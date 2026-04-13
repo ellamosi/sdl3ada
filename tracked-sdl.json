@@ -1,0 +1,21 @@
+{
+  "library": "SDL",
+  "version": "3.4.4",
+  "upstream": {
+    "git_url": "https://github.com/libsdl-org/SDL.git",
+    "git_ref": "release-3.4.4"
+  },
+  "paths": {
+    "checkout_dir": ".deps/SDL",
+    "include_dir": ".deps/SDL/include/SDL3",
+    "build_dir": ".deps/SDL-build",
+    "macos_framework_dir": ".deps/SDL-runtime/macos"
+  },
+  "artifacts": {
+    "macos": {
+      "asset_name": "SDL3-3.4.4.dmg",
+      "asset_url": "https://github.com/libsdl-org/SDL/releases/download/release-3.4.4/SDL3-3.4.4.dmg",
+      "sha256": "9605141efc02a4d1964c0c19e2075b776533102815eaff33dfdaac511421b82d"
+    }
+  }
+}

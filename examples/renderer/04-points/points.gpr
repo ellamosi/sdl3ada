@@ -1,0 +1,24 @@
+with "../../../sdl3ada.gpr";
+
+project Points is
+
+   for Languages use ("Ada");
+   for Source_Dirs use (".");
+   for Object_Dir use "../../../obj/debug/points";
+   for Exec_Dir use "../../../bin";
+   for Main use ("points.adb");
+
+   package Builder is
+      for Executable ("points.adb") use "points";
+   end Builder;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("Ada") use ("-F" & SDL3Ada.SDL3_Framework_Dir, "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end Points;

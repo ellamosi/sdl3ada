@@ -1,0 +1,24 @@
+with "../../../sdl3ada.gpr";
+
+project Debug_Text is
+
+   for Languages use ("Ada");
+   for Source_Dirs use (".");
+   for Object_Dir use "../../../obj/debug/debug_text";
+   for Exec_Dir use "../../../bin";
+   for Main use ("debug_text.adb");
+
+   package Builder is
+      for Executable ("debug_text.adb") use "debug_text";
+   end Builder;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("Ada") use ("-F" & SDL3Ada.SDL3_Framework_Dir, "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end Debug_Text;

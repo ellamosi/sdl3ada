@@ -1,0 +1,45 @@
+with "tracked_sdl_paths.gpr";
+
+library project SDL3Ada is
+   type Platform_Type is ("linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports");
+   type Mode_Type is ("debug", "release");
+
+   Platform : Platform_Type := external ("SDL3ADA_PLATFORM", "linux");
+   Mode     : Mode_Type := external ("SDL3ADA_MODE", "debug");
+   --  Generated from tracked-sdl.json via tracked_sdl_paths.gpr.
+   SDL3_Build_Dir := Tracked_SDL_Paths.SDL3_Build_Dir;
+   SDL3_Framework_Dir := Tracked_SDL_Paths.SDL3_Framework_Dir;
+
+   Source_Platform_Linker := "src/link/nix";
+
+   case Platform is
+      when "macosx" =>
+         Source_Platform_Linker := "src/link/macosx";
+
+      when others =>
+         null;
+   end case;
+
+   for Languages use ("Ada");
+   for Source_Dirs use ("src", Source_Platform_Linker);
+
+   for Library_Name use "sdl3ada";
+   for Object_Dir use "obj/" & Mode & "/lib";
+   for Library_Dir use "lib/" & Mode;
+   for Library_Kind use "static";
+
+   package Compiler is
+      Common_Switches := ("-gnat2022", "-gnatwa", "-gnaty", "-gnaty-s", "-gnatyO", "-gnatyM120");
+
+      case Mode is
+         when "debug" =>
+            Common_Switches := Common_Switches & ("-O0", "-g");
+
+         when "release" =>
+            Common_Switches := Common_Switches & ("-O2");
+      end case;
+
+      for Default_Switches ("Ada") use Common_Switches;
+   end Compiler;
+
+end SDL3Ada;

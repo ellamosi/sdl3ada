@@ -1,0 +1,5 @@
+--  Generated from tracked-sdl.json. Do not edit manually.
+abstract project Tracked_SDL_Paths is
+   SDL3_Build_Dir := external ("SDL3_BUILD_DIR", Tracked_SDL_Paths'Project_Dir & ".deps/SDL-build");
+   SDL3_Framework_Dir := external ("SDL3_FRAMEWORK_DIR", Tracked_SDL_Paths'Project_Dir & ".deps/SDL-runtime/macos");
+end Tracked_SDL_Paths;

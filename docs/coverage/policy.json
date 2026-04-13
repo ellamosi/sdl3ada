@@ -1,0 +1,73 @@
+{
+  "entry_headers": [
+    "SDL.h",
+    "SDL_main.h",
+    "SDL_metal.h",
+    "SDL_vulkan.h"
+  ],
+  "exclude_headers": {
+    "SDL_stdinc.h": "SDL's C runtime replacement layer is intentionally out of scope for the Ada binding coverage audit."
+  },
+  "exclude_symbols": {},
+  "exclude_signatures": {
+    "variadic_or_va_list": "Variadic and va_list entry points are excluded from the automatic audit."
+  },
+  "manual_coverage": [
+    {
+      "symbol": "SDL_CreateWindow",
+      "reason": "Ada exposes window creation through SDL.Video.Windows.Makers.Create and implements it via SDL_CreateWindowWithProperties.",
+      "references": [
+        {
+          "path": "src/sdl-video-windows-makers.ads",
+          "pattern": "procedure Create\n     (Win      : in out SDL.Video.Windows.Window;"
+        },
+        {
+          "path": "src/sdl-video-windows-makers.adb",
+          "pattern": "SDL_Create_Window_With_Properties"
+        }
+      ]
+    },
+    {
+      "symbol": "SDL_CreateRenderer",
+      "reason": "Ada exposes renderer creation through SDL.Video.Renderers.Makers.Create and implements it via SDL_CreateRendererWithProperties.",
+      "references": [
+        {
+          "path": "src/sdl-video-renderers-makers.ads",
+          "pattern": "procedure Create\n     (Rend   : in out SDL.Video.Renderers.Renderer;\n      Window : in out SDL.Video.Windows.Window;"
+        },
+        {
+          "path": "src/sdl-video-renderers-makers.adb",
+          "pattern": "SDL_Create_Renderer_With_Properties"
+        }
+      ]
+    },
+    {
+      "symbol": "SDL_CreateWindowAndRenderer",
+      "reason": "Ada exposes the combined window-plus-renderer convenience path through SDL.Video.Renderers.Makers.Create.",
+      "references": [
+        {
+          "path": "src/sdl-video-renderers-makers.ads",
+          "pattern": "procedure Create\n     (Window   : in out SDL.Video.Windows.Window;\n      Rend     : in out SDL.Video.Renderers.Renderer;"
+        },
+        {
+          "path": "src/sdl-video-renderers-makers.adb",
+          "pattern": "procedure Create\n     (Window   : in out SDL.Video.Windows.Window;\n      Rend     : in out SDL.Video.Renderers.Renderer;"
+        }
+      ]
+    },
+    {
+      "symbol": "SDL_Delay",
+      "reason": "Ada exposes millisecond delay through SDL.Timers.Wait_Delay, which delegates to SDL_DelayNS.",
+      "references": [
+        {
+          "path": "src/sdl-timers.ads",
+          "pattern": "procedure Wait_Delay (MS : in Milliseconds)"
+        },
+        {
+          "path": "src/sdl-timers.adb",
+          "pattern": "Wait_Delay_NS (Nanoseconds (MS) * NS_Per_Millisecond);"
+        }
+      ]
+    }
+  ]
+}

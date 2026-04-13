@@ -1,0 +1,7 @@
+/alire/
+/.deps/
+/config/
+/obj/
+/bin/
+/lib/
+__pycache__/

@@ -1,0 +1,24 @@
+with "../../../sdl3ada.gpr";
+
+project Rotating_Textures is
+
+   for Languages use ("Ada");
+   for Source_Dirs use (".");
+   for Object_Dir use "../../../obj/debug/rotating_textures";
+   for Exec_Dir use "../../../bin";
+   for Main use ("rotating_textures.adb");
+
+   package Builder is
+      for Executable ("rotating_textures.adb") use "rotating_textures";
+   end Builder;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("Ada") use ("-F" & SDL3Ada.SDL3_Framework_Dir, "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end Rotating_Textures;

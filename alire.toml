@@ -1,0 +1,20 @@
+name = "sdl3ada"
+description = "Ada 2022 SDL3 bindings with public-unit parity for sdlada callers."
+version = "0.1.0-dev"
+
+licenses = "Zlib"
+tags = ["gamedev", "games", "portable", "sdl3"]
+
+project-files = ["sdl3ada.gpr"]
+
+[gpr-externals]
+  SDL3ADA_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports"]
+  SDL3ADA_MODE = ["debug", "release"]
+
+[gpr-set-externals.'case(os)']
+  linux = { SDL3ADA_PLATFORM = "linux" }
+  windows = { SDL3ADA_PLATFORM = "windows" }
+[gpr-set-externals.'case(os)'.macos.'case(distribution)']
+  homebrew = { SDL3ADA_PLATFORM = "macos_homebrew" }
+  macports = { SDL3ADA_PLATFORM = "macos_ports" }
+  '...' = { SDL3ADA_PLATFORM = "macosx" }

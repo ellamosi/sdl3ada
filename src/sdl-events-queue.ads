@@ -89,6 +89,41 @@ package SDL.Events.Queue is
 
    Event_Error : exception renames SDL.Events.Events.Event_Error;
 
+   --  Classify the active union branch from Event.Common.Event_Type instead of
+   --  relying on the unchecked-union discriminant.
+   function Kind_Of (Item : in Event) return Event_Selector;
+
+   function Is_Window (Item : in Event) return Boolean;
+   function Is_Keyboard_Device (Item : in Event) return Boolean;
+   function Is_Keyboard (Item : in Event) return Boolean;
+   function Is_Text_Editing (Item : in Event) return Boolean;
+   function Is_Text_Input (Item : in Event) return Boolean;
+   function Is_Mouse_Device (Item : in Event) return Boolean;
+   function Is_Mouse_Motion (Item : in Event) return Boolean;
+   function Is_Mouse_Button (Item : in Event) return Boolean;
+   function Is_Mouse_Wheel (Item : in Event) return Boolean;
+   function Is_Joystick_Axis (Item : in Event) return Boolean;
+   function Is_Joystick_Ball (Item : in Event) return Boolean;
+   function Is_Joystick_Hat (Item : in Event) return Boolean;
+   function Is_Joystick_Button (Item : in Event) return Boolean;
+   function Is_Joystick_Device (Item : in Event) return Boolean;
+   function Is_Joystick_Battery (Item : in Event) return Boolean;
+   function Is_Controller_Axis (Item : in Event) return Boolean;
+   function Is_Controller_Button (Item : in Event) return Boolean;
+   function Is_Controller_Device (Item : in Event) return Boolean;
+   function Is_Controller_Touchpad (Item : in Event) return Boolean;
+   function Is_Controller_Sensor (Item : in Event) return Boolean;
+   function Is_Sensor (Item : in Event) return Boolean;
+   function Is_Pen_Proximity (Item : in Event) return Boolean;
+   function Is_Pen_Touch (Item : in Event) return Boolean;
+   function Is_Pen_Motion (Item : in Event) return Boolean;
+   function Is_Pen_Button (Item : in Event) return Boolean;
+   function Is_Pen_Axis (Item : in Event) return Boolean;
+   function Is_Camera_Device (Item : in Event) return Boolean;
+   function Is_Touch_Finger (Item : in Event) return Boolean;
+   function Is_Drop (Item : in Event) return Boolean;
+   function Is_User (Item : in Event) return Boolean;
+
    function Poll (Item : out Event) return Boolean
      renames SDL.Events.Events.Poll;
 

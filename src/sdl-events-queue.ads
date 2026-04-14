@@ -1,7 +1,17 @@
 with Interfaces;
 with System;
 
+with SDL.Events.Cameras;
+with SDL.Events.Controllers;
 with SDL.Events.Events;
+with SDL.Events.Files;
+with SDL.Events.Joysticks;
+with SDL.Events.Keyboards;
+with SDL.Events.Mice;
+with SDL.Events.Pens;
+with SDL.Events.Sensors;
+with SDL.Events.Touches;
+with SDL.Events.Windows;
 with SDL.Video.Windows;
 
 package SDL.Events.Queue is
@@ -123,6 +133,126 @@ package SDL.Events.Queue is
    function Is_Touch_Finger (Item : in Event) return Boolean;
    function Is_Drop (Item : in Event) return Boolean;
    function Is_User (Item : in Event) return Boolean;
+
+   function As_Window
+     (Item : in Event) return SDL.Events.Windows.Window_Events
+   with Pre => Is_Window (Item);
+
+   function As_Keyboard_Device
+     (Item : in Event) return SDL.Events.Keyboards.Device_Events
+   with Pre => Is_Keyboard_Device (Item);
+
+   function As_Keyboard
+     (Item : in Event) return SDL.Events.Keyboards.Keyboard_Events
+   with Pre => Is_Keyboard (Item);
+
+   function As_Text_Editing
+     (Item : in Event) return SDL.Events.Keyboards.Text_Editing_Events
+   with Pre => Is_Text_Editing (Item);
+
+   function As_Text_Input
+     (Item : in Event) return SDL.Events.Keyboards.Text_Input_Events
+   with Pre => Is_Text_Input (Item);
+
+   function As_Mouse_Device
+     (Item : in Event) return SDL.Events.Mice.Device_Events
+   with Pre => Is_Mouse_Device (Item);
+
+   function As_Mouse_Motion
+     (Item : in Event) return SDL.Events.Mice.Motion_Events
+   with Pre => Is_Mouse_Motion (Item);
+
+   function As_Mouse_Button
+     (Item : in Event) return SDL.Events.Mice.Button_Events
+   with Pre => Is_Mouse_Button (Item);
+
+   function As_Mouse_Wheel
+     (Item : in Event) return SDL.Events.Mice.Wheel_Events
+   with Pre => Is_Mouse_Wheel (Item);
+
+   function As_Joystick_Axis
+     (Item : in Event) return SDL.Events.Joysticks.Axis_Events
+   with Pre => Is_Joystick_Axis (Item);
+
+   function As_Joystick_Ball
+     (Item : in Event) return SDL.Events.Joysticks.Ball_Events
+   with Pre => Is_Joystick_Ball (Item);
+
+   function As_Joystick_Hat
+     (Item : in Event) return SDL.Events.Joysticks.Hat_Events
+   with Pre => Is_Joystick_Hat (Item);
+
+   function As_Joystick_Button
+     (Item : in Event) return SDL.Events.Joysticks.Button_Events
+   with Pre => Is_Joystick_Button (Item);
+
+   function As_Joystick_Device
+     (Item : in Event) return SDL.Events.Joysticks.Device_Events
+   with Pre => Is_Joystick_Device (Item);
+
+   function As_Joystick_Battery
+     (Item : in Event) return SDL.Events.Joysticks.Battery_Events
+   with Pre => Is_Joystick_Battery (Item);
+
+   function As_Controller_Axis
+     (Item : in Event) return SDL.Events.Controllers.Axis_Events
+   with Pre => Is_Controller_Axis (Item);
+
+   function As_Controller_Button
+     (Item : in Event) return SDL.Events.Controllers.Button_Events
+   with Pre => Is_Controller_Button (Item);
+
+   function As_Controller_Device
+     (Item : in Event) return SDL.Events.Controllers.Device_Events
+   with Pre => Is_Controller_Device (Item);
+
+   function As_Controller_Touchpad
+     (Item : in Event) return SDL.Events.Controllers.Touchpad_Events
+   with Pre => Is_Controller_Touchpad (Item);
+
+   function As_Controller_Sensor
+     (Item : in Event) return SDL.Events.Controllers.Sensor_Events
+   with Pre => Is_Controller_Sensor (Item);
+
+   function As_Sensor
+     (Item : in Event) return SDL.Events.Sensors.Update_Events
+   with Pre => Is_Sensor (Item);
+
+   function As_Pen_Proximity
+     (Item : in Event) return SDL.Events.Pens.Proximity_Events
+   with Pre => Is_Pen_Proximity (Item);
+
+   function As_Pen_Touch
+     (Item : in Event) return SDL.Events.Pens.Touch_Events
+   with Pre => Is_Pen_Touch (Item);
+
+   function As_Pen_Motion
+     (Item : in Event) return SDL.Events.Pens.Motion_Events
+   with Pre => Is_Pen_Motion (Item);
+
+   function As_Pen_Button
+     (Item : in Event) return SDL.Events.Pens.Button_Events
+   with Pre => Is_Pen_Button (Item);
+
+   function As_Pen_Axis
+     (Item : in Event) return SDL.Events.Pens.Axis_Events
+   with Pre => Is_Pen_Axis (Item);
+
+   function As_Camera_Device
+     (Item : in Event) return SDL.Events.Cameras.Device_Events
+   with Pre => Is_Camera_Device (Item);
+
+   function As_Touch_Finger
+     (Item : in Event) return SDL.Events.Touches.Finger_Events
+   with Pre => Is_Touch_Finger (Item);
+
+   function As_Drop
+     (Item : in Event) return SDL.Events.Files.Drop_Events
+   with Pre => Is_Drop (Item);
+
+   function As_User
+     (Item : in Event) return SDL.Events.User_Events
+   with Pre => Is_User (Item);
 
    function Poll (Item : out Event) return Boolean
      renames SDL.Events.Events.Poll;

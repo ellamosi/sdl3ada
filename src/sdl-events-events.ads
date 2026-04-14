@@ -15,9 +15,16 @@ with SDL.Events.Windows;
 with SDL.Video.Windows;
 
 package SDL.Events.Events is
-   --  Compatibility layer for the raw union-shaped event storage. New code can
-   --  prefer SDL.Events.Queue, which exposes the same operations with cleaner
-   --  names such as Queue.Event.
+   --  Supported compatibility layer for the raw union-shaped event storage.
+   --  This package remains available for source stability and for callers that
+   --  need direct union-field access, but it is no longer the preferred public
+   --  surface.
+   --
+   --  New code should use SDL.Events.Queue, which keeps the same queue
+   --  operations while providing cleaner names plus helper-based event
+   --  classification and typed accessors. New ergonomic additions should land
+   --  in SDL.Events.Queue; this package should stay close to the underlying
+   --  storage shape.
 
    package CE renames Interfaces.C.Extensions;
 

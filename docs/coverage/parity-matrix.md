@@ -32,8 +32,8 @@ This matrix lists the current public `sdlada` unit surface against
 | Unit | Status | SDL3 notes | Primary validation |
 | --- | --- | --- | --- |
 | `SDL.Events` | implemented | Common-event and user-event records now cover SDL3 queue control and custom-event construction without fabricating SDL2-era payload shapes. | `events_smoke` |
-| `SDL.Events.Queue` | implemented | Preferred queue facade for SDL3's union-backed event storage, covering pump/flush, timed wait, peep add/peek/get, push, filter/watch, enable-state, description, and window-ID helpers. | `events_smoke`, `input_smoke` |
-| `SDL.Events.Events` | compatibility | Obsolescent compatibility package retained for source stability; new code should use `SDL.Events.Queue`. | library build compatibility |
+| `SDL.Events.Queue` | implemented | Preferred public queue facade for SDL3's union-backed event storage, covering pump/flush, timed wait, peep add/peek/get, push, filter/watch, enable-state, description, window-ID helpers, and the helper-style event classification/accessor API. | `events_smoke`, `input_smoke` |
+| `SDL.Events.Events` | compatibility | Supported raw compatibility layer retained for source stability and direct union access; new code and new ergonomic additions should use `SDL.Events.Queue`. | library build compatibility |
 | `SDL.Events.Files` | implemented | Drop-file payloads remain under the legacy package name. | `events_smoke` |
 | `SDL.Events.Windows` | implemented | SDL3 window-event truthfulness is preserved via helper conversions instead of fake SDL2 fields. | `events_smoke` |
 | `SDL.Events.Mice` | implemented | Float coordinates and SDL3 wheel data are preserved. | `events_smoke` |

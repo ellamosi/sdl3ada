@@ -6,7 +6,7 @@ with System;
 
 with SDL;
 with SDL.Error;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Mice;
 with SDL.Properties;
 with SDL.Video;
@@ -429,8 +429,8 @@ begin
          Relative_End : constant SDL.Video.Rectangles.Float_Point :=
            SDL.Video.Renderers.Window_Coordinates_To_Render
              (Window_Renderer, (X => 8.0, Y => 12.0));
-         Event : SDL.Events.Events.Events :=
-           (Kind         => SDL.Events.Events.Is_Mouse_Motion_Event,
+         Event : SDL.Events.Queue.Event :=
+           (Kind         => SDL.Events.Queue.Is_Mouse_Motion_Event,
             Mouse_Motion =>
               (Event_Type => SDL.Events.Mice.Motion,
                Reserved   => 0,

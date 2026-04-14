@@ -12,7 +12,7 @@ with System;
 with SDL;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Joysticks;
 with SDL.Events.Keyboards;
 with SDL.Inputs.Joysticks;
@@ -159,7 +159,7 @@ package body Snake_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    with Convention => C;
 
    procedure App_Quit
@@ -565,7 +565,7 @@ package body Snake_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    is
       App : constant State_Access := To_State (App_State);
    begin

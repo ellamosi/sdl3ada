@@ -10,7 +10,7 @@ with System;
 with SDL;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Main;
 with SDL.Timers;
 with SDL.Video.Palettes;
@@ -76,7 +76,7 @@ package body Streaming_Textures_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    with Convention => C;
 
    procedure App_Quit
@@ -234,7 +234,7 @@ package body Streaming_Textures_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    is
       pragma Unreferenced (App_State);
    begin

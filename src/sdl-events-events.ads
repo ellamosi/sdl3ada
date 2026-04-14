@@ -15,6 +15,10 @@ with SDL.Events.Windows;
 with SDL.Video.Windows;
 
 package SDL.Events.Events is
+   --  Compatibility layer for the raw union-shaped event storage. New code can
+   --  prefer SDL.Events.Queue, which exposes the same operations with cleaner
+   --  names such as Queue.Event.
+
    package CE renames Interfaces.C.Extensions;
 
    type Event_Actions is (Add, Peek, Get) with
@@ -164,6 +168,10 @@ package SDL.Events.Events is
    end record with
      Unchecked_Union,
      Convention => C;
+
+   pragma Obsolescent
+     (Entity  => Events,
+      Message => "Use SDL.Events.Queue.Event instead.");
 
    for Events'Size use 128 * System.Storage_Unit;
 

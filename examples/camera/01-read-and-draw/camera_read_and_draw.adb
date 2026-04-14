@@ -11,7 +11,7 @@ with SDL.Cameras;
 with SDL.Error;
 with SDL.Events;
 with SDL.Events.Cameras;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Keyboards;
 with SDL.Events.Mice;
 with SDL.Message_Boxes;
@@ -322,9 +322,9 @@ procedure Camera_Read_And_Draw is
    end Log_Current_Camera_Format;
 
    procedure Handle_Events is
-      Event : SDL.Events.Events.Events;
+      Event : SDL.Events.Queue.Event;
    begin
-      while SDL.Events.Events.Poll (Event) loop
+      while SDL.Events.Queue.Poll (Event) loop
          case Event.Common.Event_Type is
             when SDL.Events.Keyboards.Key_Down =>
                declare

@@ -918,17 +918,17 @@ package body SDL.Video.Renderers is
 
    procedure Convert_Event_Coordinates
      (Self  : in Renderer;
-      Event : in out SDL.Events.Events.Events)
+      Event : in out SDL.Events.Queue.Event)
    is
       function SDL_Convert_Event_To_Render_Coordinates
         (Renderer : in System.Address;
-         Event    : access SDL.Events.Events.Events) return CE.bool
+         Event    : access SDL.Events.Queue.Event) return CE.bool
       with
         Import        => True,
         Convention    => C,
         External_Name => "SDL_ConvertEventToRenderCoordinates";
 
-      Raw_Event : aliased SDL.Events.Events.Events := Event;
+      Raw_Event : aliased SDL.Events.Queue.Event := Event;
    begin
       Require_Renderer (Self);
 

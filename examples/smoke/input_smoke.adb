@@ -12,7 +12,7 @@ with SDL;
 with SDL.Error;
 with SDL.Events;
 with SDL.Events.Controllers;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Joysticks;
 with SDL.Events.Joysticks.Game_Controllers;
 with SDL.Events.Keyboards;
@@ -133,12 +133,12 @@ procedure Input_Smoke is
    end Scale_Mouse_Motion;
 
    function SDL_Push_Event
-     (Event : access SDL.Events.Events.Events) return CE.bool with
+     (Event : access SDL.Events.Queue.Event) return CE.bool with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_PushEvent";
 
-   procedure Push (Event : aliased in out SDL.Events.Events.Events) is
+   procedure Push (Event : aliased in out SDL.Events.Queue.Event) is
    begin
       if not Boolean (SDL_Push_Event (Event'Access)) then
          raise Program_Error with "SDL_PushEvent failed: " & SDL.Error.Get;
@@ -282,11 +282,11 @@ procedure Input_Smoke is
    Buttons    : SDL.Events.Mice.Button_Masks;
    Mouse_X    : SDL.Events.Mice.Movement_Values;
    Mouse_Y    : SDL.Events.Mice.Movement_Values;
-   Event      : SDL.Events.Events.Events;
+   Event      : SDL.Events.Queue.Event;
    Capture_State : SDL.Inputs.Mice.Supported;
 
-   Joystick_Axis_Event : aliased SDL.Events.Events.Events :=
-     (Kind          => SDL.Events.Events.Is_Joystick_Axis_Event,
+   Joystick_Axis_Event : aliased SDL.Events.Queue.Event :=
+     (Kind          => SDL.Events.Queue.Is_Joystick_Axis_Event,
       Joystick_Axis =>
         (Event_Type => SDL.Events.Joysticks.Axis_Motion,
          Reserved   => 0,
@@ -299,8 +299,8 @@ procedure Input_Smoke is
          Value      => 1_234,
          Padding_4  => 0));
 
-   Joystick_Button_Event : aliased SDL.Events.Events.Events :=
-     (Kind            => SDL.Events.Events.Is_Joystick_Button_Event,
+   Joystick_Button_Event : aliased SDL.Events.Queue.Event :=
+     (Kind            => SDL.Events.Queue.Is_Joystick_Button_Event,
       Joystick_Button =>
         (Event_Type => SDL.Events.Joysticks.Button_Down,
          Reserved   => 0,
@@ -311,16 +311,16 @@ procedure Input_Smoke is
          Padding_1  => 0,
          Padding_2  => 0));
 
-   Joystick_Device_Event : aliased SDL.Events.Events.Events :=
-     (Kind            => SDL.Events.Events.Is_Joystick_Device_Event,
+   Joystick_Device_Event : aliased SDL.Events.Queue.Event :=
+     (Kind            => SDL.Events.Queue.Is_Joystick_Device_Event,
       Joystick_Device =>
         (Event_Type => SDL.Events.Joysticks.Device_Added,
          Reserved   => 0,
          Time_Stamp => 0,
          Which      => 99));
 
-   Controller_Axis_Event : aliased SDL.Events.Events.Events :=
-     (Kind            => SDL.Events.Events.Is_Controller_Axis_Event,
+   Controller_Axis_Event : aliased SDL.Events.Queue.Event :=
+     (Kind            => SDL.Events.Queue.Is_Controller_Axis_Event,
       Controller_Axis =>
         (Event_Type => SDL.Events.Controllers.Axis_Motion,
          Reserved   => 0,
@@ -333,8 +333,8 @@ procedure Input_Smoke is
          Value      => -2_048,
          Padding_4  => 0));
 
-   Controller_Button_Event : aliased SDL.Events.Events.Events :=
-     (Kind              => SDL.Events.Events.Is_Controller_Button_Event,
+   Controller_Button_Event : aliased SDL.Events.Queue.Event :=
+     (Kind              => SDL.Events.Queue.Is_Controller_Button_Event,
       Controller_Button =>
         (Event_Type => SDL.Events.Controllers.Button_Down,
          Reserved   => 0,
@@ -345,16 +345,16 @@ procedure Input_Smoke is
          Padding_1  => 0,
          Padding_2  => 0));
 
-   Controller_Device_Event : aliased SDL.Events.Events.Events :=
-     (Kind              => SDL.Events.Events.Is_Controller_Device_Event,
+   Controller_Device_Event : aliased SDL.Events.Queue.Event :=
+     (Kind              => SDL.Events.Queue.Is_Controller_Device_Event,
       Controller_Device =>
         (Event_Type => SDL.Events.Controllers.Device_Remapped,
          Reserved   => 0,
          Time_Stamp => 0,
          Which      => 17));
 
-   Controller_Touchpad_Event : aliased SDL.Events.Events.Events :=
-     (Kind                => SDL.Events.Events.Is_Controller_Touchpad_Event,
+   Controller_Touchpad_Event : aliased SDL.Events.Queue.Event :=
+     (Kind                => SDL.Events.Queue.Is_Controller_Touchpad_Event,
       Controller_Touchpad =>
         (Event_Type => SDL.Events.Controllers.Touchpad_Motion,
          Reserved   => 0,
@@ -366,8 +366,8 @@ procedure Input_Smoke is
          Y          => 0.75,
          Pressure   => 0.5));
 
-   Controller_Sensor_Event : aliased SDL.Events.Events.Events :=
-     (Kind              => SDL.Events.Events.Is_Controller_Sensor_Event,
+   Controller_Sensor_Event : aliased SDL.Events.Queue.Event :=
+     (Kind              => SDL.Events.Queue.Is_Controller_Sensor_Event,
       Controller_Sensor =>
         (Event_Type        => SDL.Events.Controllers.Sensor_Update,
          Reserved          => 0,
@@ -378,9 +378,9 @@ procedure Input_Smoke is
          Sensor_Time_Stamp => 123));
 
    procedure Drain_Events is
-      Drained : SDL.Events.Events.Events;
+      Drained : SDL.Events.Queue.Event;
    begin
-      while SDL.Events.Events.Poll (Drained) loop
+      while SDL.Events.Queue.Poll (Drained) loop
          null;
       end loop;
    end Drain_Events;
@@ -402,7 +402,7 @@ begin
       Height => 96);
    Window_Created := True;
 
-   while SDL.Events.Events.Poll (Event) loop
+   while SDL.Events.Queue.Poll (Event) loop
       null;
    end loop;
 
@@ -1262,47 +1262,47 @@ begin
    Push (Controller_Touchpad_Event);
    Push (Controller_Sensor_Event);
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic joystick axis event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic joystick axis event");
    Require
      (Event.Common.Event_Type = SDL.Events.Joysticks.Axis_Motion
         and then Event.Joystick_Axis.Which = 17
         and then Event.Joystick_Axis.Value = 1_234,
       "Synthetic joystick axis event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic joystick button event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic joystick button event");
    Require
      (SDL.Events.Joysticks.Get_State (Event.Joystick_Button) = SDL.Events.Pressed,
       "Synthetic joystick button event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic joystick device event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic joystick device event");
    Require
      (Event.Joystick_Device.Event_Type = SDL.Events.Joysticks.Device_Added
         and then Event.Joystick_Device.Which = 99,
       "Synthetic joystick device event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic controller axis event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic controller axis event");
    Require
      (Event.Controller_Axis.Axis = SDL.Events.Controllers.Left_X
         and then Event.Controller_Axis.Value = -2_048,
       "Synthetic controller axis event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic controller button event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic controller button event");
    Require
      (SDL.Events.Controllers.Get_State (Event.Controller_Button) = SDL.Events.Pressed,
       "Synthetic controller button event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic controller device event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic controller device event");
    Require
      (Event.Controller_Device.Event_Type = SDL.Events.Controllers.Device_Remapped,
       "Synthetic controller device event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic controller touchpad event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic controller touchpad event");
    Require
      (Event.Controller_Touchpad.Touchpad = 1
         and then Event.Controller_Touchpad.Finger = 0,
       "Synthetic controller touchpad event payload mismatch");
 
-   Require (SDL.Events.Events.Poll (Event), "Missing synthetic controller sensor event");
+   Require (SDL.Events.Queue.Poll (Event), "Missing synthetic controller sensor event");
    Require
      (Event.Controller_Sensor.Sensor = 3
         and then Event.Controller_Sensor.Data (2) = C.C_float (3.0),

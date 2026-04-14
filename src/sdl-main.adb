@@ -1,3 +1,6 @@
+with Ada.Command_Line;
+with Ada.Unchecked_Deallocation;
+
 with Interfaces.C.Strings;
 
 with SDL.Error;
@@ -5,10 +8,137 @@ with SDL.Error;
 package body SDL.Main is
    package CS renames Interfaces.C.Strings;
 
+   use type App_Init_Callback;
+   use type App_Iterate_Callback;
+   use type App_Event_Callback;
+   use type App_Quit_Callback;
+   use type CS.chars_ptr;
+
+   type Callback_Set is record
+      App_Init  : App_Init_Callback := null;
+      App_Iter  : App_Iterate_Callback := null;
+      App_Event : App_Event_Callback := null;
+      App_Quit  : App_Quit_Callback := null;
+   end record;
+
+   type Argument_Vector_Access is access CS.chars_ptr_array;
+
+   procedure Free_Argument_Vector is new Ada.Unchecked_Deallocation
+     (CS.chars_ptr_array, Argument_Vector_Access);
+
+   --  SDL_RunApp only accepts a single main callback, so the callback-app
+   --  entry points are staged here for the bridge that enters SDL callbacks.
+   Current_Callbacks : Callback_Set :=
+     (App_Init  => null,
+      App_Iter  => null,
+      App_Event => null,
+      App_Quit  => null);
+   Callback_Running  : Boolean := False;
+
+   procedure Clear_Callbacks;
+   procedure Free_Arguments (Items : in out Argument_Vector_Access);
+   procedure Raise_Exit_Error
+     (Exit_Code    : in C.int;
+      Program_Name : in String);
+   function Callback_Main
+     (ArgC : in C.int;
+      ArgV : access CS.chars_ptr_array) return C.int
+   with Convention => C;
+
+   procedure Clear_Callbacks is
+   begin
+      Current_Callbacks :=
+        (App_Init  => null,
+         App_Iter  => null,
+         App_Event => null,
+         App_Quit  => null);
+   end Clear_Callbacks;
+
+   procedure Free_Arguments (Items : in out Argument_Vector_Access) is
+   begin
+      if Items = null then
+         return;
+      end if;
+
+      for Index in Items'Range loop
+         if Items (Index) /= CS.Null_Ptr then
+            CS.Free (Items (Index));
+            Items (Index) := CS.Null_Ptr;
+         end if;
+      end loop;
+
+      Free_Argument_Vector (Items);
+   end Free_Arguments;
+
+   procedure Raise_Exit_Error
+     (Exit_Code    : in C.int;
+      Program_Name : in String)
+   is
+      Message : constant String := SDL.Error.Get;
+   begin
+      if Exit_Code = C.int (0) then
+         return;
+      end if;
+
+      if Message /= "" then
+         raise Main_Error with Message;
+      end if;
+
+      raise Main_Error with
+        Program_Name & " exited with status" & Integer'Image (Integer (Exit_Code));
+   end Raise_Exit_Error;
+
+   function Callback_Main
+     (ArgC : in C.int;
+      ArgV : access CS.chars_ptr_array) return C.int
+   is
+      Arg_Vector : constant System.Address :=
+        (if ArgV = null then System.Null_Address else ArgV.all'Address);
+   begin
+      return Enter_App_Main_Callbacks
+        (ArgC      => ArgC,
+         ArgV      => Arg_Vector,
+         App_Init  => Current_Callbacks.App_Init,
+         App_Iter  => Current_Callbacks.App_Iter,
+         App_Event => Current_Callbacks.App_Event,
+         App_Quit  => Current_Callbacks.App_Quit);
+   end Callback_Main;
+
    procedure Set_Ready is
    begin
       SDL.Raw.Main.Set_Main_Ready;
    end Set_Ready;
+
+   function Command_Name (Args : in Argument_Lists) return String is
+   begin
+      if Args'Length = 0 then
+         return "";
+      end if;
+
+      return ASU.To_String (Args (Args'First));
+   end Command_Name;
+
+   function Argument_Count (Args : in Argument_Lists) return Natural is
+   begin
+      if Args'Length = 0 then
+         return 0;
+      end if;
+
+      return Args'Length - 1;
+   end Argument_Count;
+
+   function Argument
+     (Args  : in Argument_Lists;
+      Index : in Positive) return String
+   is
+      Actual_Index : constant Positive := Args'First + Index;
+   begin
+      if Index > Argument_Count (Args) then
+         raise Constraint_Error with "argument index out of range";
+      end if;
+
+      return ASU.To_String (Args (Actual_Index));
+   end Argument;
 
    function Run_App
      (ArgC     : in C.int;
@@ -19,6 +149,68 @@ package body SDL.Main is
    begin
       return SDL.Raw.Main.Run_App (ArgC, ArgV, Main, Reserved);
    end Run_App;
+
+   procedure Run_Callback_App
+     (App_Init  : in App_Init_Callback;
+      App_Iter  : in App_Iterate_Callback;
+      App_Event : in App_Event_Callback;
+      App_Quit  : in App_Quit_Callback)
+   is
+      Arg_Count : constant Natural := Ada.Command_Line.Argument_Count + 1;
+      Args      : Argument_Vector_Access := null;
+   begin
+      if Callback_Running then
+         raise Main_Error with "SDL.Main.Run_Callback_App does not support nesting";
+      end if;
+
+      if App_Init = null
+        or else App_Iter = null
+        or else App_Event = null
+        or else App_Quit = null
+      then
+         raise Main_Error with
+           "SDL.Main.Run_Callback_App requires non-null callback pointers";
+      end if;
+
+      Args := new CS.chars_ptr_array (0 .. C.size_t (Arg_Count));
+
+      for Index in Args'Range loop
+         Args (Index) := CS.Null_Ptr;
+      end loop;
+
+      Args (0) := CS.New_String (Ada.Command_Line.Command_Name);
+      for Index in 1 .. Ada.Command_Line.Argument_Count loop
+         Args (C.size_t (Index)) := CS.New_String (Ada.Command_Line.Argument (Index));
+      end loop;
+
+      Current_Callbacks :=
+        (App_Init  => App_Init,
+         App_Iter  => App_Iter,
+         App_Event => App_Event,
+         App_Quit  => App_Quit);
+      Callback_Running := True;
+
+      declare
+         Exit_Code : constant C.int :=
+           Run_App
+             (ArgC     => C.int (Arg_Count),
+              ArgV     => Args (Args'First)'Address,
+              Main     => Callback_Main'Access,
+              Reserved => System.Null_Address);
+      begin
+         Raise_Exit_Error (Exit_Code, Ada.Command_Line.Command_Name);
+      end;
+
+      Callback_Running := False;
+      Clear_Callbacks;
+      Free_Arguments (Args);
+   exception
+      when others =>
+         Callback_Running := False;
+         Clear_Callbacks;
+         Free_Arguments (Args);
+         raise;
+   end Run_Callback_App;
 
    function Enter_App_Main_Callbacks
      (ArgC      : in C.int;

@@ -1,0 +1,26 @@
+with "../../../sdl3ada.gpr";
+
+project Clear_Run_Callback_App is
+
+   for Languages use ("Ada");
+   for Source_Dirs use (".");
+   for Object_Dir use "../../../obj/debug/clear_run_callback_app";
+   for Exec_Dir use "../../../bin";
+   for Main use ("clear_run_callback_app.adb");
+
+   package Builder is
+      for Executable ("clear_run_callback_app.adb") use "clear_run_callback_app";
+   end Builder;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("Ada") use
+              ("-F" & SDL3Ada.SDL3_Framework_Dir,
+               "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end Clear_Run_Callback_App;

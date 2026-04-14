@@ -1,0 +1,31 @@
+with "sdl3ada.gpr";
+
+abstract project SDL3Ada_SDLMain is
+   Support_Source_Dir := SDL3Ada_SDLMain'Project_Dir & "src/startup";
+   Support_Main       := "sdl3ada_sdlmain.c";
+   SDL_Include_Dir    := SDL3Ada'Project_Dir & ".deps/SDL/include";
+
+   for Languages use ("Ada", "C");
+   for Source_Dirs use (Support_Source_Dir);
+   for Main use (Support_Main);
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-n");
+   end Binder;
+
+   package Compiler is
+      for Default_Switches ("C") use ("-I" & SDL_Include_Dir);
+   end Compiler;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("C") use
+              ("-F" & SDL3Ada.SDL3_Framework_Dir,
+               "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end SDL3Ada_SDLMain;

@@ -5,7 +5,7 @@ version = "0.1.0-dev"
 licenses = "Zlib"
 tags = ["gamedev", "games", "portable", "sdl3"]
 
-project-files = ["sdl3ada.gpr"]
+project-files = ["sdl3ada.gpr", "sdl3ada_sdlmain.gpr"]
 
 [gpr-externals]
   SDL3ADA_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports"]

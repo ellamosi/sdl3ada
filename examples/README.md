@@ -17,7 +17,11 @@ subsystems buildable and runnable.
 
 If you just want a few representative entry points, start with:
 
-- `examples/renderer/01-clear/`
+- `examples/renderer/01-clear/` demonstrates direct callback startup via `SDL.Main.Enter_App_Main_Callbacks`.
+- `examples/renderer/01-clear-run-callback-app/` demonstrates the helper-based pure-Ada callback startup via `SDL.Main.Run_Callback_App`.
+- `examples/renderer/01-clear-generic/` demonstrates the same pure-Ada callback flow through `SDL.Main.Callback_Apps`.
+- `examples/renderer/01-clear-sdlmain/` demonstrates the SDL-owned callback startup path via `sdl3ada_sdlmain.gpr`.
+- `examples/renderer/01-clear-sdlmain-generic/` demonstrates the SDL-owned callback path through `SDL.Main.SDLMain_Callback_Apps`, packaged as a single `Clear` unit.
 - `examples/audio/01-simple-playback/`
 - `examples/input/01-joystick-polling/`
 - `examples/smoke/core_smoke.gpr`

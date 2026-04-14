@@ -690,55 +690,63 @@ package body Bytepusher_App is
          return SDL.Main.App_Continue;
       end if;
 
-      case Event.Common.Event_Type is
-         when SDL.Events.Quit =>
-            return SDL.Main.App_Success;
+      if Event.Common.Event_Type = SDL.Events.Quit then
+         return SDL.Main.App_Success;
+      end if;
 
-         when SDL.Events.Files.Drop_File =>
-            if Event.Drop.File_Name /= CS.Null_Ptr then
-               Load_Path (VM.all, CS.Value (Event.Drop.File_Name));
-            end if;
-
-         when SDL.Events.Keyboards.Key_Down =>
+      case SDL.Events.Queue.Kind_Of (Event.all) is
+         when SDL.Events.Queue.Is_Drop_Event =>
             declare
-               Key  : constant SDL.Events.Keyboards.Key_Codes :=
-                 Event.Keyboard.Key_Sym.Key_Code;
-               Scan : constant SDL.Events.Keyboards.Scan_Codes :=
-                 Event.Keyboard.Key_Sym.Scan_Code;
+               Drop_Event : constant SDL.Events.Files.Drop_Events :=
+                 SDL.Events.Queue.As_Drop (Event.all);
             begin
-               if Key = VM.Escape_Key then
-                  return SDL.Main.App_Success;
-               end if;
-
-               if Key = VM.Return_Key then
-                  VM.Positional_Input := not VM.Positional_Input;
-                  VM.Key_State := 0;
-
-                  if VM.Positional_Input then
-                     Set_Status (VM.all, "switched to positional input");
-                  else
-                     Set_Status (VM.all, "switched to symbolic input");
-                  end if;
-               end if;
-
-               if VM.Positional_Input then
-                  VM.Key_State := VM.Key_State or Scancode_Mask (VM.all, Scan);
-               else
-                  VM.Key_State := VM.Key_State or Keycode_Mask (VM.all, Key);
+               if Drop_Event.Event_Type = SDL.Events.Files.Drop_File
+                 and then Drop_Event.File_Name /= CS.Null_Ptr
+               then
+                  Load_Path (VM.all, CS.Value (Drop_Event.File_Name));
                end if;
             end;
 
-         when SDL.Events.Keyboards.Key_Up =>
+         when SDL.Events.Queue.Is_Keyboard_Event =>
             declare
-               Key  : constant SDL.Events.Keyboards.Key_Codes :=
-                 Event.Keyboard.Key_Sym.Key_Code;
+               Keyboard_Event : constant SDL.Events.Keyboards.Keyboard_Events :=
+                 SDL.Events.Queue.As_Keyboard (Event.all);
+               Key : constant SDL.Events.Keyboards.Key_Codes :=
+                 Keyboard_Event.Key_Sym.Key_Code;
                Scan : constant SDL.Events.Keyboards.Scan_Codes :=
-                 Event.Keyboard.Key_Sym.Scan_Code;
+                 Keyboard_Event.Key_Sym.Scan_Code;
             begin
-               if VM.Positional_Input then
-                  VM.Key_State := VM.Key_State and not Scancode_Mask (VM.all, Scan);
-               else
-                  VM.Key_State := VM.Key_State and not Keycode_Mask (VM.all, Key);
+               if Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Down then
+                  if Key = VM.Escape_Key then
+                     return SDL.Main.App_Success;
+                  end if;
+
+                  if Key = VM.Return_Key then
+                     VM.Positional_Input := not VM.Positional_Input;
+                     VM.Key_State := 0;
+
+                     if VM.Positional_Input then
+                        Set_Status (VM.all, "switched to positional input");
+                     else
+                        Set_Status (VM.all, "switched to symbolic input");
+                     end if;
+                  end if;
+
+                  if VM.Positional_Input then
+                     VM.Key_State :=
+                       VM.Key_State or Scancode_Mask (VM.all, Scan);
+                  else
+                     VM.Key_State :=
+                       VM.Key_State or Keycode_Mask (VM.all, Key);
+                  end if;
+               elsif Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Up then
+                  if VM.Positional_Input then
+                     VM.Key_State :=
+                       VM.Key_State and not Scancode_Mask (VM.all, Scan);
+                  else
+                     VM.Key_State :=
+                       VM.Key_State and not Keycode_Mask (VM.all, Key);
+                  end if;
                end if;
             end;
 

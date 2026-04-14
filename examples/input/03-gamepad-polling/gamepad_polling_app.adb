@@ -352,31 +352,39 @@ package body Gamepad_Polling_App is
    begin
       if Event.Common.Event_Type = SDL.Events.Quit then
          return SDL.Main.App_Success;
-      elsif Event.Common.Event_Type = SDL.Events.Controllers.Device_Added then
-         if not App.Gamepad_Open then
-            begin
-               SDL.Inputs.Joysticks.Game_Controllers.Open
-                 (App.Gamepad, Event.Controller_Device.Which);
-               App.Gamepad_Open := True;
-            exception
-               when Error : others =>
-                  Ada.Text_IO.Put_Line
-                    ("Failed to open gamepad ID "
-                     & ID_Image (Event.Controller_Device.Which)
-                     & ": "
-                     & Ada.Exceptions.Exception_Message (Error));
-            end;
-         end if;
-      elsif Event.Common.Event_Type = SDL.Events.Controllers.Device_Removed then
-         if App.Gamepad_Open
-           and then SDL.Inputs.Joysticks.Game_Controllers.Get_ID (App.Gamepad) =
-             Event.Controller_Device.Which
-         then
-            SDL.Inputs.Joysticks.Game_Controllers.Close (App.Gamepad);
-            App.Gamepad_Open := False;
-            App.Left_Thumb_Active := False;
-            App.Right_Thumb_Active := False;
-         end if;
+      elsif SDL.Events.Queue.Is_Controller_Device (Event.all) then
+         declare
+            Device_Event : constant SDL.Events.Controllers.Device_Events :=
+              SDL.Events.Queue.As_Controller_Device (Event.all);
+         begin
+            if Device_Event.Event_Type = SDL.Events.Controllers.Device_Added then
+               if not App.Gamepad_Open then
+                  begin
+                     SDL.Inputs.Joysticks.Game_Controllers.Open
+                       (App.Gamepad, Device_Event.Which);
+                     App.Gamepad_Open := True;
+                  exception
+                     when Error : others =>
+                        Ada.Text_IO.Put_Line
+                          ("Failed to open gamepad ID "
+                           & ID_Image (Device_Event.Which)
+                           & ": "
+                           & Ada.Exceptions.Exception_Message (Error));
+                  end;
+               end if;
+            elsif Device_Event.Event_Type = SDL.Events.Controllers.Device_Removed then
+               if App.Gamepad_Open
+                 and then
+                   SDL.Inputs.Joysticks.Game_Controllers.Get_ID (App.Gamepad) =
+                     Device_Event.Which
+               then
+                  SDL.Inputs.Joysticks.Game_Controllers.Close (App.Gamepad);
+                  App.Gamepad_Open := False;
+                  App.Left_Thumb_Active := False;
+                  App.Right_Thumb_Active := False;
+               end if;
+            end if;
+         end;
       end if;
 
       return SDL.Main.App_Continue;

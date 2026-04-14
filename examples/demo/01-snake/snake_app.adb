@@ -571,32 +571,53 @@ package body Snake_App is
    begin
       if Event.Common.Event_Type = SDL.Events.Quit then
          return SDL.Main.App_Success;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Device_Added then
-         if not App.Joystick_Open then
-            begin
-               SDL.Inputs.Joysticks.Open (App.Joystick, Event.Joystick_Device.Which);
-               App.Joystick_Open := True;
-            exception
-               when Error : others =>
-                  Ada.Text_IO.Put_Line
-                    ("Failed to open joystick ID "
-                     & SDL.Events.Joysticks.IDs'Image (Event.Joystick_Device.Which)
-                     & ": "
-                     & Ada.Exceptions.Exception_Message (Error));
-            end;
-         end if;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Device_Removed then
-         if App.Joystick_Open
-           and then SDL.Inputs.Joysticks.Instance (App.Joystick) =
-             Event.Joystick_Device.Which
-         then
-            SDL.Inputs.Joysticks.Close (App.Joystick);
-            App.Joystick_Open := False;
-         end if;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Hat_Motion then
-         return Handle_Hat_Event (App.Snake, Event.Joystick_Hat.Position);
-      elsif Event.Common.Event_Type = SDL.Events.Keyboards.Key_Down then
-         return Handle_Key_Event (App.Snake, Event.Keyboard.Key_Sym.Scan_Code);
+      elsif SDL.Events.Queue.Is_Joystick_Device (Event.all) then
+         declare
+            Device_Event : constant SDL.Events.Joysticks.Device_Events :=
+              SDL.Events.Queue.As_Joystick_Device (Event.all);
+         begin
+            if Device_Event.Event_Type = SDL.Events.Joysticks.Device_Added then
+               if not App.Joystick_Open then
+                  begin
+                     SDL.Inputs.Joysticks.Open
+                       (App.Joystick, Device_Event.Which);
+                     App.Joystick_Open := True;
+                  exception
+                     when Error : others =>
+                        Ada.Text_IO.Put_Line
+                          ("Failed to open joystick ID "
+                           & SDL.Events.Joysticks.IDs'Image (Device_Event.Which)
+                           & ": "
+                           & Ada.Exceptions.Exception_Message (Error));
+                  end;
+               end if;
+            elsif Device_Event.Event_Type = SDL.Events.Joysticks.Device_Removed then
+               if App.Joystick_Open
+                 and then SDL.Inputs.Joysticks.Instance (App.Joystick) =
+                   Device_Event.Which
+               then
+                  SDL.Inputs.Joysticks.Close (App.Joystick);
+                  App.Joystick_Open := False;
+               end if;
+            end if;
+         end;
+      elsif SDL.Events.Queue.Is_Joystick_Hat (Event.all) then
+         declare
+            Hat_Event : constant SDL.Events.Joysticks.Hat_Events :=
+              SDL.Events.Queue.As_Joystick_Hat (Event.all);
+         begin
+            return Handle_Hat_Event (App.Snake, Hat_Event.Position);
+         end;
+      elsif SDL.Events.Queue.Is_Keyboard (Event.all) then
+         declare
+            Keyboard_Event : constant SDL.Events.Keyboards.Keyboard_Events :=
+              SDL.Events.Queue.As_Keyboard (Event.all);
+         begin
+            if Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Down then
+               return Handle_Key_Event
+                 (App.Snake, Keyboard_Event.Key_Sym.Scan_Code);
+            end if;
+         end;
       end if;
 
       return SDL.Main.App_Continue;

@@ -461,137 +461,162 @@ package body Joystick_Events_App is
    begin
       if Event.Common.Event_Type = SDL.Events.Quit then
          return SDL.Main.App_Success;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Device_Added then
-         declare
-            Slot_Index : Natural := 0;
-            Which      : constant SDL.Events.Joysticks.IDs :=
-              Event.Joystick_Device.Which;
-         begin
-            Find_Free_Slot (App.all, Slot_Index);
-
-            if Slot_Index = 0 then
-               Add_Message
-                 (App.all,
-                  Which,
-                  "Joystick #" & ID_Image (Which) & " add ignored: no free slots");
-            else
-               App.Joysticks (Slot_Index).Device :=
-                 new SDL.Inputs.Joysticks.Joystick;
-
+      else
+         case SDL.Events.Queue.Kind_Of (Event.all) is
+            when SDL.Events.Queue.Is_Joystick_Device_Event =>
+               declare
+                  Device_Event : constant SDL.Events.Joysticks.Device_Events :=
+                    SDL.Events.Queue.As_Joystick_Device (Event.all);
+                  Slot_Index : Natural := 0;
+                  Which : constant SDL.Events.Joysticks.IDs := Device_Event.Which;
                begin
-                  SDL.Inputs.Joysticks.Open
-                    (App.Joysticks (Slot_Index).Device.all, Which);
-                  App.Joysticks (Slot_Index).ID := Which;
+                  if Device_Event.Event_Type = SDL.Events.Joysticks.Device_Added then
+                     Find_Free_Slot (App.all, Slot_Index);
 
-                  Add_Message
-                    (App.all,
-                     Which,
-                     "Joystick #"
-                     & ID_Image (Which)
-                     & " ('"
-                     & SDL.Inputs.Joysticks.Name
-                         (App.Joysticks (Slot_Index).Device.all)
-                     & "') added");
-               exception
-                  when Error : others =>
+                     if Slot_Index = 0 then
+                        Add_Message
+                          (App.all,
+                           Which,
+                           "Joystick #" & ID_Image (Which) & " add ignored: no free slots");
+                     else
+                        App.Joysticks (Slot_Index).Device :=
+                          new SDL.Inputs.Joysticks.Joystick;
+
+                        begin
+                           SDL.Inputs.Joysticks.Open
+                             (App.Joysticks (Slot_Index).Device.all, Which);
+                           App.Joysticks (Slot_Index).ID := Which;
+
+                           Add_Message
+                             (App.all,
+                              Which,
+                              "Joystick #"
+                              & ID_Image (Which)
+                              & " ('"
+                              & SDL.Inputs.Joysticks.Name
+                                  (App.Joysticks (Slot_Index).Device.all)
+                              & "') added");
+                        exception
+                           when Error : others =>
+                              Add_Message
+                                (App.all,
+                                 Which,
+                                 "Joystick #"
+                                 & ID_Image (Which)
+                                 & " add, but not opened: "
+                                 & Ada.Exceptions.Exception_Message (Error));
+                              Close_Slot (App.Joysticks (Slot_Index));
+                        end;
+                     end if;
+                  elsif Device_Event.Event_Type = SDL.Events.Joysticks.Device_Removed then
+                     Find_Slot (App.all, Which, Slot_Index);
+
+                     if Slot_Index /= 0 then
+                        Close_Slot (App.Joysticks (Slot_Index));
+                     end if;
+
+                     Add_Message
+                       (App.all, Which, "Joystick #" & ID_Image (Which) & " removed");
+                  end if;
+               end;
+
+            when SDL.Events.Queue.Is_Joystick_Axis_Event =>
+               declare
+                  Axis_Event : constant SDL.Events.Joysticks.Axis_Events :=
+                    SDL.Events.Queue.As_Joystick_Axis (Event.all);
+                  Now : constant SDL.Timers.Milliseconds := SDL.Timers.Ticks;
+               begin
+                  if Now >= App.Axis_Cooldown_Tick then
+                     App.Axis_Cooldown_Tick := Now + Motion_Event_Cooldown;
                      Add_Message
                        (App.all,
-                        Which,
+                        Axis_Event.Which,
                         "Joystick #"
-                        & ID_Image (Which)
-                        & " add, but not opened: "
-                        & Ada.Exceptions.Exception_Message (Error));
-                     Close_Slot (App.Joysticks (Slot_Index));
+                        & ID_Image (Axis_Event.Which)
+                        & " axis "
+                        & Int_Image (Integer (Axis_Event.Axis))
+                        & " -> "
+                        & Int_Image (Integer (Axis_Event.Value)));
+                  end if;
                end;
-            end if;
-         end;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Device_Removed then
-         declare
-            Slot_Index : Natural := 0;
-            Which      : constant SDL.Events.Joysticks.IDs :=
-              Event.Joystick_Device.Which;
-         begin
-            Find_Slot (App.all, Which, Slot_Index);
 
-            if Slot_Index /= 0 then
-               Close_Slot (App.Joysticks (Slot_Index));
-            end if;
+            when SDL.Events.Queue.Is_Joystick_Ball_Event =>
+               declare
+                  Ball_Event : constant SDL.Events.Joysticks.Ball_Events :=
+                    SDL.Events.Queue.As_Joystick_Ball (Event.all);
+                  Now : constant SDL.Timers.Milliseconds := SDL.Timers.Ticks;
+               begin
+                  if Now >= App.Ball_Cooldown_Tick then
+                     App.Ball_Cooldown_Tick := Now + Motion_Event_Cooldown;
+                     Add_Message
+                       (App.all,
+                        Ball_Event.Which,
+                        "Joystick #"
+                        & ID_Image (Ball_Event.Which)
+                        & " ball "
+                        & Int_Image (Integer (Ball_Event.Ball))
+                        & " -> "
+                        & Int_Image (Integer (Ball_Event.X_Relative))
+                        & ", "
+                        & Int_Image (Integer (Ball_Event.Y_Relative)));
+                  end if;
+               end;
 
-            Add_Message
-              (App.all, Which, "Joystick #" & ID_Image (Which) & " removed");
-         end;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Axis_Motion then
-         declare
-            Now : constant SDL.Timers.Milliseconds := SDL.Timers.Ticks;
-         begin
-            if Now >= App.Axis_Cooldown_Tick then
-               App.Axis_Cooldown_Tick := Now + Motion_Event_Cooldown;
-               Add_Message
-                 (App.all,
-                  Event.Joystick_Axis.Which,
-                  "Joystick #"
-                  & ID_Image (Event.Joystick_Axis.Which)
-                  & " axis "
-                  & Int_Image (Integer (Event.Joystick_Axis.Axis))
-                  & " -> "
-                  & Int_Image (Integer (Event.Joystick_Axis.Value)));
-            end if;
-         end;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Ball_Motion then
-         declare
-            Now : constant SDL.Timers.Milliseconds := SDL.Timers.Ticks;
-         begin
-            if Now >= App.Ball_Cooldown_Tick then
-               App.Ball_Cooldown_Tick := Now + Motion_Event_Cooldown;
-               Add_Message
-                 (App.all,
-                  Event.Joystick_Ball.Which,
-                  "Joystick #"
-                  & ID_Image (Event.Joystick_Ball.Which)
-                  & " ball "
-                  & Int_Image (Integer (Event.Joystick_Ball.Ball))
-                  & " -> "
-                  & Int_Image (Integer (Event.Joystick_Ball.X_Relative))
-                  & ", "
-                  & Int_Image (Integer (Event.Joystick_Ball.Y_Relative)));
-            end if;
-         end;
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Hat_Motion then
-         Add_Message
-           (App.all,
-            Event.Joystick_Hat.Which,
-            "Joystick #"
-            & ID_Image (Event.Joystick_Hat.Which)
-            & " hat "
-            & Int_Image (Integer (Event.Joystick_Hat.Hat))
-            & " -> "
-            & Hat_State_Image (Event.Joystick_Hat.Position));
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Button_Up
-        or else Event.Common.Event_Type = SDL.Events.Joysticks.Button_Down
-      then
-         Add_Message
-           (App.all,
-            Event.Joystick_Button.Which,
-            "Joystick #"
-            & ID_Image (Event.Joystick_Button.Which)
-            & " button "
-            & Int_Image (Integer (Event.Joystick_Button.Button))
-            & " -> "
-            & (if SDL.Events.Joysticks.Get_State (Event.Joystick_Button) =
-                   SDL.Events.Pressed
-               then "PRESSED"
-               else "RELEASED"));
-      elsif Event.Common.Event_Type = SDL.Events.Joysticks.Battery_Updated then
-         Add_Message
-           (App.all,
-            Event.Joystick_Battery.Which,
-            "Joystick #"
-            & ID_Image (Event.Joystick_Battery.Which)
-            & " battery -> "
-            & Battery_State_Image (Event.Joystick_Battery.State)
-            & " - "
-            & Int_Image (Integer (Event.Joystick_Battery.Percent))
-            & "%");
+            when SDL.Events.Queue.Is_Joystick_Hat_Event =>
+               declare
+                  Hat_Event : constant SDL.Events.Joysticks.Hat_Events :=
+                    SDL.Events.Queue.As_Joystick_Hat (Event.all);
+               begin
+                  Add_Message
+                    (App.all,
+                     Hat_Event.Which,
+                     "Joystick #"
+                     & ID_Image (Hat_Event.Which)
+                     & " hat "
+                     & Int_Image (Integer (Hat_Event.Hat))
+                     & " -> "
+                     & Hat_State_Image (Hat_Event.Position));
+               end;
+
+            when SDL.Events.Queue.Is_Joystick_Button_Event =>
+               declare
+                  Button_Event : constant SDL.Events.Joysticks.Button_Events :=
+                    SDL.Events.Queue.As_Joystick_Button (Event.all);
+               begin
+                  Add_Message
+                    (App.all,
+                     Button_Event.Which,
+                     "Joystick #"
+                     & ID_Image (Button_Event.Which)
+                     & " button "
+                     & Int_Image (Integer (Button_Event.Button))
+                     & " -> "
+                     & (if SDL.Events.Joysticks.Get_State (Button_Event) =
+                            SDL.Events.Pressed
+                        then "PRESSED"
+                        else "RELEASED"));
+               end;
+
+            when SDL.Events.Queue.Is_Joystick_Battery_Event =>
+               declare
+                  Battery_Event : constant SDL.Events.Joysticks.Battery_Events :=
+                    SDL.Events.Queue.As_Joystick_Battery (Event.all);
+               begin
+                  Add_Message
+                    (App.all,
+                     Battery_Event.Which,
+                     "Joystick #"
+                     & ID_Image (Battery_Event.Which)
+                     & " battery -> "
+                     & Battery_State_Image (Battery_Event.State)
+                     & " - "
+                     & Int_Image (Integer (Battery_Event.Percent))
+                     & "%");
+               end;
+
+            when others =>
+               null;
+         end case;
       end if;
 
       return SDL.Main.App_Continue;

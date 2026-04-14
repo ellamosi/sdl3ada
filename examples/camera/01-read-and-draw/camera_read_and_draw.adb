@@ -325,49 +325,72 @@ procedure Camera_Read_And_Draw is
       Event : SDL.Events.Queue.Event;
    begin
       while SDL.Events.Queue.Poll (Event) loop
-         case Event.Common.Event_Type is
-            when SDL.Events.Keyboards.Key_Down =>
-               declare
-                  Key_Code : constant SDL.Events.Keyboards.Key_Codes :=
-                    Event.Keyboard.Key_Sym.Key_Code;
-               begin
-                  if Key_Code = Escape_Key_Code or else Key_Code = AC_Back_Key_Code then
-                     Put_Line ("Key: Escape!");
-                     Running := False;
-                  elsif Key_Code = Space_Key_Code then
-                     Flip_Camera;
-                  end if;
-               end;
+         if Event.Common.Event_Type = SDL.Events.Quit then
+            Put_Line ("Quit!");
+            Running := False;
+         else
+            case SDL.Events.Queue.Kind_Of (Event) is
+               when SDL.Events.Queue.Is_Keyboard_Event =>
+                  declare
+                     Keyboard_Event :
+                       constant SDL.Events.Keyboards.Keyboard_Events :=
+                         SDL.Events.Queue.As_Keyboard (Event);
+                     Key_Code : constant SDL.Events.Keyboards.Key_Codes :=
+                       Keyboard_Event.Key_Sym.Key_Code;
+                  begin
+                     if Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Down then
+                        if Key_Code = Escape_Key_Code
+                          or else Key_Code = AC_Back_Key_Code
+                        then
+                           Put_Line ("Key: Escape!");
+                           Running := False;
+                        elsif Key_Code = Space_Key_Code then
+                           Flip_Camera;
+                        end if;
+                     end if;
+                  end;
 
-            when SDL.Events.Mice.Button_Down =>
-               Flip_Camera;
+               when SDL.Events.Queue.Is_Mouse_Button_Event =>
+                  declare
+                     Button_Event : constant SDL.Events.Mice.Button_Events :=
+                       SDL.Events.Queue.As_Mouse_Button (Event);
+                  begin
+                     if Button_Event.Event_Type = SDL.Events.Mice.Button_Down then
+                        Flip_Camera;
+                     end if;
+                  end;
 
-            when SDL.Events.Quit =>
-               Put_Line ("Quit!");
-               Running := False;
+               when SDL.Events.Queue.Is_Camera_Device_Event =>
+                  declare
+                     Camera_Event : constant SDL.Events.Cameras.Device_Events :=
+                       SDL.Events.Queue.As_Camera_Device (Event);
+                  begin
+                     if Camera_Event.Event_Type = SDL.Events.Cameras.Device_Approved then
+                        Log_Current_Camera_Format;
+                     elsif Camera_Event.Event_Type =
+                       SDL.Events.Cameras.Device_Denied
+                     then
+                        Put_Line ("Camera denied!");
 
-            when SDL.Events.Cameras.Device_Approved =>
-               Log_Current_Camera_Format;
+                        begin
+                           SDL.Message_Boxes.Show_Simple
+                             (Title   => "Camera permission denied!",
+                              Message => "User denied access to the camera!",
+                              Window  => Window,
+                              Flags   => SDL.Message_Boxes.Error_Box);
+                        exception
+                           when SDL.Message_Boxes.Message_Box_Error =>
+                              null;
+                        end;
 
-            when SDL.Events.Cameras.Device_Denied =>
-               Put_Line ("Camera denied!");
+                        raise Program_Error with "User denied access to the camera";
+                     end if;
+                  end;
 
-               begin
-                  SDL.Message_Boxes.Show_Simple
-                    (Title   => "Camera permission denied!",
-                     Message => "User denied access to the camera!",
-                     Window  => Window,
-                     Flags   => SDL.Message_Boxes.Error_Box);
-               exception
-                  when SDL.Message_Boxes.Message_Box_Error =>
-                     null;
-               end;
-
-               raise Program_Error with "User denied access to the camera";
-
-            when others =>
-               null;
-         end case;
+               when others =>
+                  null;
+            end case;
+         end if;
       end loop;
    end Handle_Events;
 

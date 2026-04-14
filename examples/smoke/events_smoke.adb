@@ -602,115 +602,175 @@ begin
 
    SDL.Events.Queue.Wait (Event);
    Require
-     (Event.Common.Event_Type = SDL.Events.Windows.To_Event_Type (SDL.Events.Windows.Moved),
+     (SDL.Events.Queue.Is_Window (Event),
       "Wait did not dequeue the synthetic window event");
-   Require
-     (SDL.Events.Windows.Get_Event_ID (Event.Window) = SDL.Events.Windows.Moved,
-      "Window event type did not map to the expected compatibility ID");
-   Require
-     (Event.Window.ID = Window.Get_ID and then
-        Event.Window.Data_1 = 640 and then Event.Window.Data_2 = 480,
-      "Window event did not preserve the expected payload");
+   declare
+      Window_Event : constant SDL.Events.Windows.Window_Events :=
+        SDL.Events.Queue.As_Window (Event);
+   begin
+      Require
+        (Window_Event.Event_Type =
+           SDL.Events.Windows.To_Event_Type (SDL.Events.Windows.Moved),
+         "Window event type did not preserve the expected SDL event type");
+      Require
+        (SDL.Events.Windows.Get_Event_ID (Window_Event) = SDL.Events.Windows.Moved,
+         "Window event type did not map to the expected compatibility ID");
+      Require
+        (SDL.Events.Queue.Get_Window_ID (Event) = Window.Get_ID and then
+           Window_Event.Data_1 = 640 and then Window_Event.Data_2 = 480,
+         "Window event did not preserve the expected payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic key-down event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Key_Down,
-      "Expected a key-down event");
-   Require
-     (Event.Keyboard.Key_Sym.Scan_Code = SDL.Events.Keyboards.Scan_Code_Z,
-      "Keyboard event did not preserve the scan code");
-   Require
-     (SDL.Events.Keyboards.Get_State (Event.Keyboard) = SDL.Events.Pressed,
-      "Keyboard event did not preserve the key state");
+     (SDL.Events.Queue.Is_Keyboard (Event),
+      "Expected a keyboard event");
+   declare
+      Keyboard_Event : constant SDL.Events.Keyboards.Keyboard_Events :=
+        SDL.Events.Queue.As_Keyboard (Event);
+   begin
+      Require
+        (Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Down,
+         "Expected a key-down event");
+      Require
+        (Keyboard_Event.Key_Sym.Scan_Code = SDL.Events.Keyboards.Scan_Code_Z,
+         "Keyboard event did not preserve the scan code");
+      Require
+        (SDL.Events.Keyboards.Get_State (Keyboard_Event) = SDL.Events.Pressed,
+         "Keyboard event did not preserve the key state");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic text-editing event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Text_Editing,
+     (SDL.Events.Queue.Is_Text_Editing (Event),
       "Expected a text-editing event");
-   Require
-     (CS.Value (Event.Text_Editing.Text) = "compose" and then
-        Event.Text_Editing.Start = 2 and then Event.Text_Editing.Length = 3,
-      "Text-editing event did not preserve the composition payload");
+   declare
+      Text_Editing_Event : constant SDL.Events.Keyboards.Text_Editing_Events :=
+        SDL.Events.Queue.As_Text_Editing (Event);
+   begin
+      Require
+        (CS.Value (Text_Editing_Event.Text) = "compose" and then
+           Text_Editing_Event.Start = 2 and then
+           Text_Editing_Event.Length = 3,
+         "Text-editing event did not preserve the composition payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic text-input event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Text_Input,
+     (SDL.Events.Queue.Is_Text_Input (Event),
       "Expected a text-input event");
-   Require
-     (CS.Value (Event.Text_Input.Text) = "z",
-      "Text-input event did not preserve the input text");
+   declare
+      Text_Input_Event : constant SDL.Events.Keyboards.Text_Input_Events :=
+        SDL.Events.Queue.As_Text_Input (Event);
+   begin
+      Require
+        (CS.Value (Text_Input_Event.Text) = "z",
+         "Text-input event did not preserve the input text");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-motion event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Motion,
+     (SDL.Events.Queue.Is_Mouse_Motion (Event),
       "Expected a mouse-motion event");
-   Require
-     (Event.Mouse_Motion.Mask = SDL.Events.Mice.Left_Mask and then
-        Nearly_Equal (Event.Mouse_Motion.X, 320.5) and then
-        Nearly_Equal (Event.Mouse_Motion.Y, 240.25) and then
-        Nearly_Equal (Event.Mouse_Motion.X_Relative, 2.0) and then
-        Nearly_Equal (Event.Mouse_Motion.Y_Relative, -3.5),
-      "Mouse-motion event did not preserve the motion payload");
+   declare
+      Motion_Event : constant SDL.Events.Mice.Motion_Events :=
+        SDL.Events.Queue.As_Mouse_Motion (Event);
+   begin
+      Require
+        (Motion_Event.Mask = SDL.Events.Mice.Left_Mask and then
+           Nearly_Equal (Motion_Event.X, 320.5) and then
+           Nearly_Equal (Motion_Event.Y, 240.25) and then
+           Nearly_Equal (Motion_Event.X_Relative, 2.0) and then
+           Nearly_Equal (Motion_Event.Y_Relative, -3.5),
+         "Mouse-motion event did not preserve the motion payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-button event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Button_Down,
+     (SDL.Events.Queue.Is_Mouse_Button (Event),
       "Expected a mouse-button event");
-   Require
-     (Event.Mouse_Button.Button = SDL.Events.Mice.Left and then
-        SDL.Events.Mice.Get_State (Event.Mouse_Button) = SDL.Events.Pressed and then
-        Event.Mouse_Button.Clicks = 2,
-      "Mouse-button event did not preserve the button payload");
+   declare
+      Button_Event : constant SDL.Events.Mice.Button_Events :=
+        SDL.Events.Queue.As_Mouse_Button (Event);
+   begin
+      Require
+        (Button_Event.Event_Type = SDL.Events.Mice.Button_Down,
+         "Expected a mouse-button event");
+      Require
+        (Button_Event.Button = SDL.Events.Mice.Left and then
+           SDL.Events.Mice.Get_State (Button_Event) = SDL.Events.Pressed and then
+           Button_Event.Clicks = 2,
+         "Mouse-button event did not preserve the button payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-wheel event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Wheel,
+     (SDL.Events.Queue.Is_Mouse_Wheel (Event),
       "Expected a mouse-wheel event");
-   Require
-     (Event.Mouse_Wheel.Direction = SDL.Events.Mice.Flipped and then
-        Event.Mouse_Wheel.Integer_X = 1 and then Event.Mouse_Wheel.Integer_Y = -2 and then
-        Nearly_Equal (Event.Mouse_Wheel.X, 1.5) and then
-        Nearly_Equal (Event.Mouse_Wheel.Y, -2.5),
-      "Mouse-wheel event did not preserve the wheel payload");
+   declare
+      Wheel_Event : constant SDL.Events.Mice.Wheel_Events :=
+        SDL.Events.Queue.As_Mouse_Wheel (Event);
+   begin
+      Require
+        (Wheel_Event.Direction = SDL.Events.Mice.Flipped and then
+           Wheel_Event.Integer_X = 1 and then
+           Wheel_Event.Integer_Y = -2 and then
+           Nearly_Equal (Wheel_Event.X, 1.5) and then
+           Nearly_Equal (Wheel_Event.Y, -2.5),
+         "Mouse-wheel event did not preserve the wheel payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic touch event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Touches.Finger_Motion,
+     (SDL.Events.Queue.Is_Touch_Finger (Event),
       "Expected a touch-finger event");
-   Require
-     (Event.Touch_Finger.Touch_ID = 11 and then
-        Event.Touch_Finger.Finger_ID = 19 and then
-        Event.Touch_Finger.Window_ID = Window.Get_ID and then
-        Nearly_Equal (Event.Touch_Finger.X, 0.5) and then
-        Nearly_Equal (Event.Touch_Finger.Y, 0.75) and then
-        Nearly_Equal (Event.Touch_Finger.Pressure, 0.8),
-      "Touch event did not preserve the finger payload");
+   declare
+      Touch_Event : constant SDL.Events.Touches.Finger_Events :=
+        SDL.Events.Queue.As_Touch_Finger (Event);
+   begin
+      Require
+        (Touch_Event.Touch_ID = 11 and then
+           Touch_Event.Finger_ID = 19 and then
+           Touch_Event.Window_ID = Window.Get_ID and then
+           Nearly_Equal (Touch_Event.X, 0.5) and then
+           Nearly_Equal (Touch_Event.Y, 0.75) and then
+           Nearly_Equal (Touch_Event.Pressure, 0.8),
+         "Touch event did not preserve the finger payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic drop event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Files.Drop_File,
+     (SDL.Events.Queue.Is_Drop (Event),
       "Expected a drop-file event");
-   Require
-     (CS.Value (Event.Drop.File_Name) = "synthetic-drop.gb" and then
-        Nearly_Equal (Event.Drop.X, 12.0) and then
-        Nearly_Equal (Event.Drop.Y, 34.0),
-      "Drop event did not preserve the drop payload");
+   declare
+      Drop_Event : constant SDL.Events.Files.Drop_Events :=
+        SDL.Events.Queue.As_Drop (Event);
+   begin
+      Require
+        (Drop_Event.Event_Type = SDL.Events.Files.Drop_File,
+         "Expected a drop-file event");
+      Require
+        (CS.Value (Drop_Event.File_Name) = "synthetic-drop.gb" and then
+           Nearly_Equal (Drop_Event.X, 12.0) and then
+           Nearly_Equal (Drop_Event.Y, 34.0),
+         "Drop event did not preserve the drop payload");
+   end;
 
    Require
      (SDL.Events.Queue.Poll (Event),

@@ -2,6 +2,7 @@ with Ada.Strings.Unbounded;
 with Interfaces.C;
 with System;
 
+with SDL.Events.Events;
 with SDL.Raw.Init;
 with SDL.Raw.Main;
 
@@ -39,11 +40,28 @@ package SDL.Main is
      (Args  : in Argument_Lists;
       Index : in Positive) return String;
 
+   type Ada_App_Init_Callback is access function
+     (Args : in Argument_Lists) return App_Results;
+
+   type Ada_App_Iterate_Callback is access function return App_Results;
+
+   type Ada_App_Event_Callback is access function
+     (Event : in SDL.Events.Events.Events) return App_Results;
+
+   type Ada_App_Quit_Callback is access procedure
+     (Result : in App_Results);
+
    function Run_App
      (ArgC     : in C.int;
       ArgV     : in System.Address := System.Null_Address;
       Main     : in Main_Function;
       Reserved : in System.Address := System.Null_Address) return C.int;
+
+   procedure Run_Ada_Callback_App
+     (App_Init  : in Ada_App_Init_Callback;
+      App_Iter  : in Ada_App_Iterate_Callback;
+      App_Event : in Ada_App_Event_Callback;
+      App_Quit  : in Ada_App_Quit_Callback);
 
    procedure Run_Callback_App
      (App_Init  : in App_Init_Callback;

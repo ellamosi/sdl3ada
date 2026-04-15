@@ -5,15 +5,14 @@ with System;
 with SDL.Events.Events;
 with SDL.Main;
 
-package Clear_App is
+package Hello_Logic is
    package C renames Interfaces.C;
    package CS renames Interfaces.C.Strings;
 
    function App_Init
      (App_State : access System.Address;
       ArgC      : in C.int;
-      ArgV      : access CS.chars_ptr_array)
-      return SDL.Main.App_Results
+      ArgV      : access CS.chars_ptr_array) return SDL.Main.App_Results
    with Convention => C;
 
    function App_Iterate
@@ -29,6 +28,4 @@ package Clear_App is
      (App_State : in System.Address;
       Result    : in SDL.Main.App_Results)
    with Convention => C;
-
-   procedure Run;
-end Clear_App;
+end Hello_Logic;

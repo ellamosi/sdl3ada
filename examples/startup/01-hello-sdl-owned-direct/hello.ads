@@ -4,7 +4,7 @@ with System;
 with SDL.Events.Events;
 with SDL.Main;
 
-package Clear_App is
+package Hello is
    package C renames Interfaces.C;
 
    function App_Init
@@ -39,4 +39,4 @@ package Clear_App is
      Convention    => C,
      Export        => True,
      External_Name => "SDL_AppQuit";
-end Clear_App;
+end Hello;

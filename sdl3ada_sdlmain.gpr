@@ -5,10 +5,6 @@ abstract project SDL3Ada_SDLMain is
    Support_Main       := "sdl3ada_sdlmain.c";
    SDL_Include_Dir    := SDL3Ada'Project_Dir & ".deps/SDL/include";
 
-   for Languages use ("Ada", "C");
-   for Source_Dirs use (Support_Source_Dir);
-   for Main use (Support_Main);
-
    package Binder is
       for Default_Switches ("Ada") use ("-n");
    end Binder;

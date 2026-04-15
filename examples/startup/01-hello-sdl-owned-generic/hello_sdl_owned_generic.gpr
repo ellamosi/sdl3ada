@@ -1,0 +1,34 @@
+with "../../../sdl3ada.gpr";
+with "../../../sdl3ada_sdlmain.gpr";
+
+project Hello_SDL_Owned_Generic is
+   for Languages use ("Ada", "C");
+   for Source_Dirs use (".", SDL3Ada_SDLMain.Support_Source_Dir);
+   for Object_Dir use "../../../obj/debug/hello_sdl_owned_generic";
+   for Exec_Dir use "../../../bin";
+   for Main use ("sdl3ada_sdlmain.c");
+
+   package Builder is
+      for Executable ("sdl3ada_sdlmain.c") use "hello_sdl_owned_generic";
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-n");
+   end Binder;
+
+   package Compiler is
+      for Default_Switches ("C") use ("-I" & SDL3Ada_SDLMain.SDL_Include_Dir);
+   end Compiler;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("C") use
+              ("-F" & SDL3Ada.SDL3_Framework_Dir,
+               "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
+end Hello_SDL_Owned_Generic;

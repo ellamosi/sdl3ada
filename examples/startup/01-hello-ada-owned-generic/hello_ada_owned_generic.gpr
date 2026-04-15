@@ -1,15 +1,14 @@
 with "../../../sdl3ada.gpr";
 
-project Clear_Run_Callback_App is
-
+project Hello_Ada_Owned_Generic is
    for Languages use ("Ada");
    for Source_Dirs use (".");
-   for Object_Dir use "../../../obj/debug/clear_run_callback_app";
+   for Object_Dir use "../../../obj/debug/hello_ada_owned_generic";
    for Exec_Dir use "../../../bin";
-   for Main use ("clear_run_callback_app.adb");
+   for Main use ("hello.adb");
 
    package Builder is
-      for Executable ("clear_run_callback_app.adb") use "clear_run_callback_app";
+      for Executable ("hello.adb") use "hello_ada_owned_generic";
    end Builder;
 
    package Linker is
@@ -23,4 +22,4 @@ project Clear_Run_Callback_App is
             null;
       end case;
    end Linker;
-end Clear_Run_Callback_App;
+end Hello_Ada_Owned_Generic;

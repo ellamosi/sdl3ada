@@ -1,18 +1,16 @@
 with Ada.Characters.Handling;
 with Interfaces.C.Strings;
 
+with SDL.Raw.Platform;
+
 package body SDL.Platform is
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Platform;
 
    use type CS.chars_ptr;
 
-   function SDL_Get_Platform return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetPlatform";
-
    function Name return String is
-      Value : constant CS.chars_ptr := SDL_Get_Platform;
+      Value : constant CS.chars_ptr := Raw.Get_Platform;
    begin
       if Value = CS.Null_Ptr then
          return "";

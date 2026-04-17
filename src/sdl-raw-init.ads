@@ -76,6 +76,18 @@ package SDL.Raw.Init is
      Convention    => C,
      External_Name => "SDL_WasInit";
 
+   procedure Quit
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_Quit";
+
+   procedure Quit_Sub_System (Flags : in Init_Flags)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_QuitSubSystem";
+
    function Is_Main_Thread return CE.bool
    with
      Import        => True,

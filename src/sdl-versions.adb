@@ -1,17 +1,10 @@
 with Interfaces.C.Strings;
 
+with SDL.Raw.Version;
+
 package body SDL.Versions is
    package C renames Interfaces.C;
-
-   function SDL_Get_Revision return C.Strings.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRevision";
-
-   function SDL_Get_Version return C.int with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetVersion";
+   package Raw renames SDL.Raw.Version;
 
    function To_Number (Value : in Version) return Version_Number is
      (Version_Number (Value.Major) * 1_000_000
@@ -29,7 +22,7 @@ package body SDL.Versions is
 
    function Revision return String is
    begin
-      return C.Strings.Value (SDL_Get_Revision);
+      return C.Strings.Value (Raw.Get_Revision);
    end Revision;
 
    function Revision return Revision_Level is
@@ -40,7 +33,7 @@ package body SDL.Versions is
    end Revision;
 
    function Linked_Number return Version_Number is
-     (Version_Number (SDL_Get_Version));
+     (Version_Number (Raw.Get_Version));
 
    function Linked return Version is
      (Major => Major (Linked_Number),

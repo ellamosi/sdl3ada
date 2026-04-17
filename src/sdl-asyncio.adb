@@ -16,11 +16,6 @@ package body SDL.AsyncIO is
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
 
-   procedure SDL_Free (Value : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
    procedure Raise_Last_Error;
    procedure Require_Valid (Self : in Async_IO);
    procedure Require_Valid (Self : in Queue);
@@ -291,7 +286,7 @@ package body SDL.AsyncIO is
    procedure Free_Buffer (Item : in out Outcome) is
    begin
       if Item.Buffer /= System.Null_Address then
-         SDL_Free (Item.Buffer);
+         Raw.Free (Item.Buffer);
          Item.Buffer := System.Null_Address;
       end if;
    end Free_Buffer;

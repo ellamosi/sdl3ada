@@ -27,7 +27,7 @@ Status values:
 | Workstream | Scope | Status | Notes |
 | --- | --- | --- | --- |
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
-| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.LoadSO`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.CPUS`, `SDL.Error`, `SDL.Filesystems`, `SDL.Libraries`, `SDL.Locale`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
+| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.LoadSO`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Error`, `SDL.Filesystems`, `SDL.Libraries`, `SDL.Locale`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `not started` | Includes event payload families and pure helper/value units. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `not started` | Add raw first, then migrate wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `not started` | Largest mixed layer in the current tree. |
@@ -41,7 +41,7 @@ state.
 | Raw family | Current state | Status | Notes |
 | --- | --- | --- | --- |
 | `SDL.Raw.Assert` | present | `partial` | Existing raw family; review for generated ownership once conversion reaches assertions. |
-| `SDL.Raw.AsyncIO` | present | `partial` | Existing raw family; normalize against generated rules if public wrapper work expands. |
+| `SDL.Raw.AsyncIO` | present | `complete` | Existing raw family now also owns async-result buffer cleanup, and `SDL.AsyncIO` no longer imports SDL symbols directly. |
 | `SDL.Raw.Atomic` | present | `partial` | Existing raw family; mostly support-oriented. |
 | `SDL.Raw.Clipboard` | present | `partial` | Present but not yet part of a broader generated raw family set. |
 | `SDL.Raw.CPUInfo` | present | `complete` | Added as a pure-support raw family and now owns all CPU feature and capacity imports used by `SDL.CPUS`. |
@@ -108,7 +108,7 @@ This queue records public packages that currently contain `Import => True` or
 | Package | Target classification | Status | Notes |
 | --- | --- | --- | --- |
 | `SDL` | public wrapper | `blocked` | `SDL` is `Pure`, but `SDL.Raw.Init` currently also owns callback-bearing main-entry types that prevent direct use from pure `SDL` without a support split or categorization change. |
-| `SDL.AsyncIO` | public wrapper | `not started` | Should route entirely through `SDL.Raw.AsyncIO`. |
+| `SDL.AsyncIO` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.AsyncIO`. |
 | `SDL.CPUS` | public value layer | `complete` | Public package now routes entirely through pure `SDL.Raw.CPUInfo`. |
 | `SDL.Clipboard` | public wrapper | `not started` | Should route entirely through `SDL.Raw.Clipboard`. |
 | `SDL.Error` | public value layer | `complete` | Public package now routes entirely through `SDL.Raw.Error`. |

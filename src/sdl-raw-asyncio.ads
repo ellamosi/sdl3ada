@@ -63,6 +63,12 @@ package SDL.Raw.AsyncIO is
    end record
    with Convention => C;
 
+   procedure Free (Value : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    function Async_IO_From_File
      (File : in C.char_array;
       Mode : in C.char_array) return Async_IO_Access

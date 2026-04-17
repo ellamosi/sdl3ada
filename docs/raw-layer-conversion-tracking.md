@@ -27,7 +27,7 @@ Status values:
 | Workstream | Scope | Status | Notes |
 | --- | --- | --- | --- |
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
-| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
+| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `not started` | Includes event payload families and pure helper/value units. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `not started` | Add raw first, then migrate wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `not started` | Largest mixed layer in the current tree. |
@@ -48,6 +48,7 @@ state.
 | `SDL.Raw.Error` | present | `complete` | Added as the first phase-1 raw support family and now owns all `SDL_Error` imports. |
 | `SDL.Raw.Filesystem` | present | `complete` | Existing raw family now also owns filesystem-result cleanup helpers, and `SDL.Filesystems` no longer imports SDL symbols directly. |
 | `SDL.Raw.GPU` | present | `partial` | Must stop depending on public value packages and become a strict raw mirror. |
+| `SDL.Raw.Hints` | present | `complete` | Added and now owns all hint query, mutation, and callback registration imports used by `SDL.Hints`. |
 | `SDL.Raw.Init` | present | `partial` | Expanded to cover quit calls too, but top-level `SDL` still imports directly because the current raw family is not usable from pure `SDL`. |
 | `SDL.Raw.IOStream` | present | `partial` | Closest current example of the target style. |
 | `SDL.Raw.LoadSO` | present | `complete` | Added and now owns all shared-object loading imports used by `SDL.Libraries`. |
@@ -82,7 +83,6 @@ checked-in raw packages.
 | `SDL.Raw.Gamepad` | `SDL.Inputs.Joysticks.Game_Controllers`, `SDL.Events.Joysticks.Game_Controllers` | `not started` | Split cleanly from joystick wrapper policy. |
 | `SDL.Raw.Haptic` | `SDL.Haptics` | `not started` | Device wrapper support. |
 | `SDL.Raw.HIDAPI` | `SDL.HIDAPI` | `not started` | Device wrapper support. |
-| `SDL.Raw.Hints` | `SDL.Hints` | `not started` | Core support family. |
 | `SDL.Raw.Joystick` | `SDL.Inputs.Joysticks`, `SDL.Events.Joysticks` | `not started` | Device and event support. |
 | `SDL.Raw.Keyboard` | `SDL.Inputs.Keyboards`, `SDL.Events.Keyboards` | `not started` | Input/value support. |
 | `SDL.Raw.MessageBox` | `SDL.Message_Boxes` | `not started` | Desktop UI support. |
@@ -113,7 +113,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Clipboard` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Clipboard`. |
 | `SDL.Error` | public value layer | `complete` | Public package now routes entirely through `SDL.Raw.Error`. |
 | `SDL.Filesystems` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Filesystem`. |
-| `SDL.Hints` | public wrapper | `not started` | Needs `SDL.Raw.Hints`. |
+| `SDL.Hints` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Hints`. |
 | `SDL.Libraries` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.LoadSO`. |
 | `SDL.Locale` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Locale`. |
 | `SDL.Log` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Log`. |

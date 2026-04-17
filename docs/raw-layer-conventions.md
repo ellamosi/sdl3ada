@@ -20,6 +20,7 @@ Current raw packages include:
 - `SDL.Raw.CPUInfo`
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
+- `SDL.Raw.Hints`
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
 - `SDL.Raw.Locale`

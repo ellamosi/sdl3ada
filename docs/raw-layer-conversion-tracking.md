@@ -27,7 +27,7 @@ Status values:
 | Workstream | Scope | Status | Notes |
 | --- | --- | --- | --- |
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
-| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.Error`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.Error`, `SDL.Platform`, `SDL.Power`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
+| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.CPUS`, `SDL.Error`, `SDL.Platform`, `SDL.Power`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `not started` | Includes event payload families and pure helper/value units. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `not started` | Add raw first, then migrate wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `not started` | Largest mixed layer in the current tree. |
@@ -44,6 +44,7 @@ state.
 | `SDL.Raw.AsyncIO` | present | `partial` | Existing raw family; normalize against generated rules if public wrapper work expands. |
 | `SDL.Raw.Atomic` | present | `partial` | Existing raw family; mostly support-oriented. |
 | `SDL.Raw.Clipboard` | present | `partial` | Present but not yet part of a broader generated raw family set. |
+| `SDL.Raw.CPUInfo` | present | `complete` | Added as a pure-support raw family and now owns all CPU feature and capacity imports used by `SDL.CPUS`. |
 | `SDL.Raw.Error` | present | `complete` | Added as the first phase-1 raw support family and now owns all `SDL_Error` imports. |
 | `SDL.Raw.Filesystem` | present | `partial` | Existing raw family; public layer still needs full cleanup around non-raw imports elsewhere. |
 | `SDL.Raw.GPU` | present | `partial` | Must stop depending on public value packages and become a strict raw mirror. |
@@ -74,7 +75,6 @@ checked-in raw packages.
 | --- | --- | --- | --- |
 | `SDL.Raw.Audio` | `SDL.Audio`, `SDL.Audio.Devices`, `SDL.Audio.Streams`, `SDL.Audio.Sample_Formats` | `not started` | Large wrapper family; should land before more audio API expansion. |
 | `SDL.Raw.Camera` | `SDL.Cameras`, `SDL.Events.Cameras` | `not started` | Needed for clean device and event layering. |
-| `SDL.Raw.CPUInfo` | `SDL.CPUS` | `not started` | Core support family. |
 | `SDL.Raw.Dialog` | `SDL.Dialogs` | `not started` | Needed for callback and filter structs. |
 | `SDL.Raw.Events` | `SDL.Events.*` | `not started` | Needed for event union and shared payload layout. |
 | `SDL.Raw.Gamepad` | `SDL.Inputs.Joysticks.Game_Controllers`, `SDL.Events.Joysticks.Game_Controllers` | `not started` | Split cleanly from joystick wrapper policy. |
@@ -109,7 +109,7 @@ This queue records public packages that currently contain `Import => True` or
 | --- | --- | --- | --- |
 | `SDL` | public wrapper | `blocked` | `SDL` is `Pure`, but `SDL.Raw.Init` currently also owns callback-bearing main-entry types that prevent direct use from pure `SDL` without a support split or categorization change. |
 | `SDL.AsyncIO` | public wrapper | `not started` | Should route entirely through `SDL.Raw.AsyncIO`. |
-| `SDL.CPUS` | public value layer | `not started` | Needs `SDL.Raw.CPUInfo`. |
+| `SDL.CPUS` | public value layer | `complete` | Public package now routes entirely through pure `SDL.Raw.CPUInfo`. |
 | `SDL.Clipboard` | public wrapper | `not started` | Should route entirely through `SDL.Raw.Clipboard`. |
 | `SDL.Error` | public value layer | `complete` | Public package now routes entirely through `SDL.Raw.Error`. |
 | `SDL.Filesystems` | public wrapper | `not started` | Should route entirely through `SDL.Raw.Filesystem`. |

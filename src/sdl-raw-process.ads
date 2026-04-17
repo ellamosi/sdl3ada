@@ -61,6 +61,12 @@ package SDL.Raw.Process is
    Process_Stderr_Property : constant String := "SDL.process.stderr";
    Process_Background_Property : constant String := "SDL.process.background";
 
+   procedure Free (Memory : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    function Create_Process
      (Args        : in System.Address;
       Pipe_Stdio  : in CE.bool) return Process_Access

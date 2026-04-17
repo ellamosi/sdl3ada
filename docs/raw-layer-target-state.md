@@ -121,18 +121,17 @@ public wrapper work is added:
 
 - Normalize existing raw families: `SDL.Raw.AsyncIO`, `SDL.Raw.CPUInfo`,
   `SDL.Raw.Error`, `SDL.Raw.Filesystem`, `SDL.Raw.GPU`, `SDL.Raw.Init`,
-  `SDL.Raw.IOStream`, `SDL.Raw.LoadSO`, `SDL.Raw.Main`, `SDL.Raw.Mutex`,
-  `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Process`,
+  `SDL.Raw.IOStream`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Main`,
+  `SDL.Raw.Mutex`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Process`,
   `SDL.Raw.Properties`, `SDL.Raw.Storage`, `SDL.Raw.System`,
   `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`, `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
   `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
   `SDL.Raw.Events`, `SDL.Raw.Gamepad`,
   `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Hints`, `SDL.Raw.Joystick`,
-  `SDL.Raw.Keyboard`, `SDL.Raw.Log`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`,
-  `SDL.Raw.Pen`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`,
-  `SDL.Raw.Sensor`, `SDL.Raw.Surface`, `SDL.Raw.Tray`, `SDL.Raw.Video`,
-  `SDL.Raw.Vulkan`.
+  `SDL.Raw.Keyboard`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`,
+  `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Sensor`,
+  `SDL.Raw.Surface`, `SDL.Raw.Tray`, `SDL.Raw.Video`, `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.
 

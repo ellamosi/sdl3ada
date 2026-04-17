@@ -9,23 +9,13 @@ package body SDL.Filesystems is
    package Raw renames SDL.Raw.Filesystem;
 
    use type CS.chars_ptr;
-   use type System.Address;
-
-   procedure SDL_Free (Mem : in CS.chars_ptr) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   procedure SDL_Free (Mem : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   use type Raw.Glob_Result_Pointers.Pointer;
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL filesystem call failed");
 
    function Copy_Glob_Result
-     (Items : in System.Address;
+     (Items : in Raw.Glob_Result_Pointers.Pointer;
       Count : in C.int) return Path_Lists;
 
    procedure Raise_Last_Error
@@ -41,37 +31,37 @@ package body SDL.Filesystems is
    end Raise_Last_Error;
 
    function Copy_Glob_Result
-     (Items : in System.Address;
+     (Items : in Raw.Glob_Result_Pointers.Pointer;
       Count : in C.int) return Path_Lists
    is
    begin
-      if Items = System.Null_Address then
+      if Items = null then
          Raise_Last_Error ("SDL directory glob failed");
       end if;
 
       if Count < 1 then
-         SDL_Free (Items);
+         Raw.Free (Items);
          return [];
       end if;
 
       declare
-         Raw_Items : CS.chars_ptr_array (0 .. C.size_t (Count - 1));
-         for Raw_Items'Address use Items;
-         pragma Import (Ada, Raw_Items);
-
          Result : Path_Lists (1 .. Positive (Count));
       begin
          for Index in Result'Range loop
-            Result (Index) :=
-              US.To_Unbounded_String
-                (CS.Value (Raw_Items (C.size_t (Index - 1))));
+            declare
+               Position : constant Raw.Glob_Result_Pointers.Pointer :=
+                 Items + C.ptrdiff_t (Index - 1);
+            begin
+               Result (Index) :=
+                 US.To_Unbounded_String (CS.Value (Position.all));
+            end;
          end loop;
 
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            Raw.Free (Items);
             raise;
       end;
    end Copy_Glob_Result;
@@ -104,7 +94,7 @@ package body SDL.Filesystems is
       declare
          Ada_Path : constant UTF_Strings.UTF_String := CS.Value (C_Path);
       begin
-         SDL_Free (C_Path);
+         Raw.Free (C_Path);
          return Ada_Path;
       end;
    end Preferences_Path;
@@ -131,7 +121,7 @@ package body SDL.Filesystems is
       declare
          Ada_Path : constant UTF_Strings.UTF_String := CS.Value (C_Path);
       begin
-         SDL_Free (C_Path);
+         Raw.Free (C_Path);
          return Ada_Path;
       end;
    end Current_Directory;
@@ -223,7 +213,7 @@ package body SDL.Filesystems is
       Count     : aliased C.int := 0;
       C_Path    : CS.chars_ptr := CS.New_String (Path);
       C_Pattern : CS.chars_ptr := CS.New_String (Pattern);
-      Items     : System.Address;
+      Items     : Raw.Glob_Result_Pointers.Pointer;
    begin
       begin
          Items :=
@@ -250,7 +240,7 @@ package body SDL.Filesystems is
    is
       Count  : aliased C.int := 0;
       C_Path : CS.chars_ptr := CS.New_String (Path);
-      Items  : System.Address;
+      Items  : Raw.Glob_Result_Pointers.Pointer;
    begin
       begin
          Items :=

@@ -59,7 +59,7 @@ should not grow into a second raw layer.
 | `SDL.Assertions` | public wrapper | keep `SDL.Raw.Assert` | Good fit for handwritten wrapper over generated raw. |
 | `SDL.Atomics` | public wrapper | keep `SDL.Raw.Atomic` | Keep the handwritten atomic object API and memory-barrier wrappers. |
 | `SDL.Hints` | public wrapper | add `SDL.Raw.Hints` | Callback watch plumbing stays handwritten. |
-| `SDL.Platform`, `SDL.CPUS`, `SDL.Power`, `SDL.Versions`, `SDL.Locale`, `SDL.Misc`, `SDL.Libraries` | public value or thin wrapper layer | keep or add `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, `SDL.Raw.Version`, `SDL.Raw.Locale`, `SDL.Raw.Misc`, `SDL.Raw.LoadSO` | `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, and `SDL.Raw.Version` now exist; `SDL.Libraries` still needs its raw home. |
+| `SDL.Platform`, `SDL.CPUS`, `SDL.Power`, `SDL.Versions`, `SDL.Locale`, `SDL.Misc`, `SDL.Libraries` | public value or thin wrapper layer | keep or add `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, `SDL.Raw.Version`, `SDL.Raw.Locale`, `SDL.Raw.Misc`, `SDL.Raw.LoadSO` | `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, `SDL.Raw.Version`, and `SDL.Raw.LoadSO` now exist. |
 | `SDL.Filesystems`, `SDL.Properties`, `SDL.Processes`, `SDL.Storage`, `SDL.Systems`, `SDL.Threads`, `SDL.Time`, `SDL.Timers` | public wrappers | keep or add raw families and normalize them | Existing raw families are the right shape conceptually, but handwritten public layers should own all buffer, string, and lifetime policy. `SDL.Raw.Timer` now exists, but `SDL.Timers` still needs a pure-safe conversion strategy. |
 | `SDL.C_Pointers` | compatibility/support only | no new raw dependency on it | Existing public package can remain for compatibility, but generated raw families should declare their own opaque types or use a dedicated raw support package. |
 | `SDL.UTF_8` | public support layer | add `SDL.Raw.UTF_8` only for ABI-level helpers | Ada string encoding policy stays above raw. |
@@ -121,18 +121,18 @@ public wrapper work is added:
 
 - Normalize existing raw families: `SDL.Raw.AsyncIO`, `SDL.Raw.CPUInfo`,
   `SDL.Raw.Error`, `SDL.Raw.Filesystem`, `SDL.Raw.GPU`, `SDL.Raw.Init`,
-  `SDL.Raw.IOStream`, `SDL.Raw.Main`, `SDL.Raw.Mutex`, `SDL.Raw.Platform`,
-  `SDL.Raw.Power`, `SDL.Raw.Process`, `SDL.Raw.Properties`,
-  `SDL.Raw.Storage`, `SDL.Raw.System`, `SDL.Raw.Thread`, `SDL.Raw.Time`,
-  `SDL.Raw.Timer`, `SDL.Raw.Version`.
+  `SDL.Raw.IOStream`, `SDL.Raw.LoadSO`, `SDL.Raw.Main`, `SDL.Raw.Mutex`,
+  `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Process`,
+  `SDL.Raw.Properties`, `SDL.Raw.Storage`, `SDL.Raw.System`,
+  `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`, `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
   `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
   `SDL.Raw.Events`, `SDL.Raw.Gamepad`,
   `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Hints`, `SDL.Raw.Joystick`,
-  `SDL.Raw.Keyboard`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.MessageBox`,
-  `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`,
-  `SDL.Raw.Render`, `SDL.Raw.Sensor`, `SDL.Raw.Surface`, `SDL.Raw.Tray`,
-  `SDL.Raw.Video`, `SDL.Raw.Vulkan`.
+  `SDL.Raw.Keyboard`, `SDL.Raw.Log`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`,
+  `SDL.Raw.Pen`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`,
+  `SDL.Raw.Sensor`, `SDL.Raw.Surface`, `SDL.Raw.Tray`, `SDL.Raw.Video`,
+  `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.
 

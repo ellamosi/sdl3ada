@@ -23,6 +23,7 @@ Current raw packages include:
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
 - `SDL.Raw.Locale`
+- `SDL.Raw.LoadSO`
 - `SDL.Raw.Main`
 - `SDL.Raw.Misc`
 - `SDL.Raw.Mutex`

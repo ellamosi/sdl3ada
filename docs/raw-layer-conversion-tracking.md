@@ -27,7 +27,7 @@ Status values:
 | Workstream | Scope | Status | Notes |
 | --- | --- | --- | --- |
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
-| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.CPUS`, `SDL.Error`, `SDL.Platform`, `SDL.Power`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
+| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL.CPUS`, `SDL.Error`, `SDL.Locale`, `SDL.Platform`, `SDL.Power`, and `SDL.Versions`; `SDL` and `SDL.Timers` remain blocked by `Pure`-layer constraints. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `not started` | Includes event payload families and pure helper/value units. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `not started` | Add raw first, then migrate wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `not started` | Largest mixed layer in the current tree. |
@@ -50,7 +50,7 @@ state.
 | `SDL.Raw.GPU` | present | `partial` | Must stop depending on public value packages and become a strict raw mirror. |
 | `SDL.Raw.Init` | present | `partial` | Expanded to cover quit calls too, but top-level `SDL` still imports directly because the current raw family is not usable from pure `SDL`. |
 | `SDL.Raw.IOStream` | present | `partial` | Closest current example of the target style. |
-| `SDL.Raw.Locale` | present | `partial` | Review against generated ownership once `SDL.Locale` cleanup is done. |
+| `SDL.Raw.Locale` | present | `complete` | Existing raw family now also owns locale-list cleanup via `SDL_free`, and `SDL.Locale` no longer imports SDL symbols directly. |
 | `SDL.Raw.Main` | present | `partial` | Public main-entry packages still own higher-level callback policy. |
 | `SDL.Raw.Misc` | present | `partial` | Normalize once `SDL.Misc` imports move down. |
 | `SDL.Raw.Mutex` | present | `partial` | Existing raw family; public mutex wrappers still need final classification cleanup. |
@@ -115,7 +115,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Filesystems` | public wrapper | `not started` | Should route entirely through `SDL.Raw.Filesystem`. |
 | `SDL.Hints` | public wrapper | `not started` | Needs `SDL.Raw.Hints`. |
 | `SDL.Libraries` | public wrapper | `not started` | Needs `SDL.Raw.LoadSO`. |
-| `SDL.Locale` | public wrapper | `not started` | Should route entirely through `SDL.Raw.Locale`. |
+| `SDL.Locale` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Locale`. |
 | `SDL.Log` | public wrapper | `not started` | Needs `SDL.Raw.Log`. |
 | `SDL.Platform` | public value layer | `complete` | Public package now routes entirely through `SDL.Raw.Platform`. |
 | `SDL.Power` | public value layer | `complete` | Public package now routes entirely through pure `SDL.Raw.Power`. |

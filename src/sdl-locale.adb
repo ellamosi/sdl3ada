@@ -11,11 +11,6 @@ package body SDL.Locale is
    package Raw renames SDL.Raw.Locale;
    package US renames Ada.Strings.Unbounded;
 
-   procedure SDL_Free (Locales : in Raw.Locale_Access_Pointers.Pointer) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
    use type CS.chars_ptr;
    use type Raw.Locale_Access;
    use type Raw.Locale_Access_Pointers.Pointer;
@@ -30,7 +25,7 @@ package body SDL.Locale is
       end if;
 
       if Count < 1 then
-         SDL_Free (Locales);
+         Raw.Free (Locales);
          return (1 .. 0 => <>);
       end if;
 
@@ -55,11 +50,11 @@ package body SDL.Locale is
             end;
          end loop;
 
-         SDL_Free (Locales);
+         Raw.Free (Locales);
          return Result;
       exception
          when others =>
-            SDL_Free (Locales);
+            Raw.Free (Locales);
             raise;
       end;
    end Preferred;

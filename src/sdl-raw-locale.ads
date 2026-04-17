@@ -27,6 +27,12 @@ package SDL.Raw.Locale is
       Element_Array      => Locale_Access_Array,
       Default_Terminator => null);
 
+   procedure Free (Locales : in Locale_Access_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    function Get_Preferred_Locales
      (Count : access C.int) return Locale_Access_Pointers.Pointer
    with

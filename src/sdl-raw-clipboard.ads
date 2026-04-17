@@ -1,4 +1,6 @@
+with Interfaces;
 with Interfaces.C;
+with Interfaces.C.Pointers;
 with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
@@ -12,6 +14,26 @@ package SDL.Raw.Clipboard is
 
    subtype Sizes is C.size_t;
 
+   type Byte_Array is array (C.ptrdiff_t range <>) of aliased Interfaces.Unsigned_8
+   with
+     Convention     => C,
+     Component_Size => 8;
+
+   package Byte_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => Interfaces.Unsigned_8,
+      Element_Array      => Byte_Array,
+      Default_Terminator => 0);
+
+   type Mime_Type_Array is array (C.ptrdiff_t range <>) of aliased CS.chars_ptr
+   with Convention => C;
+
+   package Mime_Type_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => CS.chars_ptr,
+      Element_Array      => Mime_Type_Array,
+      Default_Terminator => null);
+
    type Clipboard_Data_Callback is access function
      (User_Data : in System.Address;
       Mime_Type : in CS.chars_ptr;
@@ -21,6 +43,24 @@ package SDL.Raw.Clipboard is
    type Clipboard_Cleanup_Callback is access procedure
      (User_Data : in System.Address)
    with Convention => C;
+
+   procedure Free (Memory : in CS.chars_ptr)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
+   procedure Free (Memory : in Byte_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
+   procedure Free (Memory : in Mime_Type_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
 
    function Set_Text (Text : in C.char_array) return CE.bool
    with
@@ -78,7 +118,7 @@ package SDL.Raw.Clipboard is
 
    function Get_Data
      (Mime_Type : in C.char_array;
-      Size      : access Sizes) return System.Address
+      Size      : access Sizes) return Byte_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,
@@ -90,7 +130,7 @@ package SDL.Raw.Clipboard is
      Convention    => C,
      External_Name => "SDL_HasClipboardData";
 
-   function Get_Mime_Types (Count : access Sizes) return System.Address
+   function Get_Mime_Types (Count : access Sizes) return Mime_Type_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,

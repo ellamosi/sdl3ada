@@ -1,13 +1,15 @@
+with Ada.Unchecked_Conversion;
 with Ada.Strings.UTF_Encoding;
 with Ada.Strings.UTF_Encoding.Wide_Strings;
 with Interfaces.C.Extensions;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.HIDAPI;
 
 package body SDL.HIDAPI is
+   package Raw renames SDL.Raw.HIDAPI;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
    package UTF_Strings renames Ada.Strings.UTF_Encoding;
@@ -15,225 +17,22 @@ package body SDL.HIDAPI is
 
    use type C.size_t;
    use type CS.chars_ptr;
+   use type Raw.Device_Info_Access;
+   use type Raw.Wide_Char_Pointers.Pointer;
    use type SDL.C_Pointers.HID_Device_Pointer;
    use type SDL.Properties.Property_ID;
    use type System.Address;
 
-   package Wide_Char_Pointers is new Interfaces.C.Pointers
-     (Index              => C.size_t,
-      Element            => C.wchar_t,
-      Element_Array      => C.wchar_array,
-      Default_Terminator => C.wide_nul);
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.C_Pointers.HID_Device_Pointer,
+      Target => System.Address);
 
-   use type Wide_Char_Pointers.Pointer;
+   function To_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.C_Pointers.HID_Device_Pointer);
 
-   type Raw_Device_Info;
-   type Raw_Device_Info_Access is access all Raw_Device_Info with
-     Convention => C;
-
-   type Raw_Device_Info is record
-      Path                : CS.chars_ptr;
-      Vendor_ID           : C.unsigned_short;
-      Product_ID          : C.unsigned_short;
-      Serial_Number       : Wide_Char_Pointers.Pointer;
-      Release_Number      : C.unsigned_short;
-      Manufacturer_String : Wide_Char_Pointers.Pointer;
-      Product_String      : Wide_Char_Pointers.Pointer;
-      Usage_Page          : C.unsigned_short;
-      Usage               : C.unsigned_short;
-      Interface_Number    : C.int;
-      Interface_Class     : C.int;
-      Interface_Subclass  : C.int;
-      Interface_Protocol  : C.int;
-      Bus_Type            : Bus_Types;
-      Next                : Raw_Device_Info_Access;
-   end record with
-     Convention => C;
-
-   function SDL_HID_Init return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_init";
-
-   function SDL_HID_Exit return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_exit";
-
-   function SDL_HID_Device_Change_Count return Device_Change_Counts
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_device_change_count";
-
-   function SDL_HID_Enumerate
-     (Vendor_ID  : in C.unsigned_short;
-      Product_ID : in C.unsigned_short) return Raw_Device_Info_Access
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_enumerate";
-
-   procedure SDL_HID_Free_Enumeration (Devices : in Raw_Device_Info_Access)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_free_enumeration";
-
-   function SDL_HID_Open
-     (Vendor_ID     : in C.unsigned_short;
-      Product_ID    : in C.unsigned_short;
-      Serial_Number : in Wide_Char_Pointers.Pointer)
-      return SDL.C_Pointers.HID_Device_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_open";
-
-   function SDL_HID_Open_Path
-     (Path : in CS.chars_ptr) return SDL.C_Pointers.HID_Device_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_open_path";
-
-   function SDL_HID_Get_Properties
-     (Self : in SDL.C_Pointers.HID_Device_Pointer) return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_properties";
-
-   function SDL_HID_Write
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Data   : in System.Address;
-      Length : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_write";
-
-   function SDL_HID_Read_Timeout
-     (Self         : in SDL.C_Pointers.HID_Device_Pointer;
-      Data         : in System.Address;
-      Length       : in C.size_t;
-      Milliseconds : in Timeout_Milliseconds) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_read_timeout";
-
-   function SDL_HID_Read
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Data   : in System.Address;
-      Length : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_read";
-
-   function SDL_HID_Set_Nonblocking
-     (Self        : in SDL.C_Pointers.HID_Device_Pointer;
-      Nonblocking : in C.int) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_set_nonblocking";
-
-   function SDL_HID_Send_Feature_Report
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Data   : in System.Address;
-      Length : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_send_feature_report";
-
-   function SDL_HID_Get_Feature_Report
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Data   : in System.Address;
-      Length : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_feature_report";
-
-   function SDL_HID_Get_Input_Report
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Data   : in System.Address;
-      Length : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_input_report";
-
-   function SDL_HID_Close
-     (Self : in SDL.C_Pointers.HID_Device_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_close";
-
-   function SDL_HID_Get_Manufacturer_String
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Value  : in Wide_Char_Pointers.Pointer;
-      Maxlen : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_manufacturer_string";
-
-   function SDL_HID_Get_Product_String
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Value  : in Wide_Char_Pointers.Pointer;
-      Maxlen : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_product_string";
-
-   function SDL_HID_Get_Serial_Number_String
-     (Self   : in SDL.C_Pointers.HID_Device_Pointer;
-      Value  : in Wide_Char_Pointers.Pointer;
-      Maxlen : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_serial_number_string";
-
-   function SDL_HID_Get_Indexed_String
-     (Self         : in SDL.C_Pointers.HID_Device_Pointer;
-      String_Index : in String_Indices;
-      Value        : in Wide_Char_Pointers.Pointer;
-      Maxlen       : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_indexed_string";
-
-   function SDL_HID_Get_Device_Info
-     (Self : in SDL.C_Pointers.HID_Device_Pointer) return Raw_Device_Info_Access
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_device_info";
-
-   function SDL_HID_Get_Report_Descriptor
-     (Self     : in SDL.C_Pointers.HID_Device_Pointer;
-      Buffer   : in System.Address;
-      Buf_Size : in C.size_t) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_get_report_descriptor";
-
-   procedure SDL_HID_BLE_Scan (Active : in CE.bool)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_hid_ble_scan";
+   function To_Public (Value : in Raw.Bus_Types) return Bus_Types is
+     (Bus_Types'Val (Raw.Bus_Types'Pos (Value)));
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
@@ -262,7 +61,7 @@ package body SDL.HIDAPI is
       end if;
    end Require_Valid;
 
-   function To_UTF_8 (Value : in Wide_Char_Pointers.Pointer) return String is
+   function To_UTF_8 (Value : in Raw.Wide_Char_Pointers.Pointer) return String is
    begin
       if Value = null then
          return "";
@@ -270,7 +69,7 @@ package body SDL.HIDAPI is
 
       declare
          Wide_Value : constant Wide_String :=
-           C.To_Ada (Wide_Char_Pointers.Value (Value));
+           C.To_Ada (Raw.Wide_Char_Pointers.Value (Value));
          UTF_Value  : constant UTF_Strings.UTF_8_String :=
            UTF_Wide_Strings.Encode (Wide_Value);
       begin
@@ -296,7 +95,7 @@ package body SDL.HIDAPI is
      (Message = "No HID devices found in the system."
       or else Message = "No HID devices with requested VID/PID found in the system.");
 
-   function Copy_Info (Value : in Raw_Device_Info) return Device_Info is
+   function Copy_Info (Value : in Raw.Device_Info) return Device_Info is
       Result : Device_Info;
    begin
       if Value.Path /= CS.Null_Ptr then
@@ -316,16 +115,16 @@ package body SDL.HIDAPI is
       Result.Interface_Class := Value.Interface_Class;
       Result.Interface_Subclass := Value.Interface_Subclass;
       Result.Interface_Protocol := Value.Interface_Protocol;
-      Result.Bus_Type := Value.Bus_Type;
+      Result.Bus_Type := To_Public (Value.Bus_Type);
       return Result;
    end Copy_Info;
 
-   procedure Free_Enumeration (Devices : in out Raw_Device_Info_Access);
+   procedure Free_Enumeration (Devices : in out Raw.Device_Info_Access);
 
-   procedure Free_Enumeration (Devices : in out Raw_Device_Info_Access) is
+   procedure Free_Enumeration (Devices : in out Raw.Device_Info_Access) is
    begin
       if Devices /= null then
-         SDL_HID_Free_Enumeration (Devices);
+         Raw.HID_Free_Enumeration (Devices);
          Devices := null;
       end if;
    end Free_Enumeration;
@@ -361,21 +160,21 @@ package body SDL.HIDAPI is
 
    procedure Initialise is
    begin
-      if SDL_HID_Init < 0 then
+      if Raw.HID_Init < 0 then
          Raise_Last_Error ("SDL_hid_init failed");
       end if;
    end Initialise;
 
    procedure Shutdown is
    begin
-      if SDL_HID_Exit < 0 then
+      if Raw.HID_Exit < 0 then
          Raise_Last_Error ("SDL_hid_exit failed");
       end if;
    end Shutdown;
 
    function Get_Device_Change_Count return Device_Change_Counts is
    begin
-      return SDL_HID_Device_Change_Count;
+      return Device_Change_Counts (Raw.HID_Device_Change_Count);
    end Get_Device_Change_Count;
 
    function Enumerate return Device_Info_Lists is
@@ -385,14 +184,14 @@ package body SDL.HIDAPI is
      (Vendor_ID  : in Vendor_IDs;
       Product_ID : in Product_IDs) return Device_Info_Lists
    is
-      Devices : Raw_Device_Info_Access := null;
-      Current : Raw_Device_Info_Access := null;
+      Devices : Raw.Device_Info_Access := null;
+      Current : Raw.Device_Info_Access := null;
       Count   : Natural := 0;
    begin
       SDL.Error.Clear;
 
       Devices :=
-        SDL_HID_Enumerate
+        Raw.HID_Enumerate
           (Vendor_ID  => C.unsigned_short (Vendor_ID),
            Product_ID => C.unsigned_short (Product_ID));
 
@@ -458,10 +257,11 @@ package body SDL.HIDAPI is
 
       if Serial_Number = "" then
          Internal :=
-           SDL_HID_Open
+           To_Pointer
+             (Raw.HID_Open
              (Vendor_ID     => C.unsigned_short (Vendor_ID),
               Product_ID    => C.unsigned_short (Product_ID),
-              Serial_Number => null);
+              Serial_Number => null));
       else
          declare
             Wide_Serial : constant Wide_String :=
@@ -469,12 +269,13 @@ package body SDL.HIDAPI is
             C_Serial    : aliased C.wchar_array := C.To_C (Wide_Serial);
          begin
             Internal :=
-              SDL_HID_Open
+              To_Pointer
+                (Raw.HID_Open
                 (Vendor_ID     => C.unsigned_short (Vendor_ID),
                  Product_ID    => C.unsigned_short (Product_ID),
                  Serial_Number =>
-                   Wide_Char_Pointers.Pointer'
-                     (C_Serial (C_Serial'First)'Unchecked_Access));
+                   Raw.Wide_Char_Pointers.Pointer'
+                     (C_Serial (C_Serial'First)'Unchecked_Access)));
          end;
       end if;
 
@@ -506,7 +307,7 @@ package body SDL.HIDAPI is
       Close (Self);
 
       begin
-         Internal := SDL_HID_Open_Path (C_Path);
+         Internal := To_Pointer (Raw.HID_Open_Path (C_Path));
       exception
          when others =>
             CS.Free (C_Path);
@@ -534,7 +335,7 @@ package body SDL.HIDAPI is
       pragma Unreferenced (Ignored);
    begin
       if Self.Owns and then Self.Internal /= null then
-         Ignored := SDL_HID_Close (Self.Internal);
+         Ignored := Raw.HID_Close (To_Address (Self.Internal));
       end if;
 
       Self.Internal := null;
@@ -551,7 +352,7 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      Props := SDL_HID_Get_Properties (Self.Internal);
+      Props := Raw.HID_Get_Properties (To_Address (Self.Internal));
       if Props = SDL.Properties.Null_Property_ID then
          Raise_Last_Error ("SDL_hid_get_properties failed");
       end if;
@@ -560,11 +361,11 @@ package body SDL.HIDAPI is
    end Get_Properties;
 
    function Get_Info (Self : in Device) return Device_Info is
-      Info : Raw_Device_Info_Access := null;
+      Info : Raw.Device_Info_Access := null;
    begin
       Require_Valid (Self);
 
-      Info := SDL_HID_Get_Device_Info (Self.Internal);
+      Info := Raw.HID_Get_Device_Info (To_Address (Self.Internal));
       if Info = null then
          Raise_Last_Error ("SDL_hid_get_device_info failed");
       end if;
@@ -579,8 +380,8 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      if SDL_HID_Set_Nonblocking
-          (Self.Internal, (if Enabled then 1 else 0)) < 0
+      if Raw.HID_Set_Nonblocking
+          (To_Address (Self.Internal), (if Enabled then 1 else 0)) < 0
       then
          Raise_Last_Error ("SDL_hid_set_nonblocking failed");
       end if;
@@ -593,8 +394,8 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
       return Checked_Transfer
-        (SDL_HID_Write
-           (Self.Internal,
+        (Raw.HID_Write
+           (To_Address (Self.Internal),
             Buffer_Address (Data),
             C.size_t (Data'Length)),
          "SDL_hid_write failed");
@@ -610,8 +411,8 @@ package body SDL.HIDAPI is
       Require_Valid (Self);
       Count :=
         Checked_Transfer
-          (SDL_HID_Read
-             (Self.Internal,
+          (Raw.HID_Read
+             (To_Address (Self.Internal),
               Buffer_Address (Buffer),
               C.size_t (Buffer'Length)),
            "SDL_hid_read failed");
@@ -629,8 +430,8 @@ package body SDL.HIDAPI is
       Require_Valid (Self);
       Count :=
         Checked_Transfer
-          (SDL_HID_Read_Timeout
-             (Self.Internal,
+          (Raw.HID_Read_Timeout
+             (To_Address (Self.Internal),
               Buffer_Address (Buffer),
               C.size_t (Buffer'Length),
               Timeout_MS),
@@ -645,8 +446,8 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
       return Checked_Transfer
-        (SDL_HID_Send_Feature_Report
-           (Self.Internal,
+        (Raw.HID_Send_Feature_Report
+           (To_Address (Self.Internal),
             Buffer_Address (Data),
             C.size_t (Data'Length)),
          "SDL_hid_send_feature_report failed");
@@ -665,8 +466,8 @@ package body SDL.HIDAPI is
       Buffer (Buffer'First) := Report_ID;
       Count :=
         Checked_Transfer
-          (SDL_HID_Get_Feature_Report
-             (Self.Internal,
+          (Raw.HID_Get_Feature_Report
+             (To_Address (Self.Internal),
               Buffer_Address (Buffer),
               C.size_t (Buffer'Length)),
            "SDL_hid_get_feature_report failed");
@@ -686,8 +487,8 @@ package body SDL.HIDAPI is
       Buffer (Buffer'First) := Report_ID;
       Count :=
         Checked_Transfer
-          (SDL_HID_Get_Input_Report
-             (Self.Internal,
+          (Raw.HID_Get_Input_Report
+             (To_Address (Self.Internal),
               Buffer_Address (Buffer),
               C.size_t (Buffer'Length)),
            "SDL_hid_get_input_report failed");
@@ -705,8 +506,8 @@ package body SDL.HIDAPI is
 
       Count :=
         Checked_Transfer
-          (SDL_HID_Get_Report_Descriptor
-             (Self.Internal,
+          (Raw.HID_Get_Report_Descriptor
+             (To_Address (Self.Internal),
               Buffer_Address (Buffer),
               C.size_t (Buffer'Length)),
            "SDL_hid_get_report_descriptor failed");
@@ -722,9 +523,9 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      if SDL_HID_Get_Manufacturer_String
-          (Self.Internal,
-           Wide_Char_Pointers.Pointer'
+      if Raw.HID_Get_Manufacturer_String
+          (To_Address (Self.Internal),
+           Raw.Wide_Char_Pointers.Pointer'
              (Buffer (Buffer'First)'Unchecked_Access),
            C.size_t (Buffer'Length)) < 0
       then
@@ -743,9 +544,9 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      if SDL_HID_Get_Product_String
-          (Self.Internal,
-           Wide_Char_Pointers.Pointer'
+      if Raw.HID_Get_Product_String
+          (To_Address (Self.Internal),
+           Raw.Wide_Char_Pointers.Pointer'
              (Buffer (Buffer'First)'Unchecked_Access),
            C.size_t (Buffer'Length)) < 0
       then
@@ -764,9 +565,9 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      if SDL_HID_Get_Serial_Number_String
-          (Self.Internal,
-           Wide_Char_Pointers.Pointer'
+      if Raw.HID_Get_Serial_Number_String
+          (To_Address (Self.Internal),
+           Raw.Wide_Char_Pointers.Pointer'
              (Buffer (Buffer'First)'Unchecked_Access),
            C.size_t (Buffer'Length)) < 0
       then
@@ -786,10 +587,10 @@ package body SDL.HIDAPI is
    begin
       Require_Valid (Self);
 
-      if SDL_HID_Get_Indexed_String
-          (Self.Internal,
+      if Raw.HID_Get_Indexed_String
+          (To_Address (Self.Internal),
            Index,
-           Wide_Char_Pointers.Pointer'
+           Raw.Wide_Char_Pointers.Pointer'
              (Buffer (Buffer'First)'Unchecked_Access),
            C.size_t (Buffer'Length)) < 0
       then
@@ -801,6 +602,6 @@ package body SDL.HIDAPI is
 
    procedure BLE_Scan (Active : in Boolean) is
    begin
-      SDL_HID_BLE_Scan (To_C_Bool (Active));
+      Raw.HID_BLE_Scan (To_C_Bool (Active));
    end BLE_Scan;
 end SDL.HIDAPI;

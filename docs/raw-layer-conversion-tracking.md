@@ -29,7 +29,7 @@ Status values:
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
 | W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.Init`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL`, `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, `SDL.Timers`, and `SDL.Versions`; remaining W1 work is now normalization and review rather than a `Pure`-layer blocker. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `in progress` | Started with `SDL.Pens`; event payload and other pure helper/value units still need raw-backed cleanup. |
-| W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `in progress` | `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.Joystick`, `SDL.Raw.MessageBox`, `SDL.Raw.Pen`, and `SDL.Raw.Sensor` now exist. `SDL.Dialogs`, `SDL.Message_Boxes`, `SDL.Sensors`, joystick/gamepad event polling, and joystick/gamepad maker helpers route through raw; larger audio, input, and desktop wrapper families still need broader raw backfills. |
+| W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `in progress` | `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.MessageBox`, `SDL.Raw.Pen`, and `SDL.Raw.Sensor` now exist. `SDL.Dialogs`, `SDL.HIDAPI`, `SDL.Message_Boxes`, `SDL.Sensors`, joystick/gamepad event polling, and joystick/gamepad maker helpers route through raw; larger audio, input, and desktop wrapper families still need broader raw backfills. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Render` and `SDL.Raw.Video` now exist as starter families for texture/renderer creation plus window creation and property queries. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
 | W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `not started` | Should land only after most conversion work is done. |
 
@@ -50,6 +50,7 @@ state.
 | `SDL.Raw.Filesystem` | present | `complete` | Existing raw family now also owns filesystem-result cleanup helpers, and `SDL.Filesystems` no longer imports SDL symbols directly. |
 | `SDL.Raw.Gamepad` | present | `partial` | Added as a starter family for gamepad event polling and maker open calls; the full gamepad wrapper still needs broader raw coverage. |
 | `SDL.Raw.GPU` | present | `partial` | Must stop depending on public value packages and become a strict raw mirror. |
+| `SDL.Raw.HIDAPI` | present | `complete` | Added and now owns the HIDAPI ABI enums, wide-string helpers, device-info struct, and entry points used by `SDL.HIDAPI`. |
 | `SDL.Raw.Hints` | present | `complete` | Added and now owns all hint query, mutation, and callback registration imports used by `SDL.Hints`. |
 | `SDL.Raw.Init` | present | `complete` | Now pure-safe, covers init/quit/metadata imports, and is consumed from the `SDL` body so the public top-level package no longer imports SDL symbols directly. |
 | `SDL.Raw.IOStream` | present | `partial` | Closest current example of the target style. |
@@ -88,7 +89,6 @@ checked-in raw packages.
 | `SDL.Raw.Camera` | `SDL.Cameras`, `SDL.Events.Cameras` | `not started` | Needed for clean device and event layering. |
 | `SDL.Raw.Events` | `SDL.Events.*` | `not started` | Needed for event union and shared payload layout. |
 | `SDL.Raw.Haptic` | `SDL.Haptics` | `not started` | Device wrapper support. |
-| `SDL.Raw.HIDAPI` | `SDL.HIDAPI` | `not started` | Device wrapper support. |
 | `SDL.Raw.Keyboard` | `SDL.Inputs.Keyboards`, `SDL.Events.Keyboards` | `not started` | Input/value support. |
 | `SDL.Raw.Mouse` | `SDL.Inputs.Mice`, `SDL.Events.Mice`, `SDL.Inputs.Mice.Cursors` | `not started` | Needed for cursor and input support. |
 | `SDL.Raw.Metal` | `SDL.Video.Metal` | `not started` | Can be narrow if Metal exposure remains small. |
@@ -152,7 +152,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Audio.Streams` | public thick wrapper | `not started` | Needs `SDL.Raw.Audio`. |
 | `SDL.Cameras` | public thick wrapper | `not started` | Needs `SDL.Raw.Camera`. |
 | `SDL.Dialogs` | public wrapper | `complete` | Public package now routes dialog ABI types and entry points through `SDL.Raw.Dialog`, while keeping callback lifetime, filter assembly, and property policy handwritten. |
-| `SDL.HIDAPI` | public thick wrapper | `not started` | Needs `SDL.Raw.HIDAPI`. |
+| `SDL.HIDAPI` | public thick wrapper | `complete` | Public package now routes HID device enumeration, I/O, wide-string queries, and device-info ABI through `SDL.Raw.HIDAPI`, while keeping UTF conversion, ownership, and error policy handwritten. |
 | `SDL.Haptics` | public thick wrapper | `not started` | Needs `SDL.Raw.Haptic`. |
 | `SDL.Message_Boxes` | public wrapper | `complete` | Public package now routes all SDL message-box entry points through `SDL.Raw.MessageBox`. |
 | `SDL.Trays` | public thick wrapper | `not started` | Needs `SDL.Raw.Tray`. |

@@ -45,7 +45,7 @@ package SDL.Raw.Events is
 
    type Event_Filter is access function
      (User_Data : in System.Address;
-      Event     : in System.Address) return CE.bool
+      Event     : in Event_Access) return CE.bool
    with Convention => C;
 
    function Peep_Events

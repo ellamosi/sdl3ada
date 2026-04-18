@@ -6,6 +6,7 @@ with System;
 
 with SDL.Raw.Pixels;
 with SDL.Raw.Properties;
+with SDL.Raw.Rect;
 with SDL.Raw.Video;
 
 package SDL.Raw.GPU is
@@ -1049,7 +1050,7 @@ package SDL.Raw.GPU is
 
    procedure Set_Scissor
      (Render_Pass : in Render_Pass_Access;
-      Scissor     : in System.Address)
+      Scissor     : access constant SDL.Raw.Rect.Rectangle)
    with
      Import        => True,
      Convention    => C,

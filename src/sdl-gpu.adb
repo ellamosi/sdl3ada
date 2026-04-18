@@ -6,6 +6,7 @@ with Interfaces.C.Strings;
 with SDL.Error;
 with SDL.Platform;
 with SDL.Raw.Pixels;
+with SDL.Raw.Rect;
 
 package body SDL.GPU is
    package CE renames Interfaces.C.Extensions;
@@ -63,6 +64,13 @@ package body SDL.GPU is
    function To_Raw
      (Value : in Transfer_Buffer_Usages) return Raw.Transfer_Buffer_Usages is
      (Raw.Transfer_Buffer_Usages (Transfer_Buffer_Usages'Enum_Rep (Value)));
+
+   function To_Raw
+     (Value : in SDL.Video.Rectangles.Rectangle) return SDL.Raw.Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Raw.Rect.Dimension (Value.Width),
+         Height => SDL.Raw.Rect.Dimension (Value.Height)));
 
    function To_Raw (Value : in Primitive_Types) return Raw.Primitive_Types is
      (Raw.Primitive_Types (Primitive_Types'Enum_Rep (Value)));
@@ -2512,10 +2520,10 @@ package body SDL.GPU is
      (Self    : in Render_Pass;
       Scissor : in SDL.Video.Rectangles.Rectangle)
    is
-      Raw_Scissor : aliased constant SDL.Video.Rectangles.Rectangle := Scissor;
+      Raw_Scissor : aliased constant SDL.Raw.Rect.Rectangle := To_Raw (Scissor);
    begin
       Require_Render_Pass (Self);
-      Raw.Set_Scissor (Self.Internal, Raw_Scissor'Address);
+      Raw.Set_Scissor (Self.Internal, Raw_Scissor'Access);
    end Set_Scissor;
 
    procedure Set_Blend_Constants

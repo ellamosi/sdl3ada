@@ -3,6 +3,7 @@ with Interfaces.C;
 with Interfaces.C.Extensions;
 
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Raw.Event_Layouts.Mice is
    pragma Pure;
@@ -55,9 +56,7 @@ package SDL.Raw.Event_Layouts.Mice is
    subtype Movement_Value is Coordinate;
    subtype Wheel_Value is Coordinate;
 
-   type Window_ID is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Window_ID is SDL.Raw.Video_Types.Window_ID;
 
    type Motion_Event is record
       Event_Type : SDL.Raw.Event_Types.Event_Type;

@@ -1,13 +1,14 @@
 with Interfaces;
 with SDL.Raw.Event_Layouts;
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Events is
    pragma Pure;
 
    subtype Event_Types is SDL.Raw.Event_Types.Event_Type;
    subtype Time_Stamps is Interfaces.Unsigned_64;
-   subtype Window_IDs is Interfaces.Unsigned_32;
+   subtype Window_IDs is SDL.Raw.Video_Types.Window_ID;
    subtype Keyboard_IDs is Interfaces.Unsigned_32;
 
    type Button_State is (Released, Pressed) with

@@ -8,6 +8,7 @@ with System;
 with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
 with SDL.Raw.Rect;
+with SDL.Raw.Video_Types;
 
 package SDL.Raw.Video is
    pragma Preelaborate;
@@ -151,9 +152,7 @@ package SDL.Raw.Video is
       Config    : in System.Address) return System.Address
    with Convention => C;
 
-   type Window_ID is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Window_ID is SDL.Raw.Video_Types.Window_ID;
 
    subtype Window_Flags is Interfaces.Unsigned_64;
    subtype Flash_Operation is C.int;

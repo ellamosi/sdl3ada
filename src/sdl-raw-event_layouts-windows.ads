@@ -1,6 +1,7 @@
 with Interfaces;
 
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Raw.Event_Layouts.Windows is
    pragma Pure;
@@ -41,9 +42,7 @@ package SDL.Raw.Event_Layouts.Windows is
    Hit_Test              : constant SDL.Raw.Event_Types.Event_Type :=
      Window + SDL.Raw.Event_Types.Event_Type (17);
 
-   type Window_ID is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Window_ID is SDL.Raw.Video_Types.Window_ID;
 
    type Window_Event is record
       Event_Type : SDL.Raw.Event_Types.Event_Type;

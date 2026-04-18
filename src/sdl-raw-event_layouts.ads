@@ -2,6 +2,7 @@ with Interfaces;
 with System;
 
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Raw.Event_Layouts is
    pragma Pure;
@@ -19,7 +20,7 @@ package SDL.Raw.Event_Layouts is
       Event_Type : SDL.Raw.Event_Types.Event_Type;
       Reserved   : Interfaces.Unsigned_32;
       Time_Stamp : Interfaces.Unsigned_64;
-      Window_ID  : Interfaces.Unsigned_32;
+      Window_ID  : SDL.Raw.Video_Types.Window_ID;
       Code       : Event_Code;
       Data_1     : System.Address;
       Data_2     : System.Address;

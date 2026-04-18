@@ -3,6 +3,7 @@ with Interfaces.C;
 with Interfaces.C.Strings;
 
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Raw.Event_Layouts.Files is
    pragma Preelaborate;
@@ -22,9 +23,7 @@ package SDL.Raw.Event_Layouts.Files is
    Drop_Position : constant SDL.Raw.Event_Types.Event_Type :=
      Drop_File + SDL.Raw.Event_Types.Event_Type (4);
 
-   type Window_Identifier is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Window_Identifier is SDL.Raw.Video_Types.Window_ID;
 
    type Drop_Event is record
       Event_Type : SDL.Raw.Event_Types.Event_Type;

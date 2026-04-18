@@ -21,6 +21,13 @@ package SDL.Raw.Audio is
       Byte_Length : in C.int)
    with Convention => C;
 
+   type Stream_Callback is access procedure
+     (User_Data         : in System.Address;
+      Stream            : in System.Address;
+      Additional_Amount : in C.int;
+      Total_Amount      : in C.int)
+   with Convention => C;
+
    function Get_Num_Audio_Drivers return C.int
    with
      Import        => True,
@@ -154,10 +161,82 @@ package SDL.Raw.Audio is
      (Device    : in Device_ID;
       Callback  : in Postmix_Callback;
       User_Data : in System.Address) return CE.bool
+  with
+    Import        => True,
+    Convention    => C,
+    External_Name => "SDL_SetAudioPostmixCallback";
+
+   function Create_Audio_Stream
+     (Source      : in System.Address;
+      Destination : in System.Address) return System.Address
    with
      Import        => True,
      Convention    => C,
-     External_Name => "SDL_SetAudioPostmixCallback";
+     External_Name => "SDL_CreateAudioStream";
+
+   function Bind_Audio_Stream
+     (Device : in Device_ID;
+      Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_BindAudioStream";
+
+   function Put_Audio_Stream_Data
+     (Stream      : in System.Address;
+      Data        : in System.Address;
+      Byte_Length : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_PutAudioStreamData";
+
+   function Get_Audio_Stream_Data
+     (Stream      : in System.Address;
+      Data        : in System.Address;
+      Byte_Length : in C.int) return C.int
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamData";
+
+   function Get_Audio_Stream_Queued
+     (Stream : in System.Address) return C.int
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamQueued";
+
+   function Get_Audio_Stream_Available
+     (Stream : in System.Address) return C.int
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamAvailable";
+
+   function Clear_Audio_Stream
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_ClearAudioStream";
+
+   procedure Destroy_Audio_Stream
+     (Stream : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_DestroyAudioStream";
+
+   function Set_Audio_Stream_Get_Callback
+     (Stream    : in System.Address;
+      Callback  : in Stream_Callback;
+      User_Data : in System.Address)
+      return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamGetCallback";
 
    function Load_WAV_IO
      (Source      : in System.Address;

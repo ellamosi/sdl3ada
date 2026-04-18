@@ -91,11 +91,11 @@ should not grow into a second raw layer.
 
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
-| `SDL.Video` | public wrapper | add `SDL.Raw.Video` | Subsystem control and convenience helpers stay public. |
-| `SDL.Video.Displays` | public wrapper | add `SDL.Raw.Video` | Display IDs and mode enumeration stay public, with string and array policy above raw. |
+| `SDL.Video` | public wrapper | keep `SDL.Raw.Video` | Subsystem control and convenience helpers stay public. |
+| `SDL.Video.Displays` | public wrapper | keep `SDL.Raw.Video` | Display IDs and mode enumeration stay public, with string and array policy above raw. |
 | `SDL.Video.Rectangles`, `SDL.Video.Pixels`, `SDL.Video.Pixel_Formats` | public value layer | add `SDL.Raw.Rect`, `SDL.Raw.Pixels`; pixel-format ABI types should come from generated raw support | These are prime examples of public value packages that should stop importing SDL directly. |
 | `SDL.Video.Palettes` | thin wrapper | add `SDL.Raw.Pixels` or `SDL.Raw.Surface` support as needed | Ownership and palette mutation stay handwritten. |
-| `SDL.Video.Windows`, `SDL.Video.Windows.Manager`, `SDL.Video.Windows.Makers` | thick wrapper plus maker/manager support | add `SDL.Raw.Video`, generated support for system window manager structs if needed | All window ownership and platform-handle policy stay handwritten. |
+| `SDL.Video.Windows`, `SDL.Video.Windows.Manager`, `SDL.Video.Windows.Makers` | thick wrapper plus maker/manager support | keep `SDL.Raw.Video`, generated support for system window manager structs if needed | All window ownership and platform-handle policy stay handwritten. |
 | `SDL.Video.Surfaces`, `SDL.Video.Surfaces.Makers` | thick wrapper plus makers | add `SDL.Raw.Surface` | Surface ownership, pixel access policy, and conversion helpers stay handwritten. |
 | `SDL.Video.Textures`, `SDL.Video.Textures.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Texture ownership and update helpers stay handwritten. |
 | `SDL.Video.Renderers`, `SDL.Video.Renderers.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Renderer state, readback, and bridge logic stay handwritten. |
@@ -131,7 +131,7 @@ public wrapper work is added:
   `SDL.Raw.Events`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`,
-  `SDL.Raw.Tray`, `SDL.Raw.Video`, `SDL.Raw.Vulkan`.
+  `SDL.Raw.Tray`, `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.
 

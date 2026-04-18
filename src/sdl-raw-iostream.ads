@@ -94,9 +94,8 @@ package SDL.Raw.IOStream is
    end record with
      Convention => C;
 
-   type IO_Stream_Object is null record;
-   type IO_Stream_Access is access all IO_Stream_Object with
-     Convention => C;
+   subtype IO_Stream_Object is SDL.Raw.C_Pointers.IO_Streams;
+   subtype IO_Stream_Access is SDL.Raw.C_Pointers.IO_Stream_Pointer;
 
    procedure Free (Memory : in System.Address)
    with

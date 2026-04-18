@@ -59,7 +59,7 @@ state.
 | `SDL.Raw.HIDAPI` | present | `complete` | Added and now owns the HIDAPI ABI enums, wide-string helpers, device-info struct, and entry points used by `SDL.HIDAPI`. |
 | `SDL.Raw.Hints` | present | `complete` | Added and now owns all hint query, mutation, and callback registration imports used by `SDL.Hints`. |
 | `SDL.Raw.Init` | present | `complete` | Now pure-safe, covers init/quit/metadata imports, and is consumed from the `SDL` body so the public top-level package no longer imports SDL symbols directly. |
-| `SDL.Raw.IOStream` | present | `partial` | Closest current example of the target style. |
+| `SDL.Raw.IOStream` | present | `complete` | Now uses shared raw opaque-handle support from `SDL.Raw.C_Pointers` and serves as the generator-shaped owner of the `SDL_IOStream` ABI surface used by the public RWops compatibility layer and other wrapper code. |
 | `SDL.Raw.Joystick` | present | `complete` | Now owns joystick enumeration, metadata, virtual-joystick ABI, property, power, state, rumble, and virtual-input entry points used by `SDL.Inputs.Joysticks`, while pure event polling remains split into `SDL.Raw.Joystick_Events`. |
 | `SDL.Raw.Joystick_Events` | present | `complete` | Pure support split that owns the joystick event-polling entry points used by `SDL.Events.Joysticks`. |
 | `SDL.Raw.Keyboard` | present | `partial` | Added as a starter family for keyboard focus, enumeration, modifier, state, keycode/scancode naming and conversion helpers, text-input, and screen-keyboard entry points used by `SDL.Inputs.Keyboards` and `SDL.Events.Keyboards`; keyboard event payload layout still depends on `SDL.Raw.Events`. |

@@ -11,7 +11,6 @@ src/sdl-events-events.adb 21
 src/sdl-main-sdlmain_callback_apps.adb 4
 src/sdl-video-displays.adb 17
 src/sdl-video-gl.adb 24
-src/sdl-video-palettes.adb 3
 src/sdl-video-pixel_formats.adb 8
 src/sdl-video-rectangles.adb 10
 src/sdl-video-renderers.adb 83

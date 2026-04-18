@@ -1,14 +1,16 @@
 with Ada.Finalization;
-with Interfaces.C.Extensions;
+with Ada.Unchecked_Conversion;
 
 with SDL.Error;
 with SDL.Video.Palettes.Internal;
 
 package body SDL.Video.Palettes is
-   package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Pixels;
    package Palette_Internal renames SDL.Video.Palettes.Internal;
 
+   use type Raw.Palette_Access;
    use type Colour_Array_Pointer.Pointer;
+   use type System.Address;
 
    type Iterator (Container : access constant Palette'Class) is
      new Ada.Finalization.Limited_Controlled and
@@ -20,29 +22,13 @@ package body SDL.Video.Palettes is
    overriding
    function Next (Object : Iterator; Position : Cursor) return Cursor;
 
-   function SDL_Create_Palette
-     (Total_Colours : in C.int) return Internal_Palette_Access
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreatePalette";
+   function To_Colour_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Colour_Array_Pointer.Pointer);
 
-   function SDL_Set_Palette_Colors
-     (Container : in Internal_Palette_Access;
-      Colours   : in Colour_Arrays;
-      First     : in C.int;
-      Total     : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetPaletteColors";
-
-   procedure SDL_Destroy_Palette
-     (Container : in Internal_Palette_Access)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DestroyPalette";
+   function Colour_Array_Address
+     (Items : in Colour_Arrays) return System.Address is
+     (if Items'Length = 0 then System.Null_Address else Items (Items'First)'Address);
 
    function Element (Position : in Cursor) return Colour is
    begin
@@ -80,7 +66,7 @@ package body SDL.Video.Palettes is
 
    function Create (Total_Colours : in Positive) return Palette is
       Data : constant Internal_Palette_Access :=
-        SDL_Create_Palette (C.int (Total_Colours));
+        Raw.Create_Palette (C.int (Total_Colours));
    begin
       if Data = null then
          raise SDL.Video.Video_Error with SDL.Error.Get;
@@ -111,9 +97,9 @@ package body SDL.Video.Palettes is
       end if;
 
       if not Boolean
-          (SDL_Set_Palette_Colors
+          (Raw.Set_Palette_Colors
              (Container.Data,
-              Colours,
+              Colour_Array_Address (Colours),
               C.int (First),
               C.int (Colours'Length)))
       then
@@ -124,7 +110,7 @@ package body SDL.Video.Palettes is
    procedure Free (Container : in out Palette) is
    begin
       if Container.Data /= null then
-         SDL_Destroy_Palette (Container.Data);
+         Raw.Destroy_Palette (Container.Data);
          Container.Data := null;
       end if;
    end Free;
@@ -139,7 +125,7 @@ package body SDL.Video.Palettes is
    begin
       if Object.Container = null
         or else Object.Container.Data = null
-        or else Object.Container.Data.Colours = null
+        or else Object.Container.Data.Colours = System.Null_Address
       then
          return No_Element;
       end if;
@@ -147,7 +133,7 @@ package body SDL.Video.Palettes is
       return
         (Container => Object.Container,
          Index     => Natural'First + 1,
-         Current   => Object.Container.Data.Colours);
+         Current   => To_Colour_Pointer (Object.Container.Data.Colours));
    end First;
 
    overriding

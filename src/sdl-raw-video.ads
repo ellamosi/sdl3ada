@@ -159,4 +159,13 @@ package SDL.Raw.Video is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowID";
+
+   function Get_Window_Size_In_Pixels
+     (Value  : in System.Address;
+      Width  : access C.int;
+      Height : access C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetWindowSizeInPixels";
 end SDL.Raw.Video;

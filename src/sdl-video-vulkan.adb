@@ -1,15 +1,18 @@
-with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Video;
+with SDL.Raw.Vulkan;
 
 package body SDL.Video.Vulkan is
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw_Video renames SDL.Raw.Video;
+   package Raw is new SDL.Raw.Vulkan (Instance_Address_Type, Surface_Type);
 
+   use type C.ptrdiff_t;
    use type Interfaces.Unsigned_32;
-   use type System.Address;
    use type CS.chars_ptr;
+   use type Raw.Extension_Pointers.Pointer;
 
    procedure Create_Surface
      (Window   : in SDL.Video.Windows.Window;
@@ -30,18 +33,9 @@ package body SDL.Video.Vulkan is
       Surface   : out Surface_Type;
       Allocator : in System.Address)
    is
-      function SDL_Vulkan_Create_Surface
-        (Window    : in System.Address;
-         Instance  : in Instance_Address_Type;
-         Allocator : in System.Address;
-         Surface   : out Surface_Type) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_CreateSurface";
    begin
       if not Boolean
-          (SDL_Vulkan_Create_Surface
+          (Raw.Create_Surface
              (SDL.Video.Windows.Get_Internal (Window),
               Instance,
               Allocator,
@@ -56,36 +50,19 @@ package body SDL.Video.Vulkan is
       Surface   : in Surface_Type;
       Allocator : in System.Address := System.Null_Address)
    is
-      procedure SDL_Vulkan_Destroy_Surface
-        (Instance  : in Instance_Address_Type;
-         Surface   : in Surface_Type;
-         Allocator : in System.Address)
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_DestroySurface";
    begin
-      SDL_Vulkan_Destroy_Surface (Instance, Surface, Allocator);
+      Raw.Destroy_Surface (Instance, Surface, Allocator);
    end Destroy_Surface;
 
    procedure Get_Drawable_Size
      (Window        : in SDL.Video.Windows.Window;
       Width, Height : out SDL.Natural_Dimension)
    is
-      function SDL_Get_Window_Size_In_Pixels
-        (Value  : in System.Address;
-         Width  : access C.int;
-         Height : access C.int) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetWindowSizeInPixels";
-
       Raw_Width  : aliased C.int := 0;
       Raw_Height : aliased C.int := 0;
    begin
       if not Boolean
-          (SDL_Get_Window_Size_In_Pixels
+          (Raw_Video.Get_Window_Size_In_Pixels
              (SDL.Video.Windows.Get_Internal (Window),
               Raw_Width'Access,
               Raw_Height'Access))
@@ -99,35 +76,24 @@ package body SDL.Video.Vulkan is
 
    function Get_Instance_Extensions return Extension_Name_Arrays
    is
-      function SDL_Vulkan_Get_Instance_Extensions
-        (Count : access Interfaces.Unsigned_32) return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_GetInstanceExtensions";
-
       Count : aliased Interfaces.Unsigned_32 := 0;
-      Names : System.Address;
+      Names : constant Raw.Extension_Pointers.Pointer :=
+        Raw.Get_Instance_Extensions (Count'Access);
    begin
-      Names := SDL_Vulkan_Get_Instance_Extensions (Count'Access);
-
-      if Names = System.Null_Address or else Count = 0 then
+      if Names = null or else Count = 0 then
          return Null_Extension_Name_Array;
       end if;
 
       declare
-         Raw : CS.chars_ptr_array
-           (0 .. C.size_t (Count - 1));
-         for Raw'Address use Names;
-         pragma Import (Ada, Raw);
-
+         Source : constant Raw.Extension_Name_Array :=
+           Raw.Extension_Pointers.Value (Names, C.ptrdiff_t (Count));
          Result : Extension_Name_Arrays (1 .. Positive (Count));
          use Ada.Strings.Unbounded;
       begin
          for Index in Result'Range loop
             declare
                Raw_Name : constant CS.chars_ptr :=
-                 Raw (C.size_t (Index - 1));
+                 Source (Source'First + C.ptrdiff_t (Index - Result'First));
             begin
                if Raw_Name = CS.Null_Ptr then
                   Result (Index) := Null_Unbounded_String;
@@ -150,15 +116,8 @@ package body SDL.Video.Vulkan is
    end Get_Instance_Extensions;
 
    function Get_Instance_Procedure_Address return Instance_Address_Type is
-      function SDL_Vulkan_Get_Vk_Get_Instance_Proc_Addr
-        return Instance_Address_Type
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_GetVkGetInstanceProcAddr";
-
       Result : constant Instance_Address_Type :=
-        SDL_Vulkan_Get_Vk_Get_Instance_Proc_Addr;
+        Raw.Get_Vk_Get_Instance_Proc_Addr;
    begin
       if Result = Instance_Null then
          raise SDL_Vulkan_Error with SDL.Error.Get;
@@ -172,53 +131,28 @@ package body SDL.Video.Vulkan is
       Physical_Device    : in System.Address;
       Queue_Family_Index : in Interfaces.Unsigned_32) return Boolean
    is
-      function SDL_Vulkan_Get_Presentation_Support
-        (Instance           : in Instance_Address_Type;
-         Physical_Device    : in System.Address;
-         Queue_Family_Index : in Interfaces.Unsigned_32) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_GetPresentationSupport";
    begin
       return Boolean
-        (SDL_Vulkan_Get_Presentation_Support
+        (Raw.Get_Presentation_Support
            (Instance, Physical_Device, Queue_Family_Index));
    end Get_Presentation_Support;
 
    procedure Load_Library is
-      function SDL_Vulkan_Load_Library
-        (Path : in CS.chars_ptr) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_LoadLibrary";
    begin
-      if not Boolean (SDL_Vulkan_Load_Library (CS.Null_Ptr)) then
+      if not Boolean (Raw.Load_Library (CS.Null_Ptr)) then
          raise SDL_Vulkan_Error with SDL.Error.Get;
       end if;
    end Load_Library;
 
    procedure Load_Library (Path : in String) is
-      function SDL_Vulkan_Load_Library
-        (Value : in C.char_array) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_LoadLibrary";
    begin
-      if not Boolean (SDL_Vulkan_Load_Library (C.To_C (Path))) then
+      if not Boolean (Raw.Load_Library (C.To_C (Path))) then
          raise SDL_Vulkan_Error with SDL.Error.Get;
       end if;
    end Load_Library;
 
    procedure Unload_Library is
-      procedure SDL_Vulkan_Unload_Library
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Vulkan_UnloadLibrary";
    begin
-      SDL_Vulkan_Unload_Library;
+      Raw.Unload_Library;
    end Unload_Library;
 end SDL.Video.Vulkan;

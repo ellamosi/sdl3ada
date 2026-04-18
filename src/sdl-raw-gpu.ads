@@ -277,6 +277,10 @@ package SDL.Raw.GPU is
    type Fence_Access is access all Fence_Object with
      Convention => C;
 
+   type Fence_Access_Array is
+     array (C.size_t range <>) of aliased Fence_Access
+   with Convention => C;
+
    type Float_Colour is
       record
          Red   : Float := 0.0;
@@ -1507,7 +1511,7 @@ package SDL.Raw.GPU is
    function Wait_For_Fences
      (Device     : in Device_Access;
       Wait_All   : in CE.bool;
-      Fences     : in System.Address;
+      Fences     : access constant Fence_Access;
       Num_Fences : in Unsigned_32) return CE.bool
    with
      Import        => True,

@@ -2907,10 +2907,7 @@ package body SDL.GPU is
      (Device : in SDL.GPU.Device;
       Self   : in Fence) return Boolean
    is
-      type Fence_List is array (C.size_t range 0 .. 0) of aliased Fence_Handle with
-        Convention => C;
-
-      Fences : aliased Fence_List := [0 => Self.Internal];
+      Fences : aliased Raw.Fence_Access_Array (0 .. 0) := [0 => Self.Internal];
    begin
       Require_Device (Device);
 
@@ -2923,7 +2920,7 @@ package body SDL.GPU is
           (Raw.Wait_For_Fences
              (Device.Internal,
               To_C_Bool (True),
-              Fences'Address,
+              Fences (Fences'First)'Access,
               1));
    end Wait;
 

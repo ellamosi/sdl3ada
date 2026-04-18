@@ -9,6 +9,10 @@ package SDL.Raw.Video is
 
    package C renames Interfaces.C;
 
+   type Window_ID is mod 2 ** 32 with
+     Convention => C,
+     Size       => 32;
+
    subtype Window_Flags is Interfaces.Unsigned_64;
 
    function Create_Window_With_Properties
@@ -36,4 +40,11 @@ package SDL.Raw.Video is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowProperties";
+
+   function Get_Window_ID
+     (Value : in System.Address) return Window_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetWindowID";
 end SDL.Raw.Video;

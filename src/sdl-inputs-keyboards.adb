@@ -1,53 +1,36 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C.Pointers;
-with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.Keyboard;
+with SDL.Raw.Properties;
+with SDL.Raw.Video;
 
 package body SDL.Inputs.Keyboards is
-   package C renames Interfaces.C;
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Keyboard;
+   package Raw_Video renames SDL.Raw.Video;
 
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
+   use type Raw.ID_Pointers.Pointer;
    use type System.Address;
 
-   type ID_Arrays is array (C.ptrdiff_t range <>) of aliased ID with
-     Convention => C;
-
-   package ID_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => ID,
-      Element_Array      => ID_Arrays,
-      Default_Terminator => 0);
-
-   use type ID_Pointers.Pointer;
-
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => ID_Pointers.Pointer,
+     (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
+   function To_Public_Key_State_Access is new Ada.Unchecked_Conversion
+     (Source => Raw.Key_State_Access,
+      Target => Key_State_Access);
+
    function Props_ID
-     (Properties : in SDL.Properties.Property_Set) return SDL.Properties.Property_ID
-   is (Properties.Get_ID);
+     (Properties : in SDL.Properties.Property_Set) return SDL.Raw.Properties.ID
+   is (SDL.Raw.Properties.ID (Properties.Get_ID));
 
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   function Focused_Window return System.Address;
    function Focused_Window return System.Address is
-      function SDL_Get_Keyboard_Focus return System.Address with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetKeyboardFocus";
-   begin
-      return SDL_Get_Keyboard_Focus;
-   end Focused_Window;
+     (Raw.Get_Keyboard_Focus);
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL keyboard call failed");
@@ -63,48 +46,48 @@ package body SDL.Inputs.Keyboards is
       raise Keyboard_Error with Message;
    end Raise_Last_Error;
 
-   procedure Free (Items : in out ID_Pointers.Pointer);
-   procedure Free (Items : in out ID_Pointers.Pointer) is
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer);
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer) is
    begin
       if Items /= null then
-         SDL_Free (To_Address (Items));
+         Raw.Free (To_Address (Items));
          Items := null;
       end if;
    end Free;
 
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists;
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists
    is
-      Raw : ID_Pointers.Pointer := Items;
+      Raw_Items : Raw.ID_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Last_Error ("Keyboard enumeration failed");
       end if;
 
       declare
-         Source : constant ID_Arrays :=
-           ID_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.ID_Array :=
+           Raw.ID_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : ID_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
             Result (Index) :=
-              Source (Source'First + C.ptrdiff_t (Index - Result'First));
+              ID (Source (Source'First + C.ptrdiff_t (Index - Result'First)));
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_IDs;
@@ -131,14 +114,10 @@ package body SDL.Inputs.Keyboards is
 
    procedure Clear_Composition_Internal (Window : in System.Address);
    procedure Clear_Composition_Internal (Window : in System.Address) is
-      function SDL_Clear_Composition (Value : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_ClearComposition";
    begin
       Require_Window (Window);
 
-      if not Boolean (SDL_Clear_Composition (Window)) then
+      if not Boolean (Raw.Clear_Composition (Window)) then
          Raise_Last_Error ("SDL_ClearComposition failed");
       end if;
    end Clear_Composition_Internal;
@@ -148,14 +127,9 @@ package body SDL.Inputs.Keyboards is
    function Text_Input_Enabled_Internal
      (Window : in System.Address) return Boolean
    is
-      function SDL_Text_Input_Active
-        (Value : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_TextInputActive";
    begin
       Require_Window (Window);
-      return Boolean (SDL_Text_Input_Active (Window));
+      return Boolean (Raw.Text_Input_Active (Window));
    end Text_Input_Enabled_Internal;
 
    procedure Set_Text_Input_Area_Internal
@@ -167,22 +141,14 @@ package body SDL.Inputs.Keyboards is
       Rectangle : in SDL.Video.Rectangles.Rectangle;
       Cursor    : in SDL.Coordinate)
    is
-      function SDL_Set_Text_Input_Area
-        (Value  : in System.Address;
-         Rect   : access constant SDL.Video.Rectangles.Rectangle;
-         Cursor : in C.int) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextInputArea";
-
       Rectangle_Copy : aliased constant SDL.Video.Rectangles.Rectangle := Rectangle;
    begin
       Require_Window (Window);
 
       if not Boolean
-          (SDL_Set_Text_Input_Area
+          (Raw.Set_Text_Input_Area
              (Window,
-              Rectangle_Copy'Access,
+              Rectangle_Copy'Address,
               Cursor => C.int (Cursor)))
       then
          Raise_Last_Error ("SDL_SetTextInputArea failed");
@@ -198,23 +164,15 @@ package body SDL.Inputs.Keyboards is
       Rectangle : out SDL.Video.Rectangles.Rectangle;
       Cursor    : out SDL.Coordinate)
    is
-      function SDL_Get_Text_Input_Area
-        (Value  : in System.Address;
-         Rect   : access SDL.Video.Rectangles.Rectangle;
-         Cursor : access C.int) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextInputArea";
-
       Local_Rectangle : aliased SDL.Video.Rectangles.Rectangle;
       Local_Cursor    : aliased C.int := 0;
    begin
       Require_Window (Window);
 
       if not Boolean
-          (SDL_Get_Text_Input_Area
+          (Raw.Get_Text_Input_Area
              (Window,
-              Local_Rectangle'Access,
+              Local_Rectangle'Address,
               Local_Cursor'Access))
       then
          Raise_Last_Error ("SDL_GetTextInputArea failed");
@@ -226,37 +184,26 @@ package body SDL.Inputs.Keyboards is
 
    procedure Start_Text_Input_Internal (Window : in System.Address);
    procedure Start_Text_Input_Internal (Window : in System.Address) is
-      function SDL_Start_Text_Input
-        (Value : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_StartTextInput";
    begin
       Require_Window (Window);
 
-      if not Boolean (SDL_Start_Text_Input (Window)) then
+      if not Boolean (Raw.Start_Text_Input (Window)) then
          Raise_Last_Error ("SDL_StartTextInput failed");
       end if;
    end Start_Text_Input_Internal;
 
    procedure Start_Text_Input_With_Properties_Internal
      (Window     : in System.Address;
-      Properties : in SDL.Properties.Property_ID);
+      Properties : in SDL.Raw.Properties.ID);
    procedure Start_Text_Input_With_Properties_Internal
      (Window     : in System.Address;
-      Properties : in SDL.Properties.Property_ID)
+      Properties : in SDL.Raw.Properties.ID)
    is
-      function SDL_Start_Text_Input_With_Properties
-        (Value : in System.Address;
-         Props : in SDL.Properties.Property_ID) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_StartTextInputWithProperties";
    begin
       Require_Window (Window);
 
       if not Boolean
-          (SDL_Start_Text_Input_With_Properties (Window, Properties))
+          (Raw.Start_Text_Input_With_Properties (Window, Properties))
       then
          Raise_Last_Error ("SDL_StartTextInputWithProperties failed");
       end if;
@@ -264,15 +211,10 @@ package body SDL.Inputs.Keyboards is
 
    procedure Stop_Text_Input_Internal (Window : in System.Address);
    procedure Stop_Text_Input_Internal (Window : in System.Address) is
-      function SDL_Stop_Text_Input
-        (Value : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_StopTextInput";
    begin
       Require_Window (Window);
 
-      if not Boolean (SDL_Stop_Text_Input (Window)) then
+      if not Boolean (Raw.Stop_Text_Input (Window)) then
          Raise_Last_Error ("SDL_StopTextInput failed");
       end if;
    end Stop_Text_Input_Internal;
@@ -290,35 +232,20 @@ package body SDL.Inputs.Keyboards is
    end Clear_Composition;
 
    function Has_Keyboard return Boolean is
-      function SDL_Has_Keyboard return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_HasKeyboard";
    begin
-      return Boolean (SDL_Has_Keyboard);
+      return Boolean (Raw.Has_Keyboard);
    end Has_Keyboard;
 
    function Get_Keyboards return ID_Lists is
-      function SDL_Get_Keyboards
-        (Count : access C.int) return ID_Pointers.Pointer with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetKeyboards";
-
       Count : aliased C.int := 0;
-      Items : constant ID_Pointers.Pointer := SDL_Get_Keyboards (Count'Access);
+      Items : constant Raw.ID_Pointers.Pointer := Raw.Get_Keyboards (Count'Access);
    begin
       return Copy_IDs (Items, Count);
    end Get_Keyboards;
 
    function Name (Instance : in ID) return String is
-      function SDL_Get_Keyboard_Name_For_ID
-        (Value : in ID) return CS.chars_ptr with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetKeyboardNameForID";
-
-      Result : constant CS.chars_ptr := SDL_Get_Keyboard_Name_For_ID (Instance);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Keyboard_Name_For_ID (Raw.ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -328,53 +255,45 @@ package body SDL.Inputs.Keyboards is
    end Name;
 
    function Get_Focus return SDL.Video.Windows.ID is
-      function SDL_Get_Window_ID (Window : in System.Address) return SDL.Video.Windows.ID with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetWindowID";
-
       Window : constant System.Address := Focused_Window;
    begin
       if Window = System.Null_Address then
          return 0;
       end if;
 
-      return SDL_Get_Window_ID (Window);
+      return SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (Window));
    end Get_Focus;
 
    function Get_State return Key_State_Access is
-      function SDL_Get_Keyboard_State
-        (Num_Keys : access C.int) return Key_State_Access with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetKeyboardState";
-
       Num_Keys : aliased C.int := 0;
    begin
-      return SDL_Get_Keyboard_State (Num_Keys'Access);
+      return To_Public_Key_State_Access
+        (Raw.Get_Keyboard_State (Num_Keys'Access));
    end Get_State;
 
-   function Supports_Screen_Keyboard return Boolean is
-      function SDL_Has_Screen_Keyboard_Support return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_HasScreenKeyboardSupport";
+   function Get_Modifiers return SDL.Events.Keyboards.Key_Modifiers is
    begin
-      return Boolean (SDL_Has_Screen_Keyboard_Support);
+      return SDL.Events.Keyboards.Key_Modifiers (Raw.Get_Mod_State);
+   end Get_Modifiers;
+
+   procedure Set_Modifiers
+     (Modifiers : in SDL.Events.Keyboards.Key_Modifiers)
+   is
+   begin
+      Raw.Set_Mod_State (Raw.Key_Modifier (Modifiers));
+   end Set_Modifiers;
+
+   function Supports_Screen_Keyboard return Boolean is
+   begin
+      return Boolean (Raw.Has_Screen_Keyboard_Support);
    end Supports_Screen_Keyboard;
 
    function Is_Screen_Keyboard_Visible
      (Window : in SDL.Video.Windows.Window) return Boolean
    is
-      function SDL_Screen_Keyboard_Shown
-        (Value : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_ScreenKeyboardShown";
    begin
       Require_Window (Window.Get_Internal);
-      return Boolean
-        (SDL_Screen_Keyboard_Shown (Window.Get_Internal));
+      return Boolean (Raw.Screen_Keyboard_Shown (Window.Get_Internal));
    end Is_Screen_Keyboard_Visible;
 
    function Is_Text_Input_Enabled return Boolean is
@@ -392,20 +311,19 @@ package body SDL.Inputs.Keyboards is
    is (Text_Input_Enabled_Internal (Window.Get_Internal));
 
    function Is_Text_Input_Shown return Boolean is
-      function SDL_Screen_Keyboard_Shown
-        (Window : in System.Address) return CE.bool with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_ScreenKeyboardShown";
-
       Window : constant System.Address := Focused_Window;
    begin
       if Window = System.Null_Address then
          return False;
       end if;
 
-      return Boolean (SDL_Screen_Keyboard_Shown (Window));
+      return Boolean (Raw.Screen_Keyboard_Shown (Window));
    end Is_Text_Input_Shown;
+
+   procedure Reset_Keyboard is
+   begin
+      Raw.Reset_Keyboard;
+   end Reset_Keyboard;
 
    procedure Set_Text_Input_Rectangle
      (Rectangle : in SDL.Video.Rectangles.Rectangle)

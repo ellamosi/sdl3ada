@@ -10,8 +10,6 @@
 src/sdl-events-events.adb 21
 src/sdl-events-keyboards.adb 7
 src/sdl-events-touches.adb 5
-src/sdl-inputs-keyboards.adb 17
-src/sdl-inputs-keyboards.ads 3
 src/sdl-inputs-mice-cursors.adb 8
 src/sdl-inputs-mice.adb 19
 src/sdl-main-sdlmain_callback_apps.adb 4

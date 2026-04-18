@@ -15,6 +15,7 @@ layer that supports the tracked SDL callable API audit described in
 Current raw packages include:
 
 - `SDL.Raw.Assert`
+- `SDL.Raw.Audio`
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
 - `SDL.Raw.Camera`

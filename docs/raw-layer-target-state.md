@@ -69,9 +69,9 @@ should not grow into a second raw layer.
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
 | `SDL.Audio.Sample_Formats` | public value layer | generated `SDL.Raw.Audio` provides ABI enums and predicates | Keep public naming and compatibility aliases handwritten. |
-| `SDL.Audio` | public wrapper | add `SDL.Raw.Audio` | This is a high-value wrapper and should stay handwritten. |
-| `SDL.Audio.Devices` | thick wrapper | add `SDL.Raw.Audio` | Ownership, stream binding, and error policy remain handwritten. |
-| `SDL.Audio.Streams` | thick wrapper | add `SDL.Raw.Audio` | Queueing and callback-lifetime policy stay above raw. |
+| `SDL.Audio` | public wrapper | keep `SDL.Raw.Audio` | This is a high-value wrapper and should stay handwritten. |
+| `SDL.Audio.Devices` | thick wrapper | keep `SDL.Raw.Audio` | Ownership, stream binding, and error policy remain handwritten. |
+| `SDL.Audio.Streams` | thick wrapper | keep `SDL.Raw.Audio` | Queueing and callback-lifetime policy stay above raw. |
 
 ### Events, Input, And Devices
 
@@ -127,7 +127,7 @@ public wrapper work is added:
   `SDL.Raw.System`, `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`,
   `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
-  `SDL.Raw.Audio`, `SDL.Raw.Clipboard`,
+  `SDL.Raw.Clipboard`,
   `SDL.Raw.Events`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Surface`,

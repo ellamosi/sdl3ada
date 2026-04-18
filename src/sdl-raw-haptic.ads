@@ -5,7 +5,11 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.C_Pointers;
+
 package SDL.Raw.Haptic is
+   pragma Preelaborate;
+
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
@@ -45,28 +49,28 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_GetHapticNameForID";
 
    function Open_Haptic
-     (Instance : in ID) return System.Address
+     (Instance : in ID) return SDL.Raw.C_Pointers.Haptic_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenHaptic";
 
    function Get_Haptic_From_ID
-     (Instance : in ID) return System.Address
+     (Instance : in ID) return SDL.Raw.C_Pointers.Haptic_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetHapticFromID";
 
    function Get_Haptic_ID
-     (Self : in System.Address) return ID
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetHapticID";
 
    function Get_Haptic_Name
-     (Self : in System.Address) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
@@ -78,63 +82,64 @@ package SDL.Raw.Haptic is
      Convention    => C,
      External_Name => "SDL_IsMouseHaptic";
 
-   function Open_Haptic_From_Mouse return System.Address
+   function Open_Haptic_From_Mouse return SDL.Raw.C_Pointers.Haptic_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenHapticFromMouse";
 
    function Is_Joystick_Haptic
-     (Joystick : in System.Address) return CE.bool
+     (Joystick : in SDL.Raw.C_Pointers.Joystick_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_IsJoystickHaptic";
 
    function Open_Haptic_From_Joystick
-     (Joystick : in System.Address) return System.Address
+     (Joystick : in SDL.Raw.C_Pointers.Joystick_Pointer)
+      return SDL.Raw.C_Pointers.Haptic_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenHapticFromJoystick";
 
    procedure Close_Haptic
-     (Self : in System.Address)
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer)
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CloseHaptic";
 
    function Get_Max_Haptic_Effects
-     (Self : in System.Address) return C.int
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetMaxHapticEffects";
 
    function Get_Max_Haptic_Effects_Playing
-     (Self : in System.Address) return C.int
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetMaxHapticEffectsPlaying";
 
    function Get_Haptic_Features
-     (Self : in System.Address) return Features
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return Features
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetHapticFeatures";
 
    function Get_Num_Haptic_Axes
-     (Self : in System.Address) return C.int
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumHapticAxes";
 
    function Haptic_Effect_Supported
-     (Self  : in System.Address;
+     (Self  : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Value : in System.Address) return CE.bool
    with
      Import        => True,
@@ -142,7 +147,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_HapticEffectSupported";
 
    function Create_Haptic_Effect
-     (Self  : in System.Address;
+     (Self  : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Value : in System.Address) return Effect_ID
    with
      Import        => True,
@@ -150,7 +155,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_CreateHapticEffect";
 
    function Update_Haptic_Effect
-     (Self  : in System.Address;
+     (Self  : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Item  : in Effect_ID;
       Value : in System.Address) return CE.bool
    with
@@ -159,7 +164,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_UpdateHapticEffect";
 
    function Run_Haptic_Effect
-     (Self       : in System.Address;
+     (Self       : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Item       : in Effect_ID;
       Iterations : in Replay_Counts) return CE.bool
    with
@@ -168,15 +173,15 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_RunHapticEffect";
 
    function Stop_Haptic_Effect
-     (Self : in System.Address;
-      Item : in Effect_ID) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer;
+     Item : in Effect_ID) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_StopHapticEffect";
 
    procedure Destroy_Haptic_Effect
-     (Self : in System.Address;
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Item : in Effect_ID)
    with
      Import        => True,
@@ -184,7 +189,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_DestroyHapticEffect";
 
    function Get_Haptic_Effect_Status
-     (Self : in System.Address;
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Item : in Effect_ID) return CE.bool
    with
      Import        => True,
@@ -192,7 +197,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_GetHapticEffectStatus";
 
    function Set_Haptic_Gain
-     (Self : in System.Address;
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Gain : in C.int) return CE.bool
    with
      Import        => True,
@@ -200,7 +205,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_SetHapticGain";
 
    function Set_Haptic_Autocenter
-     (Self       : in System.Address;
+     (Self       : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Autocenter : in C.int) return CE.bool
    with
      Import        => True,
@@ -208,42 +213,42 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_SetHapticAutocenter";
 
    function Pause_Haptic
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_PauseHaptic";
 
    function Resume_Haptic
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_ResumeHaptic";
 
    function Stop_Haptic_Effects
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_StopHapticEffects";
 
    function Haptic_Rumble_Supported
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_HapticRumbleSupported";
 
    function Init_Haptic_Rumble
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_InitHapticRumble";
 
    function Play_Haptic_Rumble
-     (Self      : in System.Address;
+     (Self      : in SDL.Raw.C_Pointers.Haptic_Pointer;
       Strength  : in C.C_float;
       Length_MS : in Replay_Counts) return CE.bool
    with
@@ -252,7 +257,7 @@ package SDL.Raw.Haptic is
      External_Name => "SDL_PlayHapticRumble";
 
    function Stop_Haptic_Rumble
-     (Self : in System.Address) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Haptic_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,

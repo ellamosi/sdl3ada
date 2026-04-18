@@ -22,10 +22,6 @@ package body SDL.Inputs.Joysticks is
      (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
-   function To_Address is new Ada.Unchecked_Conversion
-     (Source => SDL.C_Pointers.Joystick_Pointer,
-      Target => System.Address);
-
    function To_Raw_ID (Value : in Instances) return Raw.ID is
      (Raw.ID (Value));
 
@@ -553,7 +549,7 @@ package body SDL.Inputs.Joysticks is
    function Is_Haptic (Self : in Joystick) return Boolean is
    begin
       Require_Valid (Self);
-      return Boolean (SDL.Raw.Haptic.Is_Joystick_Haptic (To_Address (Self.Internal)));
+      return Boolean (SDL.Raw.Haptic.Is_Joystick_Haptic (Self.Internal));
    end Is_Haptic;
 
    function Is_Attached (Self : in Joystick) return Boolean is

@@ -55,7 +55,7 @@ state.
 | `SDL.Raw.Gamepad` | present | `complete` | Now owns the broader gamepad mapping, metadata, binding ABI, touchpad, sensor, rumble, and symbol entry points used by `SDL.Inputs.Joysticks.Game_Controllers`; pure event polling remains split into `SDL.Raw.Gamepad_Events`, and both the public wrapper and maker now route through raw. |
 | `SDL.Raw.Gamepad_Events` | present | `complete` | Pure support split that owns the gamepad event-polling entry points used by `SDL.Events.Joysticks.Game_Controllers`. |
 | `SDL.Raw.GPU` | present | `partial` | It no longer depends on public rectangle or pixel-format value packages, but it still needs broader normalization to become a strict raw mirror. |
-| `SDL.Raw.Haptic` | present | `partial` | Added as a starter family for haptic device entry points and ID-list helpers; the public effect ABI record layout still lives above raw and should be normalized later. |
+| `SDL.Raw.Haptic` | present | `partial` | Raw haptic now owns typed haptic and joystick handle entry points plus ID-list helpers, leaving the public effect ABI record layout as the remaining normalization item for this family. |
 | `SDL.Raw.HIDAPI` | present | `complete` | Added and now owns the HIDAPI ABI enums, wide-string helpers, device-info struct, and entry points used by `SDL.HIDAPI`. |
 | `SDL.Raw.Hints` | present | `complete` | Added and now owns all hint query, mutation, and callback registration imports used by `SDL.Hints`. |
 | `SDL.Raw.Init` | present | `complete` | Now pure-safe, covers init/quit/metadata imports, and is consumed from the `SDL` body so the public top-level package no longer imports SDL symbols directly. |

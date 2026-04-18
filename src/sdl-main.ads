@@ -1,11 +1,14 @@
+with Ada.Strings.Unbounded;
 with Interfaces.C;
 with System;
 
+with SDL.Events.Events;
 with SDL.Raw.Init;
 with SDL.Raw.Main;
 
 package SDL.Main is
    package C renames Interfaces.C;
+   package ASU renames Ada.Strings.Unbounded;
 
    Main_Error : exception;
 
@@ -22,13 +25,49 @@ package SDL.Main is
    App_Failure  : constant App_Results := SDL.Raw.Init.App_Failure;
    Default_Window_Class_Style : constant Window_Class_Styles := 0;
 
+   type Argument_Lists is array (Positive range <>) of ASU.Unbounded_String;
+
+   Empty_Argument_List : constant Argument_Lists (1 .. 0) :=
+     (others => ASU.Null_Unbounded_String);
+
    procedure Set_Ready;
+
+   function Command_Name (Args : in Argument_Lists) return String;
+
+   function Argument_Count (Args : in Argument_Lists) return Natural;
+
+   function Argument
+     (Args  : in Argument_Lists;
+      Index : in Positive) return String;
+
+   type Ada_App_Init_Callback is access function
+     (Args : in Argument_Lists) return App_Results;
+
+   type Ada_App_Iterate_Callback is access function return App_Results;
+
+   type Ada_App_Event_Callback is access function
+     (Event : in SDL.Events.Events.Events) return App_Results;
+
+   type Ada_App_Quit_Callback is access procedure
+     (Result : in App_Results);
 
    function Run_App
      (ArgC     : in C.int;
       ArgV     : in System.Address := System.Null_Address;
       Main     : in Main_Function;
       Reserved : in System.Address := System.Null_Address) return C.int;
+
+   procedure Run_Ada_Callback_App
+     (App_Init  : in Ada_App_Init_Callback;
+      App_Iter  : in Ada_App_Iterate_Callback;
+      App_Event : in Ada_App_Event_Callback;
+      App_Quit  : in Ada_App_Quit_Callback);
+
+   procedure Run_Callback_App
+     (App_Init  : in App_Init_Callback;
+      App_Iter  : in App_Iterate_Callback;
+      App_Event : in App_Event_Callback;
+      App_Quit  : in App_Quit_Callback);
 
    function Enter_App_Main_Callbacks
      (ArgC      : in C.int;

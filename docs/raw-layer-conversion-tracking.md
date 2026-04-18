@@ -27,7 +27,7 @@ Status values:
 | Workstream | Scope | Status | Notes |
 | --- | --- | --- | --- |
 | W0 Guardrails | Plan, tracking, target-state docs, reviewer policy | `in progress` | Target-state and planning docs now exist. Enforcement tooling is still open. |
-| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.Init`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL`, `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, and `SDL.Versions`; `SDL.Timers` remains the outstanding `Pure`-layer blocker in this workstream. |
+| W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.Init`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL`, `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, `SDL.Timers`, and `SDL.Versions`; remaining W1 work is now normalization and review rather than a `Pure`-layer blocker. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `not started` | Includes event payload families and pure helper/value units. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `not started` | Add raw first, then migrate wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `not started` | Largest mixed layer in the current tree. |
@@ -63,7 +63,7 @@ state.
 | `SDL.Raw.Properties` | present | `partial` | Existing raw family; property-string and string-ABI policy should remain raw-only below wrappers. |
 | `SDL.Raw.Storage` | present | `complete` | Existing raw family now also uses raw filesystem pointer helpers for glob results, and `SDL.Storage` no longer imports SDL symbols directly. |
 | `SDL.Raw.System` | present | `partial` | Existing raw family; public systems facade still needs broader cleanup. |
-| `SDL.Raw.Timer` | present | `partial` | Added, but `SDL.Timers` cannot route through it yet without resolving pure-package callback typing constraints. |
+| `SDL.Raw.Timer` | present | `complete` | Now pure-safe and owns all timer, delay, and performance-counter imports used by `SDL.Timers`. |
 | `SDL.Raw.Thread` | present | `partial` | Existing raw family; thread wrapper remains handwritten. |
 | `SDL.Raw.Time` | present | `partial` | Existing raw family; pair with timer/value cleanup. |
 | `SDL.Raw.UTF_8` | present | `partial` | Treat as narrow support raw, not a second public string layer. |
@@ -121,7 +121,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Power` | public value layer | `complete` | Public package now routes entirely through pure `SDL.Raw.Power`. |
 | `SDL.Processes` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Process` and `SDL.Raw.IOStream`. |
 | `SDL.Storage` | public wrapper | `complete` | Public package now routes entirely through `SDL.Raw.Storage` and raw filesystem support helpers. |
-| `SDL.Timers` | public value or thin wrapper layer | `blocked` | `SDL.Raw.Timer` exists, but `SDL.Timers` is `Pure` and its public callback/new-type surface cannot yet route through raw without a pure-safe support split or public type decision. |
+| `SDL.Timers` | public value or thin wrapper layer | `complete` | Public package now routes entirely through pure `SDL.Raw.Timer`, keeping local callback types while backing public scalars with raw-compatible subtypes. |
 | `SDL.Versions` | public value layer | `complete` | Public package now routes entirely through `SDL.Raw.Version`. |
 
 ### Events And Input

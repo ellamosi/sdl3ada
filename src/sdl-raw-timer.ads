@@ -3,7 +3,7 @@ with Interfaces.C.Extensions;
 with System;
 
 package SDL.Raw.Timer is
-   pragma Preelaborate;
+   pragma Pure;
 
    package CE renames Interfaces.C.Extensions;
 

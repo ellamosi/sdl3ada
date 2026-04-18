@@ -6,5 +6,3 @@
 # `External_Name`/`Link_Name` aspects or non-Ada `pragma Import` calls.
 # Update this file only when intentional conversion work changes the
 # remaining non-raw import footprint.
-
-src/sdl-video-windows.adb 74

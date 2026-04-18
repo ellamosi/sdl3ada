@@ -162,19 +162,11 @@ package SDL.Raw.Video is
    subtype Hit_Test_Result is C.int;
    subtype Blend_Mode is Interfaces.Unsigned_32;
 
-   type Window_Hit_Test_Point is
-      record
-         X : C.int;
-         Y : C.int;
-      end record
-   with Convention => C;
-
-   type Window_Hit_Test_Point_Access is
-     access constant Window_Hit_Test_Point
-   with Convention => C;
+   subtype Window_Hit_Test_Point is SDL.Raw.Rect.Point;
+   subtype Window_Hit_Test_Point_Access is SDL.Raw.Rect.Point_Access;
 
    type Window_Hit_Test_Callback is access function
-     (Win       : in System.Address;
+     (Win       : in Window_Pointer;
       Area      : in Window_Hit_Test_Point_Access;
       User_Data : in System.Address) return Hit_Test_Result
    with Convention => C;

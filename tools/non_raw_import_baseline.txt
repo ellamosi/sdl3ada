@@ -19,4 +19,3 @@ src/sdl-video-surfaces.adb 59
 src/sdl-video-textures.adb 27
 src/sdl-video-vulkan.adb 9
 src/sdl-video-windows.adb 74
-src/sdl-video.adb 8

@@ -1,64 +1,80 @@
-with Interfaces.C;
-with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
 with SDL.Hints;
+with SDL.Raw.Video;
 
 package body SDL.Video is
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Video;
 
    use type CS.chars_ptr;
 
-   function SDL_Get_Num_Video_Drivers return C.int with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumVideoDrivers";
+   function To_Raw_Blend_Factor
+     (Value : in Blend_Factors) return Raw.Blend_Factor;
 
-   function SDL_Get_Video_Driver
-     (Index : in C.int) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetVideoDriver";
+   function To_Raw_Blend_Factor
+     (Value : in Blend_Factors) return Raw.Blend_Factor is
+   begin
+      case Value is
+         when Zero_Factor =>
+            return Raw.Zero_Factor;
+         when One_Factor =>
+            return Raw.One_Factor;
+         when Source_Colour_Factor =>
+            return Raw.Source_Colour_Factor;
+         when One_Minus_Source_Colour_Factor =>
+            return Raw.One_Minus_Source_Colour_Factor;
+         when Source_Alpha_Factor =>
+            return Raw.Source_Alpha_Factor;
+         when One_Minus_Source_Alpha_Factor =>
+            return Raw.One_Minus_Source_Alpha_Factor;
+         when Destination_Colour_Factor =>
+            return Raw.Destination_Colour_Factor;
+         when One_Minus_Destination_Colour_Factor =>
+            return Raw.One_Minus_Destination_Colour_Factor;
+         when Destination_Alpha_Factor =>
+            return Raw.Destination_Alpha_Factor;
+         when One_Minus_Destination_Alpha_Factor =>
+            return Raw.One_Minus_Destination_Alpha_Factor;
+      end case;
+   end To_Raw_Blend_Factor;
 
-   function SDL_Get_Current_Video_Driver return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCurrentVideoDriver";
+   function To_Raw_Blend_Operation
+     (Value : in Blend_Operations) return Raw.Blend_Operation;
 
-   function SDL_Get_System_Theme return System_Themes with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSystemTheme";
+   function To_Raw_Blend_Operation
+     (Value : in Blend_Operations) return Raw.Blend_Operation is
+   begin
+      case Value is
+         when Add_Operation =>
+            return Raw.Add_Operation;
+         when Subtract_Operation =>
+            return Raw.Subtract_Operation;
+         when Reverse_Subtract_Operation =>
+            return Raw.Reverse_Subtract_Operation;
+         when Minimum_Operation =>
+            return Raw.Minimum_Operation;
+         when Maximum_Operation =>
+            return Raw.Maximum_Operation;
+      end case;
+   end To_Raw_Blend_Operation;
 
-   function SDL_Compose_Custom_Blend_Mode
-     (Source_Colour_Factor      : in Blend_Factors;
-      Destination_Colour_Factor : in Blend_Factors;
-      Colour_Operation          : in Blend_Operations;
-      Source_Alpha_Factor       : in Blend_Factors;
-      Destination_Alpha_Factor  : in Blend_Factors;
-      Alpha_Operation           : in Blend_Operations) return Blend_Modes
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ComposeCustomBlendMode";
+   function To_Public_System_Theme
+     (Value : in Raw.System_Theme) return System_Themes;
 
-   function SDL_Screen_Saver_Enabled return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ScreenSaverEnabled";
-
-   function SDL_Enable_Screen_Saver return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_EnableScreenSaver";
-
-   function SDL_Disable_Screen_Saver return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DisableScreenSaver";
+   function To_Public_System_Theme
+     (Value : in Raw.System_Theme) return System_Themes is
+   begin
+      case Value is
+         when Raw.Unknown_Theme =>
+            return Unknown_Theme;
+         when Raw.Light_Theme =>
+            return Light_Theme;
+         when Raw.Dark_Theme =>
+            return Dark_Theme;
+      end case;
+   end To_Public_System_Theme;
 
    function Initialise (Name : in String := "") return Boolean is
    begin
@@ -75,7 +91,7 @@ package body SDL.Video is
    end Finalise;
 
    function Total_Drivers return Positive is
-      Count : constant C.int := SDL_Get_Num_Video_Drivers;
+      Count : constant C.int := Raw.Get_Num_Video_Drivers;
    begin
       if Count < 1 then
          raise Video_Error with SDL.Error.Get;
@@ -85,7 +101,8 @@ package body SDL.Video is
    end Total_Drivers;
 
    function Driver_Name (Index : in Positive) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Video_Driver (C.int (Index - 1));
+      Name : constant CS.chars_ptr :=
+        Raw.Get_Video_Driver (C.int (Index - 1));
    begin
       if Name = CS.Null_Ptr then
          return "";
@@ -95,7 +112,7 @@ package body SDL.Video is
    end Driver_Name;
 
    function Current_Driver_Name return String is
-      Name : constant CS.chars_ptr := SDL_Get_Current_Video_Driver;
+      Name : constant CS.chars_ptr := Raw.Get_Current_Video_Driver;
    begin
       if Name = CS.Null_Ptr then
          return "";
@@ -106,7 +123,7 @@ package body SDL.Video is
 
    function Current_System_Theme return System_Themes is
    begin
-      return SDL_Get_System_Theme;
+      return To_Public_System_Theme (Raw.Get_System_Theme);
    end Current_System_Theme;
 
    function Compose_Custom_Blend_Mode
@@ -119,31 +136,34 @@ package body SDL.Video is
    is
    begin
       return
-        SDL_Compose_Custom_Blend_Mode
-          (Source_Colour_Factor      => Source_Colour_Factor,
-           Destination_Colour_Factor => Destination_Colour_Factor,
-           Colour_Operation          => Colour_Operation,
-           Source_Alpha_Factor       => Source_Alpha_Factor,
-           Destination_Alpha_Factor  => Destination_Alpha_Factor,
-           Alpha_Operation           => Alpha_Operation);
+        Blend_Modes
+          (Raw.Compose_Custom_Blend_Mode
+             (Source_Colour_Factor      => To_Raw_Blend_Factor (Source_Colour_Factor),
+              Destination_Colour_Factor =>
+                To_Raw_Blend_Factor (Destination_Colour_Factor),
+              Colour_Operation          => To_Raw_Blend_Operation (Colour_Operation),
+              Source_Alpha_Factor       => To_Raw_Blend_Factor (Source_Alpha_Factor),
+              Destination_Alpha_Factor  =>
+                To_Raw_Blend_Factor (Destination_Alpha_Factor),
+              Alpha_Operation           => To_Raw_Blend_Operation (Alpha_Operation)));
    end Compose_Custom_Blend_Mode;
 
    procedure Enable_Screen_Saver is
    begin
-      if not Boolean (SDL_Enable_Screen_Saver) then
+      if not Boolean (Raw.Enable_Screen_Saver) then
          raise Video_Error with SDL.Error.Get;
       end if;
    end Enable_Screen_Saver;
 
    procedure Disable_Screen_Saver is
    begin
-      if not Boolean (SDL_Disable_Screen_Saver) then
+      if not Boolean (Raw.Disable_Screen_Saver) then
          raise Video_Error with SDL.Error.Get;
       end if;
    end Disable_Screen_Saver;
 
    function Is_Screen_Saver_Enabled return Boolean is
    begin
-      return Boolean (SDL_Screen_Saver_Enabled);
+      return Boolean (Raw.Screen_Saver_Enabled);
    end Is_Screen_Saver_Enabled;
 end SDL.Video;

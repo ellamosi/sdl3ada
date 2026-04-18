@@ -1,28 +1,18 @@
 with Interfaces;
 with Interfaces.C;
 
+with SDL.Raw.Event_Layouts.Sensors;
+
 package SDL.Events.Sensors is
    pragma Pure;
 
    package C renames Interfaces.C;
 
-   Update : constant Event_Types := 16#0000_1200#;
+   Update : constant Event_Types := SDL.Raw.Event_Layouts.Sensors.Update;
 
-   type IDs is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype IDs is SDL.Raw.Event_Layouts.Sensors.ID;
 
-   type Data_Values is array (0 .. 5) of aliased C.C_float with
-     Convention     => C,
-     Component_Size => C.C_float'Size;
+   subtype Data_Values is SDL.Raw.Event_Layouts.Sensors.Data_Value_Array;
 
-   type Update_Events is record
-      Event_Type       : Event_Types;
-      Reserved         : Interfaces.Unsigned_32;
-      Time_Stamp       : Time_Stamps;
-      Which            : IDs;
-      Data             : Data_Values;
-      Sensor_Time_Stamp : Time_Stamps;
-   end record with
-     Convention => C;
+   subtype Update_Events is SDL.Raw.Event_Layouts.Sensors.Update_Event;
 end SDL.Events.Sensors;

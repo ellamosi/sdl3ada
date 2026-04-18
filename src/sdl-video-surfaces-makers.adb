@@ -3,57 +3,26 @@ with Interfaces.C.Extensions;
 with System;
 
 with SDL.Error;
+with SDL.Raw.Surface;
 
 package body SDL.Video.Surfaces.Makers is
    package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Surface;
 
    use type SDL.Video.Pixel_Formats.Pixel_Format_Access;
    use type SDL.Video.Pixel_Formats.Pixel_Format_Names;
 
-   function SDL_Load_Surface
-     (Name : in C.char_array) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadSurface";
+   function To_Internal_Surface_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Internal_Surface_Pointer);
 
-   function SDL_Load_Surface_IO
-     (Source   : in SDL.RWops.Handle;
-      Close_IO : in CE.bool) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadSurface_IO";
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.RWops.Handle,
+      Target => System.Address);
 
-   function SDL_Load_BMP
-     (Name : in C.char_array) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadBMP";
-
-   function SDL_Load_BMP_IO
-     (Source   : in SDL.RWops.Handle;
-      Close_IO : in CE.bool) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadBMP_IO";
-
-   function SDL_Load_PNG
-     (Name : in C.char_array) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadPNG";
-
-   function SDL_Load_PNG_IO
-     (Source   : in SDL.RWops.Handle;
-      Close_IO : in CE.bool) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadPNG_IO";
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => Internal_Surface_Pointer,
+      Target => System.Address);
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
@@ -108,27 +77,19 @@ package body SDL.Video.Surfaces.Makers is
       Green_Mask : in Colour_Masks;
       Alpha_Mask : in Colour_Masks)
    is
-      function SDL_Create_Surface
-        (Width  : in SDL.Dimension;
-         Height : in SDL.Dimension;
-         Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
-         return Internal_Surface_Pointer
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_CreateSurface";
-
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Create_Surface
-          (Width  => Size.Width,
-           Height => Size.Height,
-           Format =>
-             Resolve_Format
-               (BPP        => BPP,
-                Red_Mask   => Red_Mask,
-                Green_Mask => Green_Mask,
-                Blue_Mask  => Blue_Mask,
-                Alpha_Mask => Alpha_Mask));
+        To_Internal_Surface_Pointer
+          (Raw.Create_Surface
+             (Width  => Size.Width,
+              Height => Size.Height,
+              Format =>
+                Raw.Pixel_Format_Name
+                  (Resolve_Format
+                     (BPP        => BPP,
+                      Red_Mask   => Red_Mask,
+                      Green_Mask => Green_Mask,
+                      Blue_Mask  => Blue_Mask,
+                      Alpha_Mask => Alpha_Mask))));
    begin
       Adopt (Self, Internal);
    end Create;
@@ -144,33 +105,24 @@ package body SDL.Video.Surfaces.Makers is
       Blue_Mask  : in Colour_Masks;
       Alpha_Mask : in Colour_Masks)
    is
-      function To_Address is new Ada.Unchecked_Conversion
+      function To_Pixels_Address is new Ada.Unchecked_Conversion
         (Element_Pointer, System.Address);
 
-      function SDL_Create_Surface_From
-        (Width  : in SDL.Dimension;
-         Height : in SDL.Dimension;
-         Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
-         Pixels : in System.Address;
-         Pitch  : in C.int) return Internal_Surface_Pointer
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_CreateSurfaceFrom";
-
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Create_Surface_From
-          (Width  => Size.Width,
-           Height => Size.Height,
-           Format =>
-             Resolve_Format
-               (BPP        => BPP,
-                Red_Mask   => Red_Mask,
-                Green_Mask => Green_Mask,
-                Blue_Mask  => Blue_Mask,
-                Alpha_Mask => Alpha_Mask),
-           Pixels => To_Address (Pixels),
-           Pitch  => C.int (Pitch));
+        To_Internal_Surface_Pointer
+          (Raw.Create_Surface_From
+             (Width  => Size.Width,
+              Height => Size.Height,
+              Format =>
+                Raw.Pixel_Format_Name
+                  (Resolve_Format
+                     (BPP        => BPP,
+                      Red_Mask   => Red_Mask,
+                      Green_Mask => Green_Mask,
+                      Blue_Mask  => Blue_Mask,
+                      Alpha_Mask => Alpha_Mask)),
+              Pixels => To_Pixels_Address (Pixels),
+              Pitch  => C.int (Pitch)));
    begin
       Adopt (Self, Internal);
    end Create_From;
@@ -185,17 +137,6 @@ package body SDL.Video.Surfaces.Makers is
    is
       use System.Storage_Elements;
 
-      function SDL_Create_Surface_From
-        (Width  : in SDL.Dimension;
-         Height : in SDL.Dimension;
-         Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
-         Pixels : in System.Address;
-         Pitch  : in C.int) return Internal_Surface_Pointer
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_CreateSurfaceFrom";
-
       Pitch : constant Storage_Offset :=
         (if Pixels'Length (1) > 1 then
             Pixels (Index'Succ (Pixels'First (1)), Pixels'First (2))'Address
@@ -204,18 +145,20 @@ package body SDL.Video.Surfaces.Makers is
             Storage_Offset ((Element'Size / System.Storage_Unit) * Pixels'Length (2)));
 
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Create_Surface_From
-          (Width  => SDL.Dimension (Pixels'Length (2)),
-           Height => SDL.Dimension (Pixels'Length (1)),
-           Format =>
-             Resolve_Format
-               (BPP        => Element'Size,
-                Red_Mask   => Red_Mask,
-                Green_Mask => Green_Mask,
-                Blue_Mask  => Blue_Mask,
-                Alpha_Mask => Alpha_Mask),
-           Pixels => Pixels (Pixels'First (1), Pixels'First (2))'Address,
-           Pitch  => C.int (Pitch));
+        To_Internal_Surface_Pointer
+          (Raw.Create_Surface_From
+             (Width  => SDL.Dimension (Pixels'Length (2)),
+              Height => SDL.Dimension (Pixels'Length (1)),
+              Format =>
+                Raw.Pixel_Format_Name
+                  (Resolve_Format
+                     (BPP        => Element'Size,
+                      Red_Mask   => Red_Mask,
+                      Green_Mask => Green_Mask,
+                      Blue_Mask  => Blue_Mask,
+                      Alpha_Mask => Alpha_Mask)),
+              Pixels => Pixels (Pixels'First (1), Pixels'First (2))'Address,
+              Pitch  => C.int (Pitch)));
    begin
       Adopt (Self, Internal);
    end Create_From_Array;
@@ -225,7 +168,8 @@ package body SDL.Video.Surfaces.Makers is
       File_Name : in UTF_Strings.UTF_String)
    is
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Load_Surface (C.To_C (String (File_Name)));
+        To_Internal_Surface_Pointer
+          (Raw.Load_Surface (C.To_C (String (File_Name))));
    begin
       Adopt (Self, Internal);
    end Create;
@@ -242,9 +186,10 @@ package body SDL.Video.Surfaces.Makers is
       end if;
 
       Internal :=
-        SDL_Load_Surface_IO
-          (Source   => SDL.RWops.Get_Handle (Source),
-           Close_IO => To_C_Bool (Close_After));
+        To_Internal_Surface_Pointer
+          (Raw.Load_Surface_IO
+             (Source   => To_Address (SDL.RWops.Get_Handle (Source)),
+              Close_IO => To_C_Bool (Close_After)));
 
       Adopt (Self, Internal);
    end Create;
@@ -254,7 +199,8 @@ package body SDL.Video.Surfaces.Makers is
       File_Name : in UTF_Strings.UTF_String)
    is
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Load_BMP (C.To_C (String (File_Name)));
+        To_Internal_Surface_Pointer
+          (Raw.Load_BMP (C.To_C (String (File_Name))));
    begin
       Adopt (Self, Internal);
    end Load_BMP;
@@ -271,9 +217,10 @@ package body SDL.Video.Surfaces.Makers is
       end if;
 
       Internal :=
-        SDL_Load_BMP_IO
-          (Source   => SDL.RWops.Get_Handle (Source),
-           Close_IO => To_C_Bool (Close_After));
+        To_Internal_Surface_Pointer
+          (Raw.Load_BMP_IO
+             (Source   => To_Address (SDL.RWops.Get_Handle (Source)),
+              Close_IO => To_C_Bool (Close_After)));
 
       Adopt (Self, Internal);
    end Load_BMP;
@@ -283,7 +230,8 @@ package body SDL.Video.Surfaces.Makers is
       File_Name : in UTF_Strings.UTF_String)
    is
       Internal : constant Internal_Surface_Pointer :=
-        SDL_Load_PNG (C.To_C (String (File_Name)));
+        To_Internal_Surface_Pointer
+          (Raw.Load_PNG (C.To_C (String (File_Name))));
    begin
       Adopt (Self, Internal);
    end Load_PNG;
@@ -300,9 +248,10 @@ package body SDL.Video.Surfaces.Makers is
       end if;
 
       Internal :=
-        SDL_Load_PNG_IO
-          (Source   => SDL.RWops.Get_Handle (Source),
-           Close_IO => To_C_Bool (Close_After));
+        To_Internal_Surface_Pointer
+          (Raw.Load_PNG_IO
+             (Source   => To_Address (SDL.RWops.Get_Handle (Source)),
+              Close_IO => To_C_Bool (Close_After)));
 
       Adopt (Self, Internal);
    end Load_PNG;
@@ -312,15 +261,6 @@ package body SDL.Video.Surfaces.Makers is
       Src          : SDL.Video.Surfaces.Surface;
       Pixel_Format : SDL.Video.Pixel_Formats.Pixel_Format_Access)
    is
-      function SDL_Convert_Surface
-        (Source : in Internal_Surface_Pointer;
-         Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
-         return Internal_Surface_Pointer
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_ConvertSurface";
-
       Internal : Internal_Surface_Pointer;
    begin
       if Pixel_Format = null then
@@ -328,9 +268,10 @@ package body SDL.Video.Surfaces.Makers is
       end if;
 
       Internal :=
-        SDL_Convert_Surface
-          (Source => Src.Internal,
-           Format => Pixel_Format.Format);
+        To_Internal_Surface_Pointer
+          (Raw.Convert_Surface
+             (Source => To_Address (Src.Internal),
+              Format => Raw.Pixel_Format_Name (Pixel_Format.Format)));
 
       if Internal = null then
          raise Surface_Error with SDL.Error.Get;

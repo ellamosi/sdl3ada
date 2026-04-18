@@ -30,7 +30,7 @@ Status values:
 | W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.Init`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL`, `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, `SDL.Timers`, and `SDL.Versions`; remaining W1 work is now normalization and review rather than a `Pure`-layer blocker. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `in progress` | Started with `SDL.Pens`, and `SDL.Events.Keyboards` plus `SDL.Events.Touches` helper queries now route through raw support families; event payload and other pure helper/value units still need broader raw-backed cleanup. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `complete` | `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Sensor`, and `SDL.Raw.Tray` now exist. Pure support splits `SDL.Raw.Gamepad_Events` and `SDL.Raw.Joystick_Events` avoid the old pure-layer blocker, and the planned audio, device, desktop, and input wrappers plus joystick/gamepad maker helpers now route through raw. Remaining conversion work has shifted to event/value cleanup and the broader video/render/GPU normalization streams. |
-| W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Metal`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Video`, and `SDL.Raw.Vulkan` now exist as starter families for Metal view lifecycle, palette and pixel-format ownership/mutation/query helpers, rectangle intersection/enclosing/clipping helpers, texture/renderer creation, video/window driver, theme, screensaver, creation, and property queries, plus Vulkan surface/loader support. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
+| W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Metal`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`, `SDL.Raw.Video`, and `SDL.Raw.Vulkan` now exist as starter families for Metal view lifecycle, palette and pixel-format ownership/mutation/query helpers, rectangle intersection/enclosing/clipping helpers, texture/renderer creation, surface creation/loading, video/window driver, theme, screensaver, creation, and property queries, plus Vulkan surface/loader support. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
 | W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`, the generated-raw ownership plus compatibility-freeze policy are documented, the `SDL.RWops` compatibility wrappers now route through raw support without direct imports, and handwritten video bridge glue now uses child support packages instead of linker-visible Ada hooks; final compatibility freeze follow-through and closure remain open. |
 
 ## Existing Raw Families
@@ -80,6 +80,7 @@ state.
 | `SDL.Raw.Rect` | present | `partial` | Added as a starter family for rectangle and floating-rectangle intersection, union, enclosing-points, and line-clipping helpers used by `SDL.Video.Rectangles`; broader reuse in render and GPU layers still needs normalization. |
 | `SDL.Raw.Render` | present | `partial` | Added as a starter family for texture and renderer creation; the main render and texture wrappers still need broad raw migration. |
 | `SDL.Raw.Sensor` | present | `complete` | Added as a device-support raw family and now owns sensor enumeration, lookup, property, data, lifecycle, and update imports used by `SDL.Sensors`. |
+| `SDL.Raw.Surface` | present | `partial` | Added as a starter family for surface creation-from-format, creation-from-pixel-memory, and file/IO loading entry points used by `SDL.Video.Surfaces.Makers`; the broader surface wrapper still needs major raw migration. |
 | `SDL.Raw.Storage` | present | `complete` | Existing raw family now also uses raw filesystem pointer helpers for glob results, and `SDL.Storage` no longer imports SDL symbols directly. |
 | `SDL.Raw.System` | present | `partial` | Existing raw family; public systems facade still needs broader cleanup. |
 | `SDL.Raw.Timer` | present | `complete` | Now pure-safe and owns all timer, delay, and performance-counter imports used by `SDL.Timers`. |
@@ -100,7 +101,6 @@ checked-in raw packages.
 | Raw family | Primary public dependents | Status | Notes |
 | --- | --- | --- | --- |
 | `SDL.Raw.Events` | `SDL.Events.*` | `not started` | Needed for event union and shared payload layout. |
-| `SDL.Raw.Surface` | `SDL.Video.Surfaces`, palettes, cursor helpers | `not started` | Large video foundation family. |
 
 ## Public Non-Raw Import Cleanup Queue
 
@@ -175,7 +175,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Video.Renderers` | public thick wrapper | `not started` | Needs `SDL.Raw.Render`. |
 | `SDL.Video.Renderers.Makers` | public maker wrapper | `complete` | Renderer creation helpers now route through `SDL.Raw.Render`. |
 | `SDL.Video.Surfaces` | public thick wrapper | `not started` | Needs `SDL.Raw.Surface`. |
-| `SDL.Video.Surfaces.Makers` | public maker wrapper | `not started` | Should stop importing directly. |
+| `SDL.Video.Surfaces.Makers` | public maker wrapper | `complete` | Surface maker helpers now route surface creation and file/IO loading entry points through `SDL.Raw.Surface`, while format selection and ownership policy stay handwritten. |
 | `SDL.Video.Textures` | public thick wrapper | `not started` | Needs `SDL.Raw.Render`. |
 | `SDL.Video.Textures.Makers` | public maker wrapper | `complete` | Texture creation helpers now route through `SDL.Raw.Render`. |
 | `SDL.Video.Vulkan` | public wrapper | `complete` | Public generic wrapper now routes Vulkan surface lifecycle, instance-extension enumeration, proc-address lookup, presentation support, library loading, and drawable-size queries through `SDL.Raw.Vulkan` and `SDL.Raw.Video`. |

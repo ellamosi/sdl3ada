@@ -1,6 +1,7 @@
 with Interfaces;
 with Interfaces.C;
 with Interfaces.C.Extensions;
+with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
@@ -12,6 +13,64 @@ package SDL.Raw.Video is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+
+   type Display_ID is mod 2 ** 32 with
+     Convention => C,
+     Size       => 32;
+
+   subtype Pixel_Format_Name is Interfaces.Unsigned_32;
+
+   type Display_Mode is record
+      Display              : Display_ID;
+      Format               : Pixel_Format_Name;
+      Width                : C.int;
+      Height               : C.int;
+      Pixel_Density        : C.C_float;
+      Refresh_Rate         : C.C_float;
+      Refresh_Numerator    : C.int;
+      Refresh_Denominator  : C.int;
+      Internal             : System.Address;
+   end record with
+     Convention => C;
+
+   type Display_Mode_Access is access all Display_Mode with
+     Convention => C;
+
+   type Display_Orientation is
+     (Orientation_Unknown,
+      Orientation_Landscape,
+      Orientation_Landscape_Flipped,
+      Orientation_Portrait,
+      Orientation_Portrait_Flipped)
+   with
+     Convention => C,
+     Size       => C.int'Size;
+
+   for Display_Orientation use
+     (Orientation_Unknown            => 0,
+      Orientation_Landscape          => 1,
+      Orientation_Landscape_Flipped  => 2,
+      Orientation_Portrait           => 3,
+      Orientation_Portrait_Flipped   => 4);
+
+   type Display_ID_Array is array (C.ptrdiff_t range <>) of aliased Display_ID with
+     Convention => C;
+
+   package Display_ID_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => Display_ID,
+      Element_Array      => Display_ID_Array,
+      Default_Terminator => 0);
+
+   type Display_Mode_Pointer_Array is
+     array (C.ptrdiff_t range <>) of aliased Display_Mode_Access with
+       Convention => C;
+
+   package Display_Mode_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => Display_Mode_Access,
+      Element_Array      => Display_Mode_Pointer_Array,
+      Default_Terminator => null);
 
    type Window_ID is mod 2 ** 32 with
      Convention => C,
@@ -126,6 +185,130 @@ package SDL.Raw.Video is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_DisableScreenSaver";
+
+   function Get_Displays
+     (Count : access C.int) return Display_ID_Pointers.Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplays";
+
+   function Get_Primary_Display return Display_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetPrimaryDisplay";
+
+   procedure Free (Values : in Display_ID_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
+   procedure Free (Values : in Display_Mode_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
+   function Get_Display_Name
+     (ID : in Display_ID) return CS.chars_ptr
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayName";
+
+   function Get_Display_Properties
+     (ID : in Display_ID) return SDL.Raw.Properties.ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayProperties";
+
+   function Get_Closest_Fullscreen_Display_Mode
+     (ID                         : in Display_ID;
+      Width                      : in C.int;
+      Height                     : in C.int;
+      Refresh_Rate               : in C.C_float;
+      Include_High_Density_Modes : in CE.bool;
+      Closest                    : access Display_Mode) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetClosestFullscreenDisplayMode";
+
+   function Get_Display_For_Point
+     (Point : in System.Address) return Display_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayForPoint";
+
+   function Get_Display_For_Rect
+     (Area : in System.Address) return Display_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayForRect";
+
+   function Get_Current_Display_Mode
+     (ID : in Display_ID) return Display_Mode_Access
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetCurrentDisplayMode";
+
+   function Get_Desktop_Display_Mode
+     (ID : in Display_ID) return Display_Mode_Access
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDesktopDisplayMode";
+
+   function Get_Fullscreen_Display_Modes
+     (ID    : in Display_ID;
+      Count : access C.int) return Display_Mode_Pointers.Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetFullscreenDisplayModes";
+
+   function Get_Display_Bounds
+     (ID     : in Display_ID;
+      Bounds : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayBounds";
+
+   function Get_Display_Usable_Bounds
+     (ID     : in Display_ID;
+      Bounds : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayUsableBounds";
+
+   function Get_Display_Content_Scale
+     (ID : in Display_ID) return C.C_float
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDisplayContentScale";
+
+   function Get_Current_Display_Orientation
+     (ID : in Display_ID) return Display_Orientation
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetCurrentDisplayOrientation";
+
+   function Get_Natural_Display_Orientation
+     (ID : in Display_ID) return Display_Orientation
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetNaturalDisplayOrientation";
 
    function Create_Window_With_Properties
      (Props : in SDL.Raw.Properties.ID) return System.Address

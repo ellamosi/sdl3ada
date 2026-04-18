@@ -1,106 +1,33 @@
-with Interfaces.C.Extensions;
+with Ada.Unchecked_Conversion;
+
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.Pixels;
 
 package body SDL.Video.Pixel_Formats is
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Pixels;
 
-   function SDL_Get_Pixel_Format_Details
-     (Format : in Pixel_Format_Names) return Pixel_Format_Access
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetPixelFormatDetails";
+   function To_Raw_Pixel_Format_Access is new Ada.Unchecked_Conversion
+     (Source => Pixel_Format_Access,
+      Target => Raw.Pixel_Format_Details_Access);
 
-   function SDL_Get_Pixel_Format_Name
-     (Format : in Pixel_Format_Names) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetPixelFormatName";
-
-   function SDL_Get_Masks_For_Pixel_Format
-     (Format     : in  Pixel_Format_Names;
-      Bits       : out C.int;
-      Red_Mask   : out Colour_Mask;
-      Green_Mask : out Colour_Mask;
-      Blue_Mask  : out Colour_Mask;
-      Alpha_Mask : out Colour_Mask) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetMasksForPixelFormat";
-
-   function SDL_Get_Pixel_Format_For_Masks
-     (Bits       : in C.int;
-      Red_Mask   : in Colour_Mask;
-      Green_Mask : in Colour_Mask;
-      Blue_Mask  : in Colour_Mask;
-      Alpha_Mask : in Colour_Mask) return Pixel_Format_Names
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetPixelFormatForMasks";
-
-   procedure SDL_Get_RGB
-     (Pixel   : in Unsigned_32;
-      Format  : in Pixel_Format_Access;
-      Palette : in System.Address;
-      Red     : out SDL.Video.Palettes.Colour_Component;
-      Green   : out SDL.Video.Palettes.Colour_Component;
-      Blue    : out SDL.Video.Palettes.Colour_Component)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRGB";
-
-   procedure SDL_Get_RGBA
-     (Pixel   : in Unsigned_32;
-      Format  : in Pixel_Format_Access;
-      Palette : in System.Address;
-      Red     : out SDL.Video.Palettes.Colour_Component;
-      Green   : out SDL.Video.Palettes.Colour_Component;
-      Blue    : out SDL.Video.Palettes.Colour_Component;
-      Alpha   : out SDL.Video.Palettes.Colour_Component)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRGBA";
-
-   function SDL_Map_RGB
-     (Format  : in Pixel_Format_Access;
-      Palette : in System.Address;
-      Red     : in SDL.Video.Palettes.Colour_Component;
-      Green   : in SDL.Video.Palettes.Colour_Component;
-      Blue    : in SDL.Video.Palettes.Colour_Component) return Unsigned_32
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MapRGB";
-
-   function SDL_Map_RGBA
-     (Format  : in Pixel_Format_Access;
-      Palette : in System.Address;
-      Red     : in SDL.Video.Palettes.Colour_Component;
-      Green   : in SDL.Video.Palettes.Colour_Component;
-      Blue    : in SDL.Video.Palettes.Colour_Component;
-      Alpha   : in SDL.Video.Palettes.Colour_Component) return Unsigned_32
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MapRGBA";
+   function To_Public_Pixel_Format_Access is new Ada.Unchecked_Conversion
+     (Source => Raw.Pixel_Format_Details_Access,
+      Target => Pixel_Format_Access);
 
    function Get_Details
      (Format : in Pixel_Format_Names) return Pixel_Format_Access is
    begin
-      return SDL_Get_Pixel_Format_Details (Format);
+      return To_Public_Pixel_Format_Access
+        (Raw.Get_Pixel_Format_Details (Raw.Pixel_Format_Name (Format)));
    end Get_Details;
 
    function Image (Format : in Pixel_Format_Names) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Pixel_Format_Name (Format);
+      Name : constant CS.chars_ptr :=
+        Raw.Get_Pixel_Format_Name (Raw.Pixel_Format_Name (Format));
 
       use type CS.chars_ptr;
    begin
@@ -122,7 +49,13 @@ package body SDL.Video.Pixel_Formats is
          raise SDL.Video.Video_Error with SDL.Error.Get;
       end if;
 
-      SDL_Get_RGB (Pixel, Format, System.Null_Address, Red, Green, Blue);
+      Raw.Get_RGB
+        (Pixel   => Raw.U32 (Pixel),
+         Format  => To_Raw_Pixel_Format_Access (Format),
+         Palette => System.Null_Address,
+         Red     => Red,
+         Green   => Green,
+         Blue    => Blue);
    end To_Components;
 
    procedure To_Components
@@ -137,7 +70,14 @@ package body SDL.Video.Pixel_Formats is
          raise SDL.Video.Video_Error with SDL.Error.Get;
       end if;
 
-      SDL_Get_RGBA (Pixel, Format, System.Null_Address, Red, Green, Blue, Alpha);
+      Raw.Get_RGBA
+        (Pixel   => Raw.U32 (Pixel),
+         Format  => To_Raw_Pixel_Format_Access (Format),
+         Palette => System.Null_Address,
+         Red     => Red,
+         Green   => Green,
+         Blue    => Blue,
+         Alpha   => Alpha);
    end To_Components;
 
    function To_Pixel
@@ -150,7 +90,13 @@ package body SDL.Video.Pixel_Formats is
          raise SDL.Video.Video_Error with SDL.Error.Get;
       end if;
 
-      return SDL_Map_RGB (Format, System.Null_Address, Red, Green, Blue);
+      return Unsigned_32
+        (Raw.Map_RGB
+           (Format  => To_Raw_Pixel_Format_Access (Format),
+            Palette => System.Null_Address,
+            Red     => Red,
+            Green   => Green,
+            Blue    => Blue));
    end To_Pixel;
 
    function To_Pixel
@@ -164,8 +110,14 @@ package body SDL.Video.Pixel_Formats is
          raise SDL.Video.Video_Error with SDL.Error.Get;
       end if;
 
-      return SDL_Map_RGBA
-        (Format, System.Null_Address, Red, Green, Blue, Alpha);
+      return Unsigned_32
+        (Raw.Map_RGBA
+           (Format  => To_Raw_Pixel_Format_Access (Format),
+            Palette => System.Null_Address,
+            Red     => Red,
+            Green   => Green,
+            Blue    => Blue,
+            Alpha   => Alpha));
    end To_Pixel;
 
    function To_Colour
@@ -203,12 +155,13 @@ package body SDL.Video.Pixel_Formats is
       Blue_Mask  : in Colour_Mask;
       Alpha_Mask : in Colour_Mask) return Pixel_Format_Names is
    begin
-      return SDL_Get_Pixel_Format_For_Masks
-        (Bits       => C.int (Bits),
-         Red_Mask   => Red_Mask,
-         Green_Mask => Green_Mask,
-         Blue_Mask  => Blue_Mask,
-         Alpha_Mask => Alpha_Mask);
+      return Pixel_Format_Names
+        (Raw.Get_Pixel_Format_For_Masks
+           (Bits       => C.int (Bits),
+            Red_Mask   => Raw.Colour_Mask (Red_Mask),
+            Green_Mask => Raw.Colour_Mask (Green_Mask),
+            Blue_Mask  => Raw.Colour_Mask (Blue_Mask),
+            Alpha_Mask => Raw.Colour_Mask (Alpha_Mask)));
    end To_Name;
 
    function To_Masks
@@ -222,8 +175,8 @@ package body SDL.Video.Pixel_Formats is
       Raw_Bits : C.int := 0;
       Success  : constant Boolean :=
         Boolean
-          (SDL_Get_Masks_For_Pixel_Format
-             (Format,
+          (Raw.Get_Masks_For_Pixel_Format
+             (Raw.Pixel_Format_Name (Format),
               Raw_Bits,
               Red_Mask,
               Green_Mask,

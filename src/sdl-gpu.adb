@@ -1,4 +1,5 @@
 with Ada.Streams;
+with Ada.Unchecked_Conversion;
 with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
@@ -26,8 +27,13 @@ package body SDL.GPU is
    use type Compute_Pass_Handle;
    use type Copy_Pass_Handle;
    use type Fence_Handle;
+   use type Raw.Window_Pointer;
    use type Shader_Formats;
    use type System.Address;
+
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Window_Pointer);
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (if Value then CE.bool'Val (1) else CE.bool'Val (0));
@@ -282,8 +288,8 @@ package body SDL.GPU is
    procedure Require_Copy_Pass (Self : in Copy_Pass);
    procedure Require_Texture (Self : in Texture);
 
-   function Window_Address
-     (Window : in SDL.Video.Windows.Window) return System.Address;
+   function Window_Handle
+     (Window : in SDL.Video.Windows.Window) return Raw.Window_Pointer;
 
    procedure Require_Device (Self : in Device) is
    begin
@@ -369,8 +375,8 @@ package body SDL.GPU is
       end if;
    end Require_Texture;
 
-   function Window_Address
-     (Window : in SDL.Video.Windows.Window) return System.Address
+   function Window_Handle
+     (Window : in SDL.Video.Windows.Window) return Raw.Window_Pointer
    is
       Internal : constant System.Address := SDL.Video.Windows.Get_Internal (Window);
    begin
@@ -378,8 +384,8 @@ package body SDL.GPU is
          raise GPU_Error with "Invalid window";
       end if;
 
-      return Internal;
-   end Window_Address;
+      return To_Window_Pointer (Internal);
+   end Window_Handle;
 
    procedure Reset
      (Self     : in out Buffer;
@@ -1765,7 +1771,7 @@ package body SDL.GPU is
    begin
       Require_Device (Self);
 
-      if not To_Bool (Raw.Claim_Window (Self.Internal, Window_Address (Window))) then
+      if not To_Bool (Raw.Claim_Window (Self.Internal, Window_Handle (Window))) then
          Raise_GPU_Error ("SDL_ClaimWindowForGPUDevice failed");
       end if;
    end Claim_Window;
@@ -1780,7 +1786,7 @@ package body SDL.GPU is
          return;
       end if;
 
-      Raw.Release_Window (Self.Internal, Internal_Window);
+      Raw.Release_Window (Self.Internal, To_Window_Pointer (Internal_Window));
    end Release_Window;
 
    function Supports_Composition
@@ -1794,7 +1800,7 @@ package body SDL.GPU is
       return
         To_Bool
           (Raw.Window_Supports_Swapchain_Composition
-             (Self.Internal, Window_Address (Window), To_Raw (Composition)));
+             (Self.Internal, Window_Handle (Window), To_Raw (Composition)));
    end Supports_Composition;
 
    function Supports_Present_Mode
@@ -1808,7 +1814,7 @@ package body SDL.GPU is
       return
         To_Bool
           (Raw.Window_Supports_Present_Mode
-             (Self.Internal, Window_Address (Window), To_Raw (Present_Mode)));
+             (Self.Internal, Window_Handle (Window), To_Raw (Present_Mode)));
    end Supports_Present_Mode;
 
    procedure Set_Swapchain_Parameters
@@ -1823,7 +1829,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Set_Swapchain_Parameters
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               To_Raw (Composition),
               To_Raw (Present_Mode)))
       then
@@ -1852,7 +1858,7 @@ package body SDL.GPU is
    is
    begin
       Require_Device (Self);
-      return Raw.Get_Swapchain_Texture_Format (Self.Internal, Window_Address (Window));
+      return Raw.Get_Swapchain_Texture_Format (Self.Internal, Window_Handle (Window));
    end Get_Swapchain_Texture_Format;
 
    procedure GDK_Suspend (Self : in Device) is
@@ -2196,7 +2202,7 @@ package body SDL.GPU is
    is
    begin
       Require_Device (Self);
-      return To_Bool (Raw.Wait_For_Swapchain (Self.Internal, Window_Address (Window)));
+      return To_Bool (Raw.Wait_For_Swapchain (Self.Internal, Window_Handle (Window)));
    end Wait_For_Swapchain;
 
    function Acquire_Swapchain_Texture
@@ -2214,7 +2220,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Acquire_Swapchain_Texture
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               Raw_Texture'Access,
               Raw_Width'Access,
               Raw_Height'Access))
@@ -2244,7 +2250,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Wait_And_Acquire_Swapchain_Texture
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               Raw_Texture'Access,
               Raw_Width'Access,
               Raw_Height'Access))

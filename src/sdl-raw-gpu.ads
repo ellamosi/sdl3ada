@@ -6,6 +6,7 @@ with System;
 
 with SDL.Raw.Pixels;
 with SDL.Raw.Properties;
+with SDL.Raw.Video;
 
 package SDL.Raw.GPU is
    pragma Preelaborate;
@@ -21,6 +22,7 @@ package SDL.Raw.GPU is
    subtype Texture_Formats is C.int;
    subtype Texture_Usage_Flags is Unsigned_32;
    subtype Buffer_Usage_Flags is Unsigned_32;
+   subtype Window_Pointer is SDL.Raw.Video.Window_Pointer;
    subtype Load_Ops is C.int;
    subtype Store_Ops is C.int;
    subtype Present_Modes is C.int;
@@ -1385,7 +1387,7 @@ package SDL.Raw.GPU is
 
    function Window_Supports_Swapchain_Composition
      (Device                : in Device_Access;
-      Window                : in System.Address;
+      Window                : in Window_Pointer;
       Swapchain_Composition : in Swapchain_Compositions) return CE.bool
    with
      Import        => True,
@@ -1394,7 +1396,7 @@ package SDL.Raw.GPU is
 
    function Window_Supports_Present_Mode
      (Device       : in Device_Access;
-      Window       : in System.Address;
+      Window       : in Window_Pointer;
       Present_Mode : in Present_Modes) return CE.bool
    with
      Import        => True,
@@ -1403,7 +1405,7 @@ package SDL.Raw.GPU is
 
    function Claim_Window
      (Device : in Device_Access;
-      Window : in System.Address) return CE.bool
+      Window : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -1411,7 +1413,7 @@ package SDL.Raw.GPU is
 
    procedure Release_Window
      (Device : in Device_Access;
-      Window : in System.Address)
+      Window : in Window_Pointer)
    with
      Import        => True,
      Convention    => C,
@@ -1419,7 +1421,7 @@ package SDL.Raw.GPU is
 
    function Set_Swapchain_Parameters
      (Device                : in Device_Access;
-      Window                : in System.Address;
+      Window                : in Window_Pointer;
       Swapchain_Composition : in Swapchain_Compositions;
       Present_Mode          : in Present_Modes) return CE.bool
    with
@@ -1437,7 +1439,7 @@ package SDL.Raw.GPU is
 
    function Get_Swapchain_Texture_Format
      (Device : in Device_Access;
-      Window : in System.Address) return Texture_Formats
+      Window : in Window_Pointer) return Texture_Formats
    with
      Import        => True,
      Convention    => C,
@@ -1445,7 +1447,7 @@ package SDL.Raw.GPU is
 
    function Acquire_Swapchain_Texture
      (Command_Buffer : in Command_Buffer_Access;
-      Window         : in System.Address;
+      Window         : in Window_Pointer;
       Texture        : access Texture_Access;
       Texture_Width  : access Unsigned_32;
       Texture_Height : access Unsigned_32) return CE.bool
@@ -1456,7 +1458,7 @@ package SDL.Raw.GPU is
 
    function Wait_For_Swapchain
      (Device : in Device_Access;
-      Window : in System.Address) return CE.bool
+      Window : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -1464,7 +1466,7 @@ package SDL.Raw.GPU is
 
    function Wait_And_Acquire_Swapchain_Texture
      (Command_Buffer : in Command_Buffer_Access;
-      Window         : in System.Address;
+      Window         : in Window_Pointer;
       Texture        : access Texture_Access;
       Texture_Width  : access Unsigned_32;
       Texture_Height : access Unsigned_32) return CE.bool

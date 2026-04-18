@@ -3,6 +3,7 @@ with Interfaces.C;
 with Interfaces.C.Extensions;
 with System;
 
+with SDL.Raw.Event_Types;
 with SDL.Raw.Video;
 
 package SDL.Raw.Events is
@@ -11,7 +12,7 @@ package SDL.Raw.Events is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
 
-   subtype Event_Type is Interfaces.Unsigned_32;
+   subtype Event_Type is SDL.Raw.Event_Types.Event_Type;
 
    type Event_Action is
      (Add_Action,

@@ -3,7 +3,6 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
-with SDL.Raw.Touch;
 
 package body SDL.Events.Touches is
    package C renames Interfaces.C;
@@ -39,24 +38,6 @@ package body SDL.Events.Touches is
 
       raise Touch_Error with Message;
    end Raise_Last_Error;
-
-   function To_Public_Device_Type
-     (Value : in Raw.Device_Type) return Touch_Device_Types;
-
-   function To_Public_Device_Type
-     (Value : in Raw.Device_Type) return Touch_Device_Types is
-   begin
-      case Value is
-         when Raw.Invalid_Touch_Device =>
-            return Invalid_Touch_Device;
-         when Raw.Direct_Touch_Device =>
-            return Direct_Touch_Device;
-         when Raw.Indirect_Absolute_Touch_Device =>
-            return Indirect_Absolute_Touch_Device;
-         when Raw.Indirect_Relative_Touch_Device =>
-            return Indirect_Relative_Touch_Device;
-      end case;
-   end To_Public_Device_Type;
 
    procedure Free (Items : in out Raw.ID_Pointers.Pointer);
 
@@ -149,11 +130,7 @@ package body SDL.Events.Touches is
                if Current = null then
                   Result (Index) := (others => <>);
                else
-                  Result (Index) :=
-                    (ID       => Finger_IDs (Current.ID),
-                     X        => Touch_Locations (Current.X),
-                     Y        => Touch_Locations (Current.Y),
-                     Pressure => Touch_Pressures (Current.Pressure));
+                  Result (Index) := Current.all;
                end if;
             end;
          end loop;
@@ -189,8 +166,7 @@ package body SDL.Events.Touches is
    function Device_Type
      (Instance : in Touch_IDs) return Touch_Device_Types is
    begin
-      return To_Public_Device_Type
-        (Raw.Get_Touch_Device_Type (Raw.ID (Instance)));
+      return Raw.Get_Touch_Device_Type (Instance);
    end Device_Type;
 
    function Get_Fingers

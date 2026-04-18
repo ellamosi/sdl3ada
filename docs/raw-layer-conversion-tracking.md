@@ -18,7 +18,7 @@ Status values:
 - [x] Public value packages no longer import C or SDL directly.
 - [x] Public thick wrappers call only into raw and internal handwritten glue.
 - [ ] Raw packages depend only on raw or support packages.
-- [ ] Compatibility packages are frozen and do not gain new low-level behavior.
+- [x] Compatibility packages are frozen and do not gain new low-level behavior.
 - [x] A repository check exists for non-raw imports.
 - [x] Development docs describe generated raw ownership and review policy.
 
@@ -31,7 +31,7 @@ Status values:
 | W2 Value package migration | Public value-heavy packages stop importing directly | `in progress` | Started with `SDL.Pens`, and `SDL.Events.Events` plus the keyboard and touch helper queries now route through raw support families; event payload and other pure helper/value units still need broader raw-backed cleanup. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `complete` | `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Sensor`, and `SDL.Raw.Tray` now exist. Pure support splits `SDL.Raw.Gamepad_Events` and `SDL.Raw.Joystick_Events` avoid the old pure-layer blocker, and the planned audio, device, desktop, and input wrappers plus joystick/gamepad maker helpers now route through raw. Remaining conversion work has shifted to event/value cleanup and the broader video/render/GPU normalization streams. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Metal`, `SDL.Raw.Pixels`, `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`, `SDL.Raw.Video`, and `SDL.Raw.Vulkan` now exist as starter families for Metal view lifecycle, palette and pixel-format ownership/mutation/query helpers, rectangle intersection/enclosing/clipping helpers, full texture and renderer creation/query/state/draw/copy/geometry/readback/present plus texture property/lock/update/palette/blend/colour/alpha/size/destruction entry points, full surface creation/load/save/property/blit/clip/palette/key/modulation/blend/lock/RLE/alternate-image/transform/convert/pixel helpers, and broad video/window driver, theme, screensaver, display, GL/EGL, window, and Vulkan support. Public video/render wrappers are now routed through raw; remaining W4 work is normalization and review, especially around `SDL.Raw.GPU` and the broader raw-video target shape. |
-| W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`, the generated-raw ownership plus compatibility-freeze policy are documented, the `SDL.RWops` compatibility wrappers now route through raw support without direct imports, and handwritten video bridge glue now uses child support packages instead of linker-visible Ada hooks; final compatibility freeze follow-through and closure remain open. |
+| W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`, the generated-raw ownership plus compatibility-freeze policy are documented, the compatibility queue is now explicitly closed for `SDL.C_Pointers`, `SDL.Events.Controllers`, `SDL.Inputs`, and `SDL.RWops*`, and handwritten video bridge glue now uses child support packages instead of linker-visible Ada hooks; remaining closure work is the raw-package dependency cleanup and final normalization pass. |
 
 ## Existing Raw Families
 
@@ -187,9 +187,9 @@ or ABI responsibilities during conversion.
 
 | Package | Status | Notes |
 | --- | --- | --- |
-| `SDL.C_Pointers` | `not started` | Freeze as compatibility/support only. |
-| `SDL.Events.Controllers` | `not started` | Keep as migration alias layer over gamepad/event families. |
-| `SDL.Inputs` | `not started` | Shared namespace only; do not grow new low-level behavior here. |
+| `SDL.C_Pointers` | `complete` | Compatibility/support-only opaque-pointer namespace; no direct imports or new raw-home responsibilities should be added here. |
+| `SDL.Events.Controllers` | `complete` | Frozen migration/value alias layer over joystick and gamepad event families; it remains handwritten and does not own direct SDL imports. |
+| `SDL.Inputs` | `complete` | Shared compatibility namespace only; the root package stays pure and does not grow low-level behavior. |
 | `SDL.RWops` | `complete` | Compatibility wrapper now routes through `SDL.Raw.IOStream` and `SDL.Raw.Filesystem` support, without keeping its own direct C imports. |
 | `SDL.RWops.Streams` | `complete` | Compatibility stream bridge now routes raw read/write/status access through `SDL.Raw.IOStream`. |
 

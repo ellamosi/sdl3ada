@@ -72,6 +72,69 @@ package SDL.Raw.Video is
       Element_Array      => Display_Mode_Pointer_Array,
       Default_Terminator => null);
 
+   type GL_Attribute is
+     (Attribute_Red_Size,
+      Attribute_Green_Size,
+      Attribute_Blue_Size,
+      Attribute_Alpha_Size,
+      Attribute_Buffer_Size,
+      Attribute_Double_Buffer,
+      Attribute_Depth_Buffer_Size,
+      Attribute_Stencil_Size,
+      Attribute_Accumulator_Red_Size,
+      Attribute_Accumulator_Green_Size,
+      Attribute_Accumulator_Blue_Size,
+      Attribute_Accumulator_Alpha_Size,
+      Attribute_Stereo,
+      Attribute_Multisample_Buffers,
+      Attribute_Multisample_Samples,
+      Attribute_Accelerated,
+      Attribute_Retained_Backing,
+      Attribute_Context_Major_Version,
+      Attribute_Context_Minor_Version,
+      Attribute_Context_Flags,
+      Attribute_Context_Profile,
+      Attribute_Share_With_Current_Context,
+      Attribute_EGL_Platform)
+   with
+     Convention => C,
+     Size       => C.int'Size;
+
+   for GL_Attribute use
+     (Attribute_Red_Size                   => 0,
+      Attribute_Green_Size                 => 1,
+      Attribute_Blue_Size                  => 2,
+      Attribute_Alpha_Size                 => 3,
+      Attribute_Buffer_Size                => 4,
+      Attribute_Double_Buffer              => 5,
+      Attribute_Depth_Buffer_Size          => 6,
+      Attribute_Stencil_Size               => 7,
+      Attribute_Accumulator_Red_Size       => 8,
+      Attribute_Accumulator_Green_Size     => 9,
+      Attribute_Accumulator_Blue_Size      => 10,
+      Attribute_Accumulator_Alpha_Size     => 11,
+      Attribute_Stereo                     => 12,
+      Attribute_Multisample_Buffers        => 13,
+      Attribute_Multisample_Samples        => 14,
+      Attribute_Accelerated                => 15,
+      Attribute_Retained_Backing           => 16,
+      Attribute_Context_Major_Version      => 17,
+      Attribute_Context_Minor_Version      => 18,
+      Attribute_Context_Flags              => 19,
+      Attribute_Context_Profile            => 20,
+      Attribute_Share_With_Current_Context => 21,
+      Attribute_EGL_Platform               => 27);
+
+   type EGL_Attribute_Array_Callback is access function
+     (User_Data : in System.Address) return System.Address
+   with Convention => C;
+
+   type EGL_Integer_Array_Callback is access function
+     (User_Data : in System.Address;
+      Display   : in System.Address;
+      Config    : in System.Address) return System.Address
+   with Convention => C;
+
    type Window_ID is mod 2 ** 32 with
      Convention => C,
      Size       => 32;
@@ -185,6 +248,22 @@ package SDL.Raw.Video is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_DisableScreenSaver";
+
+   function Set_GL_Attribute
+     (Attr  : in GL_Attribute;
+      Value : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_SetAttribute";
+
+   function Get_GL_Attribute
+     (Attr  : in GL_Attribute;
+      Value : access C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_GetAttribute";
 
    function Get_Displays
      (Count : access C.int) return Display_ID_Pointers.Pointer
@@ -309,6 +388,137 @@ package SDL.Raw.Video is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNaturalDisplayOrientation";
+
+   function Create_GL_Context
+     (Window : in System.Address) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_CreateContext";
+
+   function Destroy_GL_Context
+     (Context : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_DestroyContext";
+
+   function Get_Current_GL_Context return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_GetCurrentContext";
+
+   function Get_Current_GL_Window return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_GetCurrentWindow";
+
+   function Make_GL_Current
+     (Window  : in System.Address;
+      Context : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_MakeCurrent";
+
+   function EGL_Get_Proc_Address
+     (Proc : in C.char_array) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_EGL_GetProcAddress";
+
+   function Get_Current_EGL_Display return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_EGL_GetCurrentDisplay";
+
+   function Get_Current_EGL_Config return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_EGL_GetCurrentConfig";
+
+   function Get_EGL_Window_Surface
+     (Value : in System.Address) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_EGL_GetWindowSurface";
+
+   procedure Set_EGL_Attribute_Callbacks
+     (Platform_Attributes : in EGL_Attribute_Array_Callback;
+      Surface_Attributes  : in EGL_Integer_Array_Callback;
+      Context_Attributes  : in EGL_Integer_Array_Callback;
+      User_Data           : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_EGL_SetAttributeCallbacks";
+
+   procedure Reset_GL_Attributes
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_ResetAttributes";
+
+   function GL_Get_Proc_Address
+     (Proc : in C.char_array) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_GetProcAddress";
+
+   function GL_Extension_Supported
+     (Name : in CS.chars_ptr) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_ExtensionSupported";
+
+   function Get_GL_Swap_Interval
+     (Interval : access C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_GetSwapInterval";
+
+   function Set_GL_Swap_Interval
+     (Value : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_SetSwapInterval";
+
+   function Swap_GL_Window
+     (Value : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_SwapWindow";
+
+   function Load_GL_Library
+     (Path : in CS.chars_ptr) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_LoadLibrary";
+
+   function Load_GL_Library
+     (Value : in C.char_array) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_LoadLibrary";
+
+   procedure Unload_GL_Library
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GL_UnloadLibrary";
 
    function Create_Window_With_Properties
      (Props : in SDL.Raw.Properties.ID) return System.Address

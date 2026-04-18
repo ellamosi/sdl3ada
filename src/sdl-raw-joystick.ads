@@ -5,7 +5,7 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Joystick_Events;
 with SDL.Raw.Power;
 with SDL.Raw.Properties;
@@ -289,21 +289,21 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickTypeForID";
 
    function Open_Joystick
-     (Device : in ID) return SDL.C_Pointers.Joystick_Pointer
+     (Device : in ID) return SDL.Raw.C_Pointers.Joystick_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenJoystick";
 
    function Get_Joystick_From_ID
-     (Instance : in ID) return SDL.C_Pointers.Joystick_Pointer
+     (Instance : in ID) return SDL.Raw.C_Pointers.Joystick_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickFromID";
 
    function Get_Joystick_From_Player_Index
-     (Index : in Player_Index) return SDL.C_Pointers.Joystick_Pointer
+     (Index : in Player_Index) return SDL.Raw.C_Pointers.Joystick_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -343,35 +343,35 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_UnlockJoysticks";
 
    function Get_Joystick_Properties
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return SDL.Raw.Properties.ID
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickProperties";
 
    function Get_Joystick_Name
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickName";
 
    function Get_Joystick_Path
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickPath";
 
    function Get_Joystick_Player_Index
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Player_Index
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Player_Index
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickPlayerIndex";
 
    function Set_Joystick_Player_Index
-     (Self         : in SDL.C_Pointers.Joystick_Pointer;
+     (Self         : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Index        : in Player_Index) return CE.bool
    with
      Import        => True,
@@ -379,49 +379,49 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickPlayerIndex";
 
    function Get_Joystick_GUID
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return GUID
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return GUID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickGUID";
 
    function Get_Joystick_Vendor
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Vendor_ID
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Vendor_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickVendor";
 
    function Get_Joystick_Product
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Product_ID
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Product_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickProduct";
 
    function Get_Joystick_Product_Version
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Version_Number
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Version_Number
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickProductVersion";
 
    function Get_Joystick_Firmware_Version
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Version_Number
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Version_Number
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickFirmwareVersion";
 
    function Get_Joystick_Serial
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickSerial";
 
    function Get_Joystick_Type
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Types
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Types
    with
      Import        => True,
      Convention    => C,
@@ -439,63 +439,63 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickGUIDInfo";
 
    function Joystick_Connected
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_JoystickConnected";
 
    function Get_Joystick_ID
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return ID
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickID";
 
    function Get_Num_Joystick_Axes
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumJoystickAxes";
 
    function Get_Num_Joystick_Balls
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumJoystickBalls";
 
    function Get_Num_Joystick_Hats
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumJoystickHats";
 
    function Get_Num_Joystick_Buttons
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumJoystickButtons";
 
    procedure Close_Joystick
-     (Self : in SDL.C_Pointers.Joystick_Pointer)
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer)
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CloseJoystick";
 
    function Get_Joystick_Connection_State
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Connection_States
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer) return Connection_States
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetJoystickConnectionState";
 
    function Get_Joystick_Power_Info
-     (Self       : in SDL.C_Pointers.Joystick_Pointer;
+     (Self       : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Percentage : access C.int) return SDL.Raw.Power.State
    with
      Import        => True,
@@ -503,7 +503,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickPowerInfo";
 
    function Get_Joystick_Axis
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Axis : in C.int) return Axis_Value
    with
      Import        => True,
@@ -511,7 +511,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickAxis";
 
    function Get_Joystick_Axis_Initial_State
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Axis  : in C.int;
       State : access Axis_Value) return CE.bool
    with
@@ -520,7 +520,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickAxisInitialState";
 
    function Get_Joystick_Ball
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Ball  : in C.int;
       X, Y  : access C.int) return CE.bool
    with
@@ -529,7 +529,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickBall";
 
    function Get_Joystick_Hat
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Hat  : in C.int) return Hat_Position
    with
      Import        => True,
@@ -537,7 +537,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickHat";
 
    function Get_Joystick_Button
-     (Self   : in SDL.C_Pointers.Joystick_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Button : in C.int) return CE.bool
    with
      Import        => True,
@@ -545,7 +545,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_GetJoystickButton";
 
    function Rumble_Joystick
-     (Self                  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self                  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Low_Frequency_Rumble  : in Interfaces.Unsigned_16;
       High_Frequency_Rumble : in Interfaces.Unsigned_16;
       Duration_MS           : in Interfaces.Unsigned_32) return CE.bool
@@ -555,7 +555,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_RumbleJoystick";
 
    function Rumble_Joystick_Triggers
-     (Self         : in SDL.C_Pointers.Joystick_Pointer;
+     (Self         : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Left_Rumble  : in Interfaces.Unsigned_16;
       Right_Rumble : in Interfaces.Unsigned_16;
       Duration_MS  : in Interfaces.Unsigned_32) return CE.bool
@@ -565,7 +565,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_RumbleJoystickTriggers";
 
    function Set_Joystick_LED
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Red   : in LED_Component;
       Green : in LED_Component;
       Blue  : in LED_Component) return CE.bool
@@ -575,7 +575,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickLED";
 
    function Send_Joystick_Effect
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Data : in System.Address;
       Size : in C.int) return CE.bool
    with
@@ -584,7 +584,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SendJoystickEffect";
 
    function Set_Joystick_Virtual_Axis
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Axis  : in C.int;
       Value : in Axis_Value) return CE.bool
    with
@@ -593,7 +593,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickVirtualAxis";
 
    function Set_Joystick_Virtual_Ball
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Ball : in C.int;
       Xrel : in Ball_Delta;
       Yrel : in Ball_Delta) return CE.bool
@@ -603,7 +603,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickVirtualBall";
 
    function Set_Joystick_Virtual_Button
-     (Self   : in SDL.C_Pointers.Joystick_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Button : in C.int;
       Down   : in CE.bool) return CE.bool
    with
@@ -612,7 +612,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickVirtualButton";
 
    function Set_Joystick_Virtual_Hat
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Hat   : in C.int;
       Value : in Hat_Position) return CE.bool
    with
@@ -621,7 +621,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickVirtualHat";
 
    function Set_Joystick_Virtual_Touchpad
-     (Self     : in SDL.C_Pointers.Joystick_Pointer;
+     (Self     : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Touchpad : in C.int;
       Finger   : in C.int;
       Down     : in CE.bool;
@@ -634,7 +634,7 @@ package SDL.Raw.Joystick is
      External_Name => "SDL_SetJoystickVirtualTouchpad";
 
    function Send_Joystick_Virtual_Sensor_Data
-     (Self             : in SDL.C_Pointers.Joystick_Pointer;
+     (Self             : in SDL.Raw.C_Pointers.Joystick_Pointer;
       Sensor_Type      : in SDL.Raw.Sensor.Types;
       Sensor_Timestamp : in Nanoseconds;
       Data             : in System.Address;

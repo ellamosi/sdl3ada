@@ -19,6 +19,7 @@ Current raw packages include:
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
 - `SDL.Raw.Camera`
+- `SDL.Raw.C_Pointers`
 - `SDL.Raw.CPUInfo`
 - `SDL.Raw.Dialog`
 - `SDL.Raw.Error`
@@ -126,6 +127,9 @@ Current raw packages include:
 
 - `SDL.C_Pointers`, `SDL.Events.Controllers`, `SDL.Inputs`, `SDL.RWops`, and
   `SDL.RWops.Streams` are compatibility or support namespaces, not raw homes.
+- `SDL.C_Pointers` remains public only as a compatibility facade over raw
+  support types; new low-level handle definitions belong in `SDL.Raw.*`,
+  currently via `SDL.Raw.C_Pointers`.
 - These packages may wrap, rename, or bridge raw-backed behavior for caller
   compatibility, but they should not accumulate new `Import`, `External_Name`,
   or ABI-layout responsibilities during conversion.

@@ -1,67 +1,53 @@
+with SDL.Raw.C_Pointers;
+
 package SDL.C_Pointers is
    pragma Preelaborate;
 
-   type Windows is null record;
-   type Windows_Pointer is access all Windows with
-     Convention => C;
+   subtype Windows is SDL.Raw.C_Pointers.Windows;
+   subtype Windows_Pointer is SDL.Raw.C_Pointers.Windows_Pointer;
 
-   type Renderers is null record;
-   type Renderer_Pointer is access all Renderers with
-     Convention => C;
+   subtype Renderers is SDL.Raw.C_Pointers.Renderers;
+   subtype Renderer_Pointer is SDL.Raw.C_Pointers.Renderer_Pointer;
 
-   type Textures is null record;
-   type Texture_Pointer is access all Textures with
-     Convention => C;
+   subtype Textures is SDL.Raw.C_Pointers.Textures;
+   subtype Texture_Pointer is SDL.Raw.C_Pointers.Texture_Pointer;
 
-   type Surfaces is null record;
-   type Surface_Pointer is access all Surfaces with
-     Convention => C;
+   subtype Surfaces is SDL.Raw.C_Pointers.Surfaces;
+   subtype Surface_Pointer is SDL.Raw.C_Pointers.Surface_Pointer;
 
-   type Palettes is null record;
-   type Palette_Pointer is access all Palettes with
-     Convention => C;
+   subtype Palettes is SDL.Raw.C_Pointers.Palettes;
+   subtype Palette_Pointer is SDL.Raw.C_Pointers.Palette_Pointer;
 
-   type GL_Contexts is null record;
-   type GL_Context_Pointer is access all GL_Contexts with
-     Convention => C;
+   subtype GL_Contexts is SDL.Raw.C_Pointers.GL_Contexts;
+   subtype GL_Context_Pointer is SDL.Raw.C_Pointers.GL_Context_Pointer;
 
-   type Audio_Streams is null record;
-   type Audio_Stream_Pointer is access all Audio_Streams with
-     Convention => C;
+   subtype Audio_Streams is SDL.Raw.C_Pointers.Audio_Streams;
+   subtype Audio_Stream_Pointer is SDL.Raw.C_Pointers.Audio_Stream_Pointer;
 
-   type IO_Streams is null record;
-   type IO_Stream_Pointer is access all IO_Streams with
-     Convention => C;
+   subtype IO_Streams is SDL.Raw.C_Pointers.IO_Streams;
+   subtype IO_Stream_Pointer is SDL.Raw.C_Pointers.IO_Stream_Pointer;
 
-   type Joysticks is null record;
-   type Joystick_Pointer is access all Joysticks with
-     Convention => C;
+   subtype Joysticks is SDL.Raw.C_Pointers.Joysticks;
+   subtype Joystick_Pointer is SDL.Raw.C_Pointers.Joystick_Pointer;
 
-   type Game_Controllers is null record;
-   type Game_Controller_Pointer is access all Game_Controllers with
-     Convention => C;
+   subtype Game_Controllers is SDL.Raw.C_Pointers.Game_Controllers;
+   subtype Game_Controller_Pointer is SDL.Raw.C_Pointers.Game_Controller_Pointer;
 
-   type Haptics is null record;
-   type Haptic_Pointer is access all Haptics with
-     Convention => C;
+   subtype Haptics is SDL.Raw.C_Pointers.Haptics;
+   subtype Haptic_Pointer is SDL.Raw.C_Pointers.Haptic_Pointer;
 
-   type Sensors is null record;
-   type Sensor_Pointer is access all Sensors with
-     Convention => C;
+   subtype Sensors is SDL.Raw.C_Pointers.Sensors;
+   subtype Sensor_Pointer is SDL.Raw.C_Pointers.Sensor_Pointer;
 
-   type Cameras is null record;
-   type Camera_Pointer is access all Cameras with
-     Convention => C;
+   subtype Cameras is SDL.Raw.C_Pointers.Cameras;
+   subtype Camera_Pointer is SDL.Raw.C_Pointers.Camera_Pointer;
 
-   type HID_Devices is null record;
-   type HID_Device_Pointer is access all HID_Devices with
-     Convention => C;
+   subtype HID_Devices is SDL.Raw.C_Pointers.HID_Devices;
+   subtype HID_Device_Pointer is SDL.Raw.C_Pointers.HID_Device_Pointer;
 
-   type Cursors is null record;
-   type Cursor_Pointer is access all Cursors with
-     Convention => C;
+   subtype Cursors is SDL.Raw.C_Pointers.Cursors;
+   subtype Cursor_Pointer is SDL.Raw.C_Pointers.Cursor_Pointer;
 
-   type Shared_Objects is null record;
-   type Shared_Object_Pointer is access all Shared_Objects with
-     Convention => C;
+   subtype Shared_Objects is SDL.Raw.C_Pointers.Shared_Objects;
+   subtype Shared_Object_Pointer is SDL.Raw.C_Pointers.Shared_Object_Pointer;
 end SDL.C_Pointers;

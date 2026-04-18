@@ -2,7 +2,7 @@ with Interfaces.C;
 with Interfaces.C.Extensions;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
 
 package SDL.Raw.Process is
@@ -99,14 +99,14 @@ package SDL.Raw.Process is
      External_Name => "SDL_ReadProcess";
 
    function Get_Process_Input
-     (Self : in Process_Access) return SDL.C_Pointers.IO_Stream_Pointer
+     (Self : in Process_Access) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetProcessInput";
 
    function Get_Process_Output
-     (Self : in Process_Access) return SDL.C_Pointers.IO_Stream_Pointer
+     (Self : in Process_Access) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,

@@ -2,11 +2,12 @@ with Ada.Unchecked_Conversion;
 
 package body SDL.Video.Palettes.Internal is
    use type Internal_Palette_Access;
-   use type System.Address;
+   use type Internal_Colour_Access;
    use type Colour_Array_Pointer.Pointer;
+   use type System.Address;
 
    function To_Colour_Pointer is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Internal_Colour_Access,
       Target => Colour_Array_Pointer.Pointer);
 
    function To_Internal_Palette_Access is new Ada.Unchecked_Conversion
@@ -25,7 +26,7 @@ package body SDL.Video.Palettes.Internal is
       if Value = System.Null_Address
         or else Source = null
         or else Source.Total <= 0
-        or else Source.Colours = System.Null_Address
+        or else Source.Colours = null
       then
          return;
       end if;

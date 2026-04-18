@@ -91,6 +91,8 @@ private
       Element_Array      => Colour_Arrays,
       Default_Terminator => (others => 0));
 
+   subtype Internal_Colour is SDL.Raw.Pixels.Colour;
+   subtype Internal_Colour_Access is SDL.Raw.Pixels.Colour_Access;
    subtype Internal_Palette is SDL.Raw.Pixels.Palette;
    subtype Internal_Palette_Access is SDL.Raw.Pixels.Palette_Access;
 

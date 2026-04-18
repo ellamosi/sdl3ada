@@ -1,7 +1,6 @@
 with Ada.Unchecked_Conversion;
 
 with Interfaces.C.Strings;
-with System;
 
 with SDL.Error;
 with SDL.Raw.Pixels;
@@ -52,7 +51,7 @@ package body SDL.Video.Pixel_Formats is
       Raw.Get_RGB
         (Pixel   => Raw.U32 (Pixel),
          Format  => To_Raw_Pixel_Format_Access (Format),
-         Palette => System.Null_Address,
+         Palette => null,
          Red     => Red,
          Green   => Green,
          Blue    => Blue);
@@ -73,7 +72,7 @@ package body SDL.Video.Pixel_Formats is
       Raw.Get_RGBA
         (Pixel   => Raw.U32 (Pixel),
          Format  => To_Raw_Pixel_Format_Access (Format),
-         Palette => System.Null_Address,
+         Palette => null,
          Red     => Red,
          Green   => Green,
          Blue    => Blue,
@@ -93,7 +92,7 @@ package body SDL.Video.Pixel_Formats is
       return Unsigned_32
         (Raw.Map_RGB
            (Format  => To_Raw_Pixel_Format_Access (Format),
-            Palette => System.Null_Address,
+            Palette => null,
             Red     => Red,
             Green   => Green,
             Blue    => Blue));
@@ -113,7 +112,7 @@ package body SDL.Video.Pixel_Formats is
       return Unsigned_32
         (Raw.Map_RGBA
            (Format  => To_Raw_Pixel_Format_Access (Format),
-            Palette => System.Null_Address,
+            Palette => null,
             Red     => Red,
             Green   => Green,
             Blue    => Blue,

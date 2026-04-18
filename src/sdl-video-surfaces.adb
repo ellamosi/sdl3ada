@@ -1,239 +1,299 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C.Pointers;
-with System.Storage_Elements;
 with Interfaces.C.Extensions;
+with System.Storage_Elements;
 
 with SDL.Error;
+with SDL.Raw.Pixels;
+with SDL.Raw.Surface;
 with SDL.Video.Palettes.Internal;
 with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Surfaces is
    package CE renames Interfaces.C.Extensions;
    package Palette_Internal renames SDL.Video.Palettes.Internal;
+   package Raw_Pixels renames SDL.Raw.Pixels;
    package Raw_Properties renames SDL.Raw.Properties;
+   package Raw_Surface renames SDL.Raw.Surface;
    package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
    Default_Scale_Mode : constant Scale_Modes := Linear;
 
-   type Surface_Array is array (C.ptrdiff_t range <>) of aliased Internal_Surface_Pointer
-   with Convention => C;
-
-   package Surface_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => Internal_Surface_Pointer,
-      Element_Array      => Surface_Array,
-      Default_Terminator => null);
-
    Surface_User_Data_Property : constant String := "SDL3Ada.surface.user_data";
+
+   type Surface_Address_Access is access all System.Address with Convention => C;
+
+   Address_Stride : constant System.Storage_Elements.Storage_Offset :=
+     System.Storage_Elements.Storage_Offset
+       (System.Address'Size / System.Storage_Unit);
 
    use type SDL.Video.Pixel_Formats.Pixel_Format_Access;
    use type Interfaces.Unsigned_32;
    use type Rectangles.Rectangle;
    use type System.Address;
-   use type C.ptrdiff_t;
-   use type Surface_Pointers.Pointer;
+   use type System.Storage_Elements.Storage_Offset;
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => Internal_Surface_Pointer,
+      Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.RWops.Handle,
+      Target => System.Address);
+
+   function To_Internal_Surface_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Internal_Surface_Pointer);
+
+   function To_Raw_Details is new Ada.Unchecked_Conversion
+     (Source => SDL.Video.Pixel_Formats.Pixel_Format_Access,
+      Target => Raw_Pixels.Pixel_Format_Details_Access);
+
+   function To_Surface_Address_Access is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Surface_Address_Access);
+
+   function To_Address
+     (Value : access constant Rectangles.Rectangle) return System.Address is
+       (if Value = null then System.Null_Address else Value.all'Address);
+
+   function To_Address
+     (Value : in Rectangles.Rectangle_Arrays) return System.Address is
+       (if Value'Length = 0
+        then System.Null_Address
+        else Value (Value'First)'Address);
+
+   function Surface_List_Item_Address
+     (Base  : in System.Address;
+      Index : in C.ptrdiff_t) return System.Address is
+       (System.Storage_Elements."+"
+          (Base,
+           Address_Stride *
+             System.Storage_Elements.Storage_Offset (Index)));
+
+   function Surface_List_Item
+     (Base  : in System.Address;
+      Index : in C.ptrdiff_t) return System.Address is
+       (To_Surface_Address_Access
+          (Surface_List_Item_Address (Base, Index)).all);
+
+   function To_Raw (Value : in Scale_Modes) return Raw_Surface.Scale_Mode is
+   begin
+      case Value is
+         when Invalid =>
+            return -1;
+         when Nearest =>
+            return 0;
+         when Linear =>
+            return 1;
+         when Pixel_Art =>
+            return 2;
+      end case;
+   end To_Raw;
+
+   function To_Raw (Value : in Flip_Modes) return Raw_Surface.Flip_Mode is
+   begin
+      case Value is
+         when No_Flip =>
+            return 0;
+         when Horizontal_Flip =>
+            return 1;
+         when Vertical_Flip =>
+            return 2;
+         when Horizontal_And_Vertical_Flip =>
+            return 3;
+      end case;
+   end To_Raw;
+
+   function To_Raw
+     (Value : in SDL.Video.Blend_Modes) return Raw_Surface.Blend_Mode is
+       (Raw_Surface.Blend_Mode (Value));
+
+   function To_Raw
+     (Value : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
+      return Raw_Surface.Pixel_Format_Name is
+       (Raw_Surface.Pixel_Format_Name (Value));
+
+   function To_Raw
+     (Value : in Colour_Spaces) return Raw_Surface.Colour_Space is
+       (Raw_Surface.Colour_Space (Value));
+
+   function To_Public
+     (Value : in Raw_Surface.Blend_Mode) return SDL.Video.Blend_Modes is
+       (SDL.Video.Blend_Modes (Value));
+
+   function To_Public
+     (Value : in Raw_Surface.Colour_Space) return Colour_Spaces is
+       (Colour_Spaces (Value));
 
    function SDL_Get_Surface_Properties
-     (Self : in Internal_Surface_Pointer) return Raw_Properties.ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceProperties";
+     (Self : in Internal_Surface_Pointer) return Raw_Properties.ID is
+       (Raw_Surface.Get_Surface_Properties (To_Address (Self)));
 
    function SDL_Blit_Surface
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
-      Target_Area : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurface";
+      Target_Area : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Blit_Surface
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area)));
 
    function SDL_Blit_Surface_Scaled
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
       Target_Area : access constant Rectangles.Rectangle;
-      Mode        : in Scale_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurfaceScaled";
+      Mode        : in Scale_Modes) return CE.bool is
+       (Raw_Surface.Blit_Surface_Scaled
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area),
+           To_Raw (Mode)));
 
    function SDL_Blit_Surface_Unchecked
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
-      Target_Area : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurfaceUnchecked";
+      Target_Area : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Blit_Surface_Unchecked
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area)));
 
    function SDL_Blit_Surface_Unchecked_Scaled
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
       Target_Area : access constant Rectangles.Rectangle;
-      Mode        : in Scale_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurfaceUncheckedScaled";
+      Mode        : in Scale_Modes) return CE.bool is
+       (Raw_Surface.Blit_Surface_Unchecked_Scaled
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area),
+           To_Raw (Mode)));
 
    function SDL_Fill_Surface_Rect
      (Self   : in Internal_Surface_Pointer;
       Area   : access constant Rectangles.Rectangle;
-      Colour : in Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_FillSurfaceRect";
+      Colour : in Interfaces.Unsigned_32) return CE.bool is
+       (Raw_Surface.Fill_Surface_Rect
+          (To_Address (Self), To_Address (Area), Colour));
 
    function SDL_Fill_Surface_Rects
      (Self   : in Internal_Surface_Pointer;
       Areas  : in Rectangles.Rectangle_Arrays;
       Count  : in C.int;
-      Colour : in Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_FillSurfaceRects";
+      Colour : in Interfaces.Unsigned_32) return CE.bool is
+       (Raw_Surface.Fill_Surface_Rects
+          (To_Address (Self), To_Address (Areas), Count, Colour));
 
    function SDL_Get_Surface_Clip_Rect
      (Self : in Internal_Surface_Pointer;
-      Area : access Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceClipRect";
+      Area : access Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Get_Surface_Clip_Rect
+          (To_Address (Self), To_Address (Area)));
 
    function SDL_Set_Surface_Clip_Rect
      (Self : in Internal_Surface_Pointer;
-      Area : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceClipRect";
+      Area : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Set_Surface_Clip_Rect
+          (To_Address (Self), To_Address (Area)));
 
    function SDL_Get_Surface_Palette
-     (Self : in Internal_Surface_Pointer) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfacePalette";
+     (Self : in Internal_Surface_Pointer) return System.Address is
+       (Raw_Surface.Get_Surface_Palette (To_Address (Self)));
 
    function SDL_Surface_Has_Color_Key
-     (Self : in Internal_Surface_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SurfaceHasColorKey";
+     (Self : in Internal_Surface_Pointer) return CE.bool is
+       (Raw_Surface.Surface_Has_Color_Key (To_Address (Self)));
 
    function SDL_Get_Surface_Color_Key
      (Self : in Internal_Surface_Pointer;
-      Key  : access Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceColorKey";
+      Key  : access Interfaces.Unsigned_32) return CE.bool is
+       (Raw_Surface.Get_Surface_Color_Key (To_Address (Self), Key));
 
    function SDL_Set_Surface_Color_Key
      (Self   : in Internal_Surface_Pointer;
       Enable : in CE.bool;
-      Key    : in Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceColorKey";
+      Key    : in Interfaces.Unsigned_32) return CE.bool is
+       (Raw_Surface.Set_Surface_Color_Key (To_Address (Self), Enable, Key));
 
    function SDL_Get_Surface_Alpha_Mod
      (Self  : in Internal_Surface_Pointer;
-      Alpha : access Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceAlphaMod";
+      Alpha : access Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Get_Surface_Alpha_Mod (To_Address (Self), Alpha));
 
    function SDL_Set_Surface_Alpha_Mod
      (Self  : in Internal_Surface_Pointer;
-      Alpha : in Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceAlphaMod";
+      Alpha : in Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Set_Surface_Alpha_Mod (To_Address (Self), Alpha));
 
    function SDL_Get_Surface_Blend_Mode
      (Self : in Internal_Surface_Pointer;
       Mode : access SDL.Video.Blend_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceBlendMode";
+   is
+      Raw_Mode : aliased Raw_Surface.Blend_Mode := To_Raw (SDL.Video.None);
+      Success  : constant CE.bool :=
+        Raw_Surface.Get_Surface_Blend_Mode (To_Address (Self), Raw_Mode'Access);
+   begin
+      if Boolean (Success) then
+         Mode.all := To_Public (Raw_Mode);
+      end if;
+
+      return Success;
+   end SDL_Get_Surface_Blend_Mode;
 
    function SDL_Set_Surface_Blend_Mode
      (Self : in Internal_Surface_Pointer;
-      Mode : in SDL.Video.Blend_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceBlendMode";
+      Mode : in SDL.Video.Blend_Modes) return CE.bool is
+       (Raw_Surface.Set_Surface_Blend_Mode
+          (To_Address (Self), To_Raw (Mode)));
 
    function SDL_Get_Surface_Color_Mod
      (Self  : in Internal_Surface_Pointer;
       Red   : access Palettes.Colour_Component;
       Green : access Palettes.Colour_Component;
-      Blue  : access Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceColorMod";
+      Blue  : access Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Get_Surface_Color_Mod (To_Address (Self), Red, Green, Blue));
 
    function SDL_Set_Surface_Color_Mod
      (Self  : in Internal_Surface_Pointer;
       Red   : in Palettes.Colour_Component;
       Green : in Palettes.Colour_Component;
-      Blue  : in Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceColorMod";
+      Blue  : in Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Set_Surface_Color_Mod (To_Address (Self), Red, Green, Blue));
 
    function SDL_Lock_Surface
-     (Self : in Internal_Surface_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LockSurface";
+     (Self : in Internal_Surface_Pointer) return CE.bool is
+       (Raw_Surface.Lock_Surface (To_Address (Self)));
 
    procedure SDL_Unlock_Surface
-     (Self : in Internal_Surface_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UnlockSurface";
+     (Self : in Internal_Surface_Pointer) is
+   begin
+      Raw_Surface.Unlock_Surface (To_Address (Self));
+   end SDL_Unlock_Surface;
 
    function SDL_Set_Surface_RLE
      (Self    : in Internal_Surface_Pointer;
-      Enabled : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceRLE";
+      Enabled : in CE.bool) return CE.bool is
+       (Raw_Surface.Set_Surface_RLE (To_Address (Self), Enabled));
 
    procedure SDL_Destroy_Surface
-     (Self : in Internal_Surface_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DestroySurface";
+     (Self : in Internal_Surface_Pointer) is
+   begin
+      Raw_Surface.Destroy_Surface (To_Address (Self));
+   end SDL_Destroy_Surface;
 
-   procedure SDL_Free (Value : in System.Address)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   procedure SDL_Free
+     (Value : in System.Address) is
+   begin
+      Raw_Surface.Free (Value);
+   end SDL_Free;
 
    procedure SDL_Get_RGBA
      (Pixel   : in Interfaces.Unsigned_32;
@@ -243,160 +303,129 @@ package body SDL.Video.Surfaces is
       Green   : out Palettes.Colour_Component;
       Blue    : out Palettes.Colour_Component;
       Alpha   : out Palettes.Colour_Component)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRGBA";
+   is
+      Raw_Red   : Raw_Pixels.Colour_Component;
+      Raw_Green : Raw_Pixels.Colour_Component;
+      Raw_Blue  : Raw_Pixels.Colour_Component;
+      Raw_Alpha : Raw_Pixels.Colour_Component;
+   begin
+      Raw_Pixels.Get_RGBA
+        (Pixel   => Pixel,
+         Format  => To_Raw_Details (Format),
+         Palette => Palette,
+         Red     => Raw_Red,
+         Green   => Raw_Green,
+         Blue    => Raw_Blue,
+         Alpha   => Raw_Alpha);
 
-   function SDL_Map_RGBA
-     (Format  : in SDL.Video.Pixel_Formats.Pixel_Format_Access;
-      Palette : in System.Address;
-      Red     : in Palettes.Colour_Component;
-      Green   : in Palettes.Colour_Component;
-      Blue    : in Palettes.Colour_Component;
-      Alpha   : in Palettes.Colour_Component) return Interfaces.Unsigned_32
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MapRGBA";
+      Red := Raw_Red;
+      Green := Raw_Green;
+      Blue := Raw_Blue;
+      Alpha := Raw_Alpha;
+   end SDL_Get_RGBA;
 
    function SDL_Save_BMP
      (Self : in Internal_Surface_Pointer;
-      File : in C.char_array) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SaveBMP";
+      File : in C.char_array) return CE.bool is
+       (Raw_Surface.Save_BMP (To_Address (Self), File));
 
    function SDL_Save_BMP_IO
      (Self     : in Internal_Surface_Pointer;
       Dest     : in SDL.RWops.Handle;
-      Close_IO : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SaveBMP_IO";
+      Close_IO : in CE.bool) return CE.bool is
+       (Raw_Surface.Save_BMP_IO
+          (To_Address (Self), To_Address (Dest), Close_IO));
 
    function SDL_Save_PNG
      (Self : in Internal_Surface_Pointer;
-      File : in C.char_array) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SavePNG";
+      File : in C.char_array) return CE.bool is
+       (Raw_Surface.Save_PNG (To_Address (Self), File));
 
    function SDL_Save_PNG_IO
      (Self     : in Internal_Surface_Pointer;
       Dest     : in SDL.RWops.Handle;
-      Close_IO : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SavePNG_IO";
+      Close_IO : in CE.bool) return CE.bool is
+       (Raw_Surface.Save_PNG_IO
+          (To_Address (Self), To_Address (Dest), Close_IO));
 
    function SDL_Set_Surface_Colourspace
-     (Self        : in Internal_Surface_Pointer;
-      Colour_Space : in Colour_Spaces) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfaceColorspace";
+     (Self         : in Internal_Surface_Pointer;
+      Colour_Space : in Colour_Spaces) return CE.bool is
+       (Raw_Surface.Set_Surface_Colourspace
+          (To_Address (Self), To_Raw (Colour_Space)));
 
    function SDL_Create_Surface_Palette
-     (Self : in Internal_Surface_Pointer) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateSurfacePalette";
+     (Self : in Internal_Surface_Pointer) return System.Address is
+       (Raw_Surface.Create_Surface_Palette (To_Address (Self)));
 
    function SDL_Set_Surface_Palette
      (Self    : in Internal_Surface_Pointer;
-      Palette : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetSurfacePalette";
+      Palette : in System.Address) return CE.bool is
+       (Raw_Surface.Set_Surface_Palette (To_Address (Self), Palette));
 
    function SDL_Add_Surface_Alternate_Image
      (Self  : in Internal_Surface_Pointer;
-      Image : in Internal_Surface_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AddSurfaceAlternateImage";
+      Image : in Internal_Surface_Pointer) return CE.bool is
+       (Raw_Surface.Add_Surface_Alternate_Image
+          (To_Address (Self), To_Address (Image)));
 
    function SDL_Surface_Has_Alternate_Images
-     (Self : in Internal_Surface_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SurfaceHasAlternateImages";
+     (Self : in Internal_Surface_Pointer) return CE.bool is
+       (Raw_Surface.Surface_Has_Alternate_Images (To_Address (Self)));
 
    function SDL_Get_Surface_Images
      (Self  : in Internal_Surface_Pointer;
-      Count : access C.int) return Surface_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceImages";
+      Count : access C.int) return System.Address is
+       (Raw_Surface.Get_Surface_Images (To_Address (Self), Count));
 
    procedure SDL_Remove_Surface_Alternate_Images
-     (Self : in Internal_Surface_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RemoveSurfaceAlternateImages";
+     (Self : in Internal_Surface_Pointer) is
+   begin
+      Raw_Surface.Remove_Surface_Alternate_Images (To_Address (Self));
+   end SDL_Remove_Surface_Alternate_Images;
 
    function SDL_Surface_Has_RLE
-     (Self : in Internal_Surface_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SurfaceHasRLE";
+     (Self : in Internal_Surface_Pointer) return CE.bool is
+       (Raw_Surface.Surface_Has_RLE (To_Address (Self)));
 
    function SDL_Flip_Surface
      (Self : in Internal_Surface_Pointer;
-      Mode : in Flip_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_FlipSurface";
+      Mode : in Flip_Modes) return CE.bool is
+       (Raw_Surface.Flip_Surface (To_Address (Self), To_Raw (Mode)));
 
    function SDL_Rotate_Surface
      (Self  : in Internal_Surface_Pointer;
-      Angle : in C.C_float) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RotateSurface";
+      Angle : in C.C_float) return Internal_Surface_Pointer is
+       (To_Internal_Surface_Pointer
+          (Raw_Surface.Rotate_Surface (To_Address (Self), Angle)));
 
    function SDL_Duplicate_Surface
-     (Self : in Internal_Surface_Pointer) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DuplicateSurface";
+     (Self : in Internal_Surface_Pointer) return Internal_Surface_Pointer is
+       (To_Internal_Surface_Pointer
+          (Raw_Surface.Duplicate_Surface (To_Address (Self))));
 
    function SDL_Scale_Surface
      (Self   : in Internal_Surface_Pointer;
       Width  : in C.int;
       Height : in C.int;
-      Mode   : in Scale_Modes) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ScaleSurface";
+      Mode   : in Scale_Modes) return Internal_Surface_Pointer is
+       (To_Internal_Surface_Pointer
+          (Raw_Surface.Scale_Surface
+             (To_Address (Self), Width, Height, To_Raw (Mode))));
 
    function SDL_Convert_Surface_And_Colourspace
      (Self         : in Internal_Surface_Pointer;
       Pixel_Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
       Palette      : in System.Address;
       Colour_Space : in Colour_Spaces;
-      Properties   : in Raw_Properties.ID) return Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ConvertSurfaceAndColorspace";
+      Properties   : in Raw_Properties.ID) return Internal_Surface_Pointer is
+       (To_Internal_Surface_Pointer
+          (Raw_Surface.Convert_Surface_And_Colourspace
+             (To_Address (Self),
+              To_Raw (Pixel_Format),
+              Palette,
+              To_Raw (Colour_Space),
+              Properties)));
 
    function SDL_Convert_Pixels
      (Width              : in C.int;
@@ -406,11 +435,16 @@ package body SDL.Video.Surfaces is
       Source_Pitch       : in C.int;
       Destination_Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
       Destination        : in System.Address;
-      Destination_Pitch  : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ConvertPixels";
+      Destination_Pitch  : in C.int) return CE.bool is
+       (Raw_Surface.Convert_Pixels
+          (Width,
+           Height,
+           To_Raw (Source_Format),
+           Source,
+           Source_Pitch,
+           To_Raw (Destination_Format),
+           Destination,
+           Destination_Pitch));
 
    function SDL_Convert_Pixels_And_Colourspace
      (Width                    : in C.int;
@@ -424,11 +458,20 @@ package body SDL.Video.Surfaces is
       Destination_Colour_Space : in Colour_Spaces;
       Destination_Properties   : in Raw_Properties.ID;
       Destination              : in System.Address;
-      Destination_Pitch        : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ConvertPixelsAndColorspace";
+      Destination_Pitch        : in C.int) return CE.bool is
+       (Raw_Surface.Convert_Pixels_And_Colourspace
+          (Width,
+           Height,
+           To_Raw (Source_Format),
+           To_Raw (Source_Colour_Space),
+           Source_Properties,
+           Source,
+           Source_Pitch,
+           To_Raw (Destination_Format),
+           To_Raw (Destination_Colour_Space),
+           Destination_Properties,
+           Destination,
+           Destination_Pitch));
 
    function SDL_Premultiply_Alpha
      (Width              : in C.int;
@@ -439,51 +482,54 @@ package body SDL.Video.Surfaces is
       Destination_Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
       Destination        : in System.Address;
       Destination_Pitch  : in C.int;
-      Linear             : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PremultiplyAlpha";
+      Linear             : in CE.bool) return CE.bool is
+       (Raw_Surface.Premultiply_Alpha
+          (Width,
+           Height,
+           To_Raw (Source_Format),
+           Source,
+           Source_Pitch,
+           To_Raw (Destination_Format),
+           Destination,
+           Destination_Pitch,
+           Linear));
 
    function SDL_Premultiply_Surface_Alpha
      (Self   : in Internal_Surface_Pointer;
-      Linear : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PremultiplySurfaceAlpha";
+      Linear : in CE.bool) return CE.bool is
+       (Raw_Surface.Premultiply_Surface_Alpha (To_Address (Self), Linear));
 
    function SDL_Clear_Surface
      (Self  : in Internal_Surface_Pointer;
       Red   : in C.C_float;
       Green : in C.C_float;
       Blue  : in C.C_float;
-      Alpha : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ClearSurface";
+      Alpha : in C.C_float) return CE.bool is
+       (Raw_Surface.Clear_Surface (To_Address (Self), Red, Green, Blue, Alpha));
 
    function SDL_Stretch_Surface
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
       Target_Area : access constant Rectangles.Rectangle;
-      Mode        : in Scale_Modes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_StretchSurface";
+      Mode        : in Scale_Modes) return CE.bool is
+       (Raw_Surface.Stretch_Surface
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area),
+           To_Raw (Mode)));
 
    function SDL_Blit_Surface_Tiled
      (Source      : in Internal_Surface_Pointer;
       Source_Area : access constant Rectangles.Rectangle;
       Target      : in Internal_Surface_Pointer;
-      Target_Area : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurfaceTiled";
+      Target_Area : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Blit_Surface_Tiled
+          (To_Address (Source),
+           To_Address (Source_Area),
+           To_Address (Target),
+           To_Address (Target_Area)));
 
    function SDL_Blit_Surface_Tiled_With_Scale
      (Source      : in Internal_Surface_Pointer;
@@ -491,11 +537,14 @@ package body SDL.Video.Surfaces is
       Scale       : in C.C_float;
       Mode        : in Scale_Modes;
       Target      : in Internal_Surface_Pointer;
-      Target_Area : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurfaceTiledWithScale";
+      Target_Area : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Blit_Surface_Tiled_With_Scale
+          (To_Address (Source),
+           To_Address (Source_Area),
+           Scale,
+           To_Raw (Mode),
+           To_Address (Target),
+           To_Address (Target_Area)));
 
    function SDL_Blit_Surface_9_Grid
      (Source        : in Internal_Surface_Pointer;
@@ -507,32 +556,34 @@ package body SDL.Video.Surfaces is
       Scale         : in C.C_float;
       Mode          : in Scale_Modes;
       Target        : in Internal_Surface_Pointer;
-      Target_Area   : access constant Rectangles.Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BlitSurface9Grid";
+      Target_Area   : access constant Rectangles.Rectangle) return CE.bool is
+       (Raw_Surface.Blit_Surface_9_Grid
+          (To_Address (Source),
+           To_Address (Source_Area),
+           Left_Width,
+           Right_Width,
+           Top_Height,
+           Bottom_Height,
+           Scale,
+           To_Raw (Mode),
+           To_Address (Target),
+           To_Address (Target_Area)));
 
    function SDL_Map_Surface_RGB
      (Self  : in Internal_Surface_Pointer;
       Red   : in Palettes.Colour_Component;
       Green : in Palettes.Colour_Component;
-      Blue  : in Palettes.Colour_Component) return Interfaces.Unsigned_32
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MapSurfaceRGB";
+      Blue  : in Palettes.Colour_Component) return Interfaces.Unsigned_32 is
+       (Raw_Surface.Map_Surface_RGB (To_Address (Self), Red, Green, Blue));
 
    function SDL_Map_Surface_RGBA
      (Self  : in Internal_Surface_Pointer;
       Red   : in Palettes.Colour_Component;
       Green : in Palettes.Colour_Component;
       Blue  : in Palettes.Colour_Component;
-      Alpha : in Palettes.Colour_Component) return Interfaces.Unsigned_32
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MapSurfaceRGBA";
+      Alpha : in Palettes.Colour_Component) return Interfaces.Unsigned_32 is
+       (Raw_Surface.Map_Surface_RGBA
+          (To_Address (Self), Red, Green, Blue, Alpha));
 
    function SDL_Read_Surface_Pixel
      (Self  : in Internal_Surface_Pointer;
@@ -541,11 +592,9 @@ package body SDL.Video.Surfaces is
       Red   : access Palettes.Colour_Component;
       Green : access Palettes.Colour_Component;
       Blue  : access Palettes.Colour_Component;
-      Alpha : access Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ReadSurfacePixel";
+      Alpha : access Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Read_Surface_Pixel
+          (To_Address (Self), X, Y, Red, Green, Blue, Alpha));
 
    function SDL_Read_Surface_Pixel_Float
      (Self  : in Internal_Surface_Pointer;
@@ -554,11 +603,9 @@ package body SDL.Video.Surfaces is
       Red   : access C.C_float;
       Green : access C.C_float;
       Blue  : access C.C_float;
-      Alpha : access C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ReadSurfacePixelFloat";
+      Alpha : access C.C_float) return CE.bool is
+       (Raw_Surface.Read_Surface_Pixel_Float
+          (To_Address (Self), X, Y, Red, Green, Blue, Alpha));
 
    function SDL_Write_Surface_Pixel
      (Self  : in Internal_Surface_Pointer;
@@ -567,11 +614,9 @@ package body SDL.Video.Surfaces is
       Red   : in Palettes.Colour_Component;
       Green : in Palettes.Colour_Component;
       Blue  : in Palettes.Colour_Component;
-      Alpha : in Palettes.Colour_Component) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_WriteSurfacePixel";
+      Alpha : in Palettes.Colour_Component) return CE.bool is
+       (Raw_Surface.Write_Surface_Pixel
+          (To_Address (Self), X, Y, Red, Green, Blue, Alpha));
 
    function SDL_Write_Surface_Pixel_Float
      (Self  : in Internal_Surface_Pointer;
@@ -580,15 +625,13 @@ package body SDL.Video.Surfaces is
       Red   : in C.C_float;
       Green : in C.C_float;
       Blue  : in C.C_float;
-      Alpha : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_WriteSurfacePixelFloat";
+      Alpha : in C.C_float) return CE.bool is
+       (Raw_Surface.Write_Surface_Pixel_Float
+          (To_Address (Self), X, Y, Red, Green, Blue, Alpha));
 
-   function To_Surface_Pointer_Address is new Ada.Unchecked_Conversion
-     (Source => Surface_Pointers.Pointer,
-      Target => System.Address);
+   function SDL_Get_Surface_Colourspace
+     (Self : in Internal_Surface_Pointer) return Colour_Spaces is
+       (To_Public (Raw_Surface.Get_Surface_Colourspace (To_Address (Self))));
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
@@ -696,13 +739,6 @@ package body SDL.Video.Surfaces is
       return Props;
    end Get_Properties;
 
-   function SDL_Get_Surface_Colourspace
-     (Self : in Internal_Surface_Pointer) return Colour_Spaces
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSurfaceColorspace";
-
    function Get_Colour_Space (Self : in Surface) return Colour_Spaces is
    begin
       Ensure_Valid (Self);
@@ -781,15 +817,15 @@ package body SDL.Video.Surfaces is
 
    function Get_Images (Self : in Surface) return Surface_Lists is
       Count : aliased C.int := 0;
-      Raw   : Surface_Pointers.Pointer := null;
+      Raw   : System.Address := System.Null_Address;
    begin
       Ensure_Valid (Self);
 
       Raw := SDL_Get_Surface_Images (Self.Internal, Count'Access);
 
       if Count <= 0 then
-         if Raw /= null then
-            SDL_Free (To_Surface_Pointer_Address (Raw));
+         if Raw /= System.Null_Address then
+            SDL_Free (Raw);
          end if;
 
          return Result : Surface_Lists (1 .. 0) do
@@ -797,29 +833,27 @@ package body SDL.Video.Surfaces is
          end return;
       end if;
 
-      if Raw = null then
+      if Raw = System.Null_Address then
          raise Surface_Error with SDL.Error.Get;
       end if;
 
-      declare
-         Source : constant Surface_Array :=
-           Surface_Pointers.Value (Raw, C.ptrdiff_t (Count));
-      begin
-         return Result : Surface_Lists (0 .. Natural (Count) - 1) do
-            for Index in Result'Range loop
-               Result (Index) :=
-                 Surface_Internal.Make_From_Pointer
-                   (Source (Source'First + C.ptrdiff_t (Index - Result'First)),
-                    Owns => False);
-            end loop;
+      return Result : Surface_Lists (0 .. Natural (Count) - 1) do
+         for Index in Result'Range loop
+            Result (Index) :=
+              Surface_Internal.Make_From_Pointer
+                (To_Internal_Surface_Pointer
+                   (Surface_List_Item
+                      (Raw,
+                       C.ptrdiff_t (Index - Result'First))),
+                 Owns => False);
+         end loop;
 
-            SDL_Free (To_Surface_Pointer_Address (Raw));
-         exception
-            when others =>
-               SDL_Free (To_Surface_Pointer_Address (Raw));
-               raise;
-         end return;
-      end;
+         SDL_Free (Raw);
+      exception
+         when others =>
+            SDL_Free (Raw);
+            raise;
+      end return;
    end Get_Images;
 
    procedure Remove_Alternate_Images (Self : in out Surface) is

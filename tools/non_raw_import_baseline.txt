@@ -8,5 +8,4 @@
 # remaining non-raw import footprint.
 
 src/sdl-video-renderers.adb 83
-src/sdl-video-surfaces.adb 59
 src/sdl-video-windows.adb 74

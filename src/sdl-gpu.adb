@@ -221,18 +221,6 @@ package body SDL.GPU is
      ((Format      => Value.Format,
        Blend_State => To_Raw (Value.Blend_State)));
 
-   type Raw_Vertex_Buffer_Description_Arrays is
-     array (C.size_t range <>) of aliased Raw.Vertex_Buffer_Description
-   with Convention => C;
-
-   type Raw_Vertex_Attribute_Arrays is
-     array (C.size_t range <>) of aliased Raw.Vertex_Attribute
-   with Convention => C;
-
-   type Raw_Colour_Target_Description_Arrays is
-     array (C.size_t range <>) of aliased Raw.Color_Target_Description
-   with Convention => C;
-
    function Array_Last (Length : in Natural) return C.size_t is
      (if Length = 0 then 0 else C.size_t (Length - 1));
 
@@ -1343,14 +1331,17 @@ package body SDL.GPU is
         SDL.Properties.Null_Property_ID)
    is
       Raw_Vertex_Buffers    :
-        aliased Raw_Vertex_Buffer_Description_Arrays
+        aliased Raw.Vertex_Buffer_Description_Array
           (0 .. Array_Last (Vertex_Buffers'Length));
       Raw_Vertex_Attributes :
-        aliased Raw_Vertex_Attribute_Arrays
+        aliased Raw.Vertex_Attribute_Array
           (0 .. Array_Last (Vertex_Attributes'Length));
       Raw_Colour_Targets    :
-        aliased Raw_Colour_Target_Description_Arrays
+        aliased Raw.Color_Target_Description_Array
           (0 .. Array_Last (Color_Targets'Length));
+      First_Vertex_Buffer   : Raw.Vertex_Buffer_Description_Access := null;
+      First_Vertex_Attribute : Raw.Vertex_Attribute_Access := null;
+      First_Color_Target    : Raw.Color_Target_Description_Access := null;
       Info                  : aliased Raw.Graphics_Pipeline_Create_Info;
       Created               : Graphics_Pipeline_Handle;
    begin
@@ -1374,18 +1365,28 @@ package body SDL.GPU is
            To_Raw (Color_Targets (Index));
       end loop;
 
+      if Vertex_Buffers'Length > 0 then
+         First_Vertex_Buffer := Raw_Vertex_Buffers (0)'Unchecked_Access;
+      end if;
+
+      if Vertex_Attributes'Length > 0 then
+         First_Vertex_Attribute := Raw_Vertex_Attributes (0)'Unchecked_Access;
+      end if;
+
+      if Color_Targets'Length > 0 then
+         First_Color_Target := Raw_Colour_Targets (0)'Unchecked_Access;
+      end if;
+
       Info :=
         (Vertex_Shader      => Vertex.Internal,
          Fragment_Shader    => Fragment.Internal,
          Vertex_Input_State =>
            (Vertex_Buffer_Descriptions =>
-              (if Vertex_Buffers'Length = 0 then System.Null_Address
-               else Raw_Vertex_Buffers'Address),
+              First_Vertex_Buffer,
             Num_Vertex_Buffers         =>
               Interfaces.Unsigned_32 (Vertex_Buffers'Length),
             Vertex_Attributes          =>
-              (if Vertex_Attributes'Length = 0 then System.Null_Address
-               else Raw_Vertex_Attributes'Address),
+              First_Vertex_Attribute,
             Num_Vertex_Attributes      =>
               Interfaces.Unsigned_32 (Vertex_Attributes'Length)),
          Primitive_Type     => To_Raw (Primitive),
@@ -1394,8 +1395,7 @@ package body SDL.GPU is
          Depth_Stencil_State => To_Raw (Depth_Stencil),
          Target_Info        =>
            (Color_Target_Descriptions =>
-              (if Color_Targets'Length = 0 then System.Null_Address
-               else Raw_Colour_Targets'Address),
+              First_Color_Target,
             Num_Color_Targets         => Interfaces.Unsigned_32 (Color_Targets'Length),
             Depth_Stencil_Format      => Depth_Stencil_Format,
             Has_Depth_Stencil_Target  => To_C_Bool (Has_Depth_Stencil_Target),

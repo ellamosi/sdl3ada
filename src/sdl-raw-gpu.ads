@@ -465,6 +465,14 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Vertex_Buffer_Description_Access is access constant
+     Vertex_Buffer_Description
+   with Convention => C;
+
+   type Vertex_Buffer_Description_Array is
+     array (C.size_t range <>) of aliased Vertex_Buffer_Description
+   with Convention => C;
+
    type Vertex_Attribute is
       record
          Location    : Unsigned_32 := 0;
@@ -474,11 +482,18 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Vertex_Attribute_Access is access constant Vertex_Attribute with
+     Convention => C;
+
+   type Vertex_Attribute_Array is
+     array (C.size_t range <>) of aliased Vertex_Attribute
+   with Convention => C;
+
    type Vertex_Input_State is
       record
-         Vertex_Buffer_Descriptions : System.Address := System.Null_Address;
+         Vertex_Buffer_Descriptions : Vertex_Buffer_Description_Access := null;
          Num_Vertex_Buffers         : Unsigned_32 := 0;
-         Vertex_Attributes          : System.Address := System.Null_Address;
+         Vertex_Attributes          : Vertex_Attribute_Access := null;
          Num_Vertex_Attributes      : Unsigned_32 := 0;
       end record
    with Convention => C;
@@ -593,9 +608,17 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Color_Target_Description_Access is access constant
+     Color_Target_Description
+   with Convention => C;
+
+   type Color_Target_Description_Array is
+     array (C.size_t range <>) of aliased Color_Target_Description
+   with Convention => C;
+
    type Graphics_Pipeline_Target_Info is
       record
-         Color_Target_Descriptions : System.Address := System.Null_Address;
+         Color_Target_Descriptions : Color_Target_Description_Access := null;
          Num_Color_Targets         : Unsigned_32 := 0;
          Depth_Stencil_Format      : Texture_Formats := Invalid_Texture_Format;
          Has_Depth_Stencil_Target  : CE.bool := CE.bool'Val (0);
@@ -610,9 +633,9 @@ package SDL.Raw.GPU is
          Vertex_Shader       : Shader_Access := null;
          Fragment_Shader     : Shader_Access := null;
          Vertex_Input_State  : SDL.Raw.GPU.Vertex_Input_State :=
-           (Vertex_Buffer_Descriptions => System.Null_Address,
+           (Vertex_Buffer_Descriptions => null,
             Num_Vertex_Buffers         => 0,
-            Vertex_Attributes          => System.Null_Address,
+            Vertex_Attributes          => null,
             Num_Vertex_Attributes      => 0);
          Primitive_Type      : Primitive_Types := Primitive_Triangle_List;
          Rasterizer_State    : SDL.Raw.GPU.Rasterizer_State :=
@@ -654,7 +677,7 @@ package SDL.Raw.GPU is
             Padding_2           => 0,
             Padding_3           => 0);
          Target_Info         : SDL.Raw.GPU.Graphics_Pipeline_Target_Info :=
-           (Color_Target_Descriptions => System.Null_Address,
+           (Color_Target_Descriptions => null,
             Num_Color_Targets         => 0,
             Depth_Stencil_Format      => Invalid_Texture_Format,
             Has_Depth_Stencil_Target  => CE.bool'Val (0),

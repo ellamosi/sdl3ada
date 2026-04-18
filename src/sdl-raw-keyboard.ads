@@ -5,7 +5,9 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
+with SDL.Raw.Rect;
 
 package SDL.Raw.Keyboard is
    pragma Preelaborate;
@@ -47,13 +49,14 @@ package SDL.Raw.Keyboard is
      Convention    => C,
      External_Name => "SDL_free";
 
-   function Get_Keyboard_Focus return System.Address
+   function Get_Keyboard_Focus return SDL.Raw.C_Pointers.Windows_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetKeyboardFocus";
 
-   function Clear_Composition (Window : in System.Address) return CE.bool
+   function Clear_Composition
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -158,14 +161,14 @@ package SDL.Raw.Keyboard is
      External_Name => "SDL_HasScreenKeyboardSupport";
 
    function Screen_Keyboard_Shown
-     (Window : in System.Address) return CE.bool
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_ScreenKeyboardShown";
 
    function Text_Input_Active
-     (Window : in System.Address) return CE.bool
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -178,8 +181,8 @@ package SDL.Raw.Keyboard is
      External_Name => "SDL_ResetKeyboard";
 
    function Set_Text_Input_Area
-     (Window : in System.Address;
-      Rect   : in System.Address;
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer;
+      Rect   : access constant SDL.Raw.Rect.Rectangle;
       Cursor : in C.int) return CE.bool
    with
      Import        => True,
@@ -187,8 +190,8 @@ package SDL.Raw.Keyboard is
      External_Name => "SDL_SetTextInputArea";
 
    function Get_Text_Input_Area
-     (Window : in System.Address;
-      Rect   : in System.Address;
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer;
+      Rect   : access SDL.Raw.Rect.Rectangle;
       Cursor : access C.int) return CE.bool
    with
      Import        => True,
@@ -196,14 +199,14 @@ package SDL.Raw.Keyboard is
      External_Name => "SDL_GetTextInputArea";
 
    function Start_Text_Input
-     (Window : in System.Address) return CE.bool
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_StartTextInput";
 
    function Start_Text_Input_With_Properties
-     (Window : in System.Address;
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer;
       Props  : in SDL.Raw.Properties.ID) return CE.bool
    with
      Import        => True,
@@ -211,7 +214,7 @@ package SDL.Raw.Keyboard is
      External_Name => "SDL_StartTextInputWithProperties";
 
    function Stop_Text_Input
-     (Window : in System.Address) return CE.bool
+     (Window : in SDL.Raw.C_Pointers.Windows_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,

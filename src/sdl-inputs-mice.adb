@@ -3,6 +3,7 @@ with Interfaces.C;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Keyboard;
 with SDL.Raw.Mouse;
 with SDL.Raw.Video;
@@ -20,6 +21,10 @@ package body SDL.Inputs.Mice is
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => Raw.ID_Pointers.Pointer,
+      Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.Raw.C_Pointers.Windows_Pointer,
       Target => System.Address);
 
    function To_Raw_Motion_Transform_Callback is new Ada.Unchecked_Conversion
@@ -100,7 +105,7 @@ package body SDL.Inputs.Mice is
          return Window;
       end if;
 
-      return SDL.Raw.Keyboard.Get_Keyboard_Focus;
+      return To_Address (SDL.Raw.Keyboard.Get_Keyboard_Focus);
    end Focused_Window;
 
    function Window_ID (Window : in System.Address) return SDL.Video.Windows.ID;

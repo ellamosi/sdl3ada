@@ -3,8 +3,10 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Keyboard;
 with SDL.Raw.Properties;
+with SDL.Raw.Rect;
 with SDL.Raw.Video;
 
 package body SDL.Inputs.Keyboards is
@@ -25,12 +27,34 @@ package body SDL.Inputs.Keyboards is
      (Source => Raw.Key_State_Access,
       Target => Key_State_Access);
 
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.Raw.C_Pointers.Windows_Pointer,
+      Target => System.Address);
+
+   function To_Raw_Window is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.Raw.C_Pointers.Windows_Pointer);
+
    function Props_ID
      (Properties : in SDL.Properties.Property_Set) return SDL.Raw.Properties.ID
    is (SDL.Raw.Properties.ID (Properties.Get_ID));
 
    function Focused_Window return System.Address is
-     (Raw.Get_Keyboard_Focus);
+     (To_Address (Raw.Get_Keyboard_Focus));
+
+   function To_Raw
+     (Value : in SDL.Video.Rectangles.Rectangle) return SDL.Raw.Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Raw.Rect.Dimension (Value.Width),
+         Height => SDL.Raw.Rect.Dimension (Value.Height)));
+
+   function To_Public
+     (Value : in SDL.Raw.Rect.Rectangle) return SDL.Video.Rectangles.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Natural_Dimension (Value.Width),
+         Height => SDL.Natural_Dimension (Value.Height)));
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL keyboard call failed");
@@ -117,7 +141,7 @@ package body SDL.Inputs.Keyboards is
    begin
       Require_Window (Window);
 
-      if not Boolean (Raw.Clear_Composition (Window)) then
+      if not Boolean (Raw.Clear_Composition (To_Raw_Window (Window))) then
          Raise_Last_Error ("SDL_ClearComposition failed");
       end if;
    end Clear_Composition_Internal;
@@ -129,7 +153,7 @@ package body SDL.Inputs.Keyboards is
    is
    begin
       Require_Window (Window);
-      return Boolean (Raw.Text_Input_Active (Window));
+      return Boolean (Raw.Text_Input_Active (To_Raw_Window (Window)));
    end Text_Input_Enabled_Internal;
 
    procedure Set_Text_Input_Area_Internal
@@ -141,14 +165,14 @@ package body SDL.Inputs.Keyboards is
       Rectangle : in SDL.Video.Rectangles.Rectangle;
       Cursor    : in SDL.Coordinate)
    is
-      Rectangle_Copy : aliased constant SDL.Video.Rectangles.Rectangle := Rectangle;
+      Rectangle_Copy : aliased constant SDL.Raw.Rect.Rectangle := To_Raw (Rectangle);
    begin
       Require_Window (Window);
 
       if not Boolean
           (Raw.Set_Text_Input_Area
-             (Window,
-              Rectangle_Copy'Address,
+             (To_Raw_Window (Window),
+              Rectangle_Copy'Access,
               Cursor => C.int (Cursor)))
       then
          Raise_Last_Error ("SDL_SetTextInputArea failed");
@@ -164,21 +188,21 @@ package body SDL.Inputs.Keyboards is
       Rectangle : out SDL.Video.Rectangles.Rectangle;
       Cursor    : out SDL.Coordinate)
    is
-      Local_Rectangle : aliased SDL.Video.Rectangles.Rectangle;
+      Local_Rectangle : aliased SDL.Raw.Rect.Rectangle := SDL.Raw.Rect.Null_Rectangle;
       Local_Cursor    : aliased C.int := 0;
    begin
       Require_Window (Window);
 
       if not Boolean
           (Raw.Get_Text_Input_Area
-             (Window,
-              Local_Rectangle'Address,
+             (To_Raw_Window (Window),
+              Local_Rectangle'Access,
               Local_Cursor'Access))
       then
          Raise_Last_Error ("SDL_GetTextInputArea failed");
       end if;
 
-      Rectangle := Local_Rectangle;
+      Rectangle := To_Public (Local_Rectangle);
       Cursor := SDL.Coordinate (Local_Cursor);
    end Get_Text_Input_Area_Internal;
 
@@ -187,7 +211,7 @@ package body SDL.Inputs.Keyboards is
    begin
       Require_Window (Window);
 
-      if not Boolean (Raw.Start_Text_Input (Window)) then
+      if not Boolean (Raw.Start_Text_Input (To_Raw_Window (Window))) then
          Raise_Last_Error ("SDL_StartTextInput failed");
       end if;
    end Start_Text_Input_Internal;
@@ -203,7 +227,8 @@ package body SDL.Inputs.Keyboards is
       Require_Window (Window);
 
       if not Boolean
-          (Raw.Start_Text_Input_With_Properties (Window, Properties))
+          (Raw.Start_Text_Input_With_Properties
+             (To_Raw_Window (Window), Properties))
       then
          Raise_Last_Error ("SDL_StartTextInputWithProperties failed");
       end if;
@@ -214,7 +239,7 @@ package body SDL.Inputs.Keyboards is
    begin
       Require_Window (Window);
 
-      if not Boolean (Raw.Stop_Text_Input (Window)) then
+      if not Boolean (Raw.Stop_Text_Input (To_Raw_Window (Window))) then
          Raise_Last_Error ("SDL_StopTextInput failed");
       end if;
    end Stop_Text_Input_Internal;
@@ -293,7 +318,7 @@ package body SDL.Inputs.Keyboards is
    is
    begin
       Require_Window (Window.Get_Internal);
-      return Boolean (Raw.Screen_Keyboard_Shown (Window.Get_Internal));
+      return Boolean (Raw.Screen_Keyboard_Shown (To_Raw_Window (Window.Get_Internal)));
    end Is_Screen_Keyboard_Visible;
 
    function Is_Text_Input_Enabled return Boolean is
@@ -317,7 +342,7 @@ package body SDL.Inputs.Keyboards is
          return False;
       end if;
 
-      return Boolean (Raw.Screen_Keyboard_Shown (Window));
+      return Boolean (Raw.Screen_Keyboard_Shown (To_Raw_Window (Window)));
    end Is_Text_Input_Shown;
 
    procedure Reset_Keyboard is

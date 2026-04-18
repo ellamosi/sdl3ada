@@ -97,8 +97,8 @@ should not grow into a second raw layer.
 | `SDL.Video.Palettes` | thin wrapper | add `SDL.Raw.Pixels` or `SDL.Raw.Surface` support as needed | Ownership and palette mutation stay handwritten. |
 | `SDL.Video.Windows`, `SDL.Video.Windows.Manager`, `SDL.Video.Windows.Makers` | thick wrapper plus maker/manager support | keep `SDL.Raw.Video`, generated support for system window manager structs if needed | All window ownership and platform-handle policy stay handwritten. |
 | `SDL.Video.Surfaces`, `SDL.Video.Surfaces.Makers` | thick wrapper plus makers | add `SDL.Raw.Surface` | Surface ownership, pixel access policy, and conversion helpers stay handwritten. |
-| `SDL.Video.Textures`, `SDL.Video.Textures.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Texture ownership and update helpers stay handwritten. |
-| `SDL.Video.Renderers`, `SDL.Video.Renderers.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Renderer state, readback, and bridge logic stay handwritten. |
+| `SDL.Video.Textures`, `SDL.Video.Textures.Makers` | thick wrapper plus makers | keep `SDL.Raw.Render` | Texture ownership and update helpers stay handwritten. |
+| `SDL.Video.Renderers`, `SDL.Video.Renderers.Makers` | thick wrapper plus makers | keep `SDL.Raw.Render` | Renderer state, readback, and bridge logic stay handwritten. |
 | `SDL.Video.GL` | public wrapper | primarily `SDL.Raw.Video`; support raw packages for any SDL-defined GL-facing value types | All direct imports in the wrapper move to raw, but OpenGL ecosystem headers remain support data, not public wrapper families. |
 | `SDL.Video.Metal` | thick wrapper | add `SDL.Raw.Metal` | Metal view lifetime remains public wrapper policy. |
 | `SDL.Video.Vulkan` | wrapper | add `SDL.Raw.Vulkan` | Loader and surface lifecycle policy stay handwritten. |
@@ -130,7 +130,7 @@ public wrapper work is added:
   `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
   `SDL.Raw.Events`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
-  `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`,
+  `SDL.Raw.Rect`, `SDL.Raw.Surface`,
   `SDL.Raw.Tray`, `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.

@@ -1,34 +1,14 @@
+with Ada.Unchecked_Conversion;
 with System;
 
 with SDL.Error;
-with SDL.Properties;
-with SDL.Video.Surfaces.Makers;
+with SDL.Raw.Render;
 with SDL.Video.Windows.Makers;
 
 package body SDL.Video.Renderers.Makers is
+   package Raw renames SDL.Raw.Render;
+
    use type System.Address;
-
-   function SDL_Create_Renderer_With_Properties
-     (Props : in SDL.Properties.Property_ID) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateRendererWithProperties";
-
-   function SDL_Create_Software_Renderer
-     (Surface : in SDL.Video.Surfaces.Internal_Surface_Pointer) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateSoftwareRenderer";
-
-   function SDL_Create_GPU_Renderer
-     (Device : in SDL.GPU.Device_Handle;
-      Window : in System.Address) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateGPURenderer";
 
    function Get_Internal_Surface
      (Self : in SDL.Video.Surfaces.Surface)
@@ -36,6 +16,14 @@ package body SDL.Video.Renderers.Makers is
    with
      Import     => True,
      Convention => Ada;
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
+      Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.GPU.Device_Handle,
+      Target => System.Address);
 
    function Resolve_Name
      (Driver : in SDL.Video.Renderers.Driver_Indices;
@@ -100,7 +88,9 @@ package body SDL.Video.Renderers.Makers is
          raise Renderer_Error with "Invalid window";
       end if;
 
-      Internal := SDL_Create_GPU_Renderer (SDL.GPU.Get_Handle (Device), Internal_Window);
+      Internal :=
+        Raw.Create_GPU_Renderer
+          (To_Address (SDL.GPU.Get_Handle (Device)), Internal_Window);
       Adopt (Rend, Internal);
    end Create;
 
@@ -135,7 +125,7 @@ package body SDL.Video.Renderers.Makers is
       end if;
 
       Internal :=
-        SDL_Create_Renderer_With_Properties (SDL.Properties.Get_ID (Props));
+        Raw.Create_Renderer_With_Properties (SDL.Properties.Get_ID (Props));
 
       Adopt (Rend, Internal);
    end Create;
@@ -159,7 +149,7 @@ package body SDL.Video.Renderers.Makers is
       Surface : in SDL.Video.Surfaces.Surface)
    is
       Internal : constant System.Address :=
-        SDL_Create_Software_Renderer (Get_Internal_Surface (Surface));
+        Raw.Create_Software_Renderer (To_Address (Get_Internal_Surface (Surface)));
    begin
       Adopt (Rend, Internal);
    end Create;
@@ -169,7 +159,7 @@ package body SDL.Video.Renderers.Makers is
       Properties : in SDL.Properties.Property_Set)
    is
       Internal : constant System.Address :=
-        SDL_Create_Renderer_With_Properties (SDL.Properties.Get_ID (Properties));
+        Raw.Create_Renderer_With_Properties (SDL.Properties.Get_ID (Properties));
    begin
       Adopt (Rend, Internal);
    end Create;

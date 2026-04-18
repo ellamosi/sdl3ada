@@ -37,6 +37,7 @@ Current raw packages include:
 - `SDL.Raw.Power`
 - `SDL.Raw.Process`
 - `SDL.Raw.Properties`
+- `SDL.Raw.Render`
 - `SDL.Raw.Sensor`
 - `SDL.Raw.Storage`
 - `SDL.Raw.System`

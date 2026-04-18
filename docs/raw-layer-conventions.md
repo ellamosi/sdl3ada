@@ -48,6 +48,7 @@ Current raw packages include:
 - `SDL.Raw.Timer`
 - `SDL.Raw.Thread`
 - `SDL.Raw.Time`
+- `SDL.Raw.Tray`
 - `SDL.Raw.Video`
 - `SDL.Raw.Version`
 

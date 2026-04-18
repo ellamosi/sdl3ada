@@ -111,7 +111,7 @@ should not grow into a second raw layer.
 | `SDL.RWops`, `SDL.RWops.Streams` | compatibility wrapper | keep `SDL.Raw.IOStream` | Public RWops compatibility stays handwritten; raw stays `SDL_IOStream`-shaped. |
 | `SDL.Dialogs` | public wrapper | keep `SDL.Raw.Dialog` | Callback lifetime and file-filter ergonomics stay handwritten. |
 | `SDL.Message_Boxes` | public wrapper | keep `SDL.Raw.MessageBox` | UI struct assembly stays handwritten. |
-| `SDL.Trays` | thick wrapper | add `SDL.Raw.Tray` | Menu-tree ownership and callbacks stay handwritten. |
+| `SDL.Trays` | thick wrapper | keep `SDL.Raw.Tray` | Menu-tree ownership and callbacks stay handwritten. |
 
 ## Raw Families To Add Or Normalize
 
@@ -131,7 +131,7 @@ public wrapper work is added:
   `SDL.Raw.Events`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Surface`,
-  `SDL.Raw.Tray`, `SDL.Raw.Vulkan`.
+  `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.
 

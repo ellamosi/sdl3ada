@@ -20,9 +20,11 @@ Current raw packages include:
 - `SDL.Raw.CPUInfo`
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
+- `SDL.Raw.Gamepad`
 - `SDL.Raw.Hints`
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
+- `SDL.Raw.Joystick`
 - `SDL.Raw.Locale`
 - `SDL.Raw.LoadSO`
 - `SDL.Raw.Log`

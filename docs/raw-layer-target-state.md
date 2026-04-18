@@ -81,7 +81,7 @@ should not grow into a second raw layer.
 | `SDL.Events.Windows`, `SDL.Events.Mice`, `SDL.Events.Touches`, `SDL.Events.Joysticks`, `SDL.Events.Joysticks.Game_Controllers`, `SDL.Events.Cameras`, `SDL.Events.Keyboards`, `SDL.Events.Pens`, `SDL.Events.Sensors`, `SDL.Events.Files` | public value layer | use `SDL.Raw.Events` plus support raw families for cross-header value types | These packages should expose event payload types and constants, but imports move to raw. |
 | `SDL.Events.Controllers` | compatibility shim | no direct imports | This remains a handwritten migration package over public gamepad/event units. |
 | `SDL.Inputs` | compatibility/value layer | no direct imports | Shared input namespace only. |
-| `SDL.Inputs.Keyboards`, `SDL.Inputs.Mice`, `SDL.Inputs.Joysticks`, `SDL.Inputs.Joysticks.Game_Controllers` | public wrappers | add `SDL.Raw.Keyboard`, `SDL.Raw.Mouse`, `SDL.Raw.Joystick`, `SDL.Raw.Gamepad` | Device queries, string conversion, arrays, and borrowed handles stay handwritten. |
+| `SDL.Inputs.Keyboards`, `SDL.Inputs.Mice`, `SDL.Inputs.Joysticks`, `SDL.Inputs.Joysticks.Game_Controllers` | public wrappers | add `SDL.Raw.Keyboard`, `SDL.Raw.Mouse`; keep `SDL.Raw.Joystick`, `SDL.Raw.Gamepad` | Device queries, string conversion, arrays, and borrowed handles stay handwritten. |
 | `SDL.Inputs.Mice.Cursors` | thick wrapper | add or reuse `SDL.Raw.Mouse` and `SDL.Raw.Surface` | Cursor construction and ownership stay handwritten. |
 | `SDL.Inputs.Joysticks.Makers`, `SDL.Inputs.Joysticks.Game_Controllers.Makers` | public makers | no direct imports | Open/close helpers remain wrappers only. |
 | `SDL.Pens` | public value or thin wrapper layer | keep `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
@@ -128,8 +128,7 @@ public wrapper work is added:
   `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
   `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
-  `SDL.Raw.Events`, `SDL.Raw.Gamepad`,
-  `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`,
+  `SDL.Raw.Events`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Keyboard`,
   `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`,
   `SDL.Raw.Tray`, `SDL.Raw.Video`, `SDL.Raw.Vulkan`.

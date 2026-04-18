@@ -751,7 +751,7 @@ package SDL.Raw.Video is
 
    function Get_Window_Safe_Area
      (Value : in Window_Pointer;
-      Area  : in System.Address) return CE.bool
+      Area  : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -943,7 +943,7 @@ package SDL.Raw.Video is
 
    function Update_Window_Surface_Rects
      (Value      : in Window_Pointer;
-      Rectangles : in System.Address;
+      Rectangles : access constant SDL.Raw.Rect.Rectangle;
       Total      : in C.int) return CE.bool
    with
      Import        => True,
@@ -995,14 +995,14 @@ package SDL.Raw.Video is
 
    function Set_Window_Mouse_Rect
      (Value     : in Window_Pointer;
-      Rectangle : in System.Address) return CE.bool
+      Rectangle : access constant SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowMouseRect";
 
    function Get_Window_Mouse_Rect
-     (Value : in Window_Pointer) return System.Address
+     (Value : in Window_Pointer) return SDL.Raw.Rect.Rectangle_Access
    with
      Import        => True,
      Convention    => C,

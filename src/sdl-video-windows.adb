@@ -4,12 +4,14 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Rect;
 with SDL.Raw.Video;
 with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Windows is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw_Rect renames SDL.Raw.Rect;
    package Raw_Video renames SDL.Raw.Video;
    package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
@@ -87,23 +89,26 @@ package body SDL.Video.Windows is
       Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
 
    function To_Rectangle_Access is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Raw_Rect.Rectangle_Access,
       Target => Rectangle_Access);
 
    function To_Raw_Hit_Test_Callback is new Ada.Unchecked_Conversion
      (Source => Hit_Test_Callback,
       Target => Raw_Video.Window_Hit_Test_Callback);
 
-   function To_Address
-     (Value : access constant SDL.Video.Rectangles.Rectangle)
-      return System.Address is
-       (if Value = null then System.Null_Address else Value.all'Address);
+   function To_Raw
+     (Value : in SDL.Video.Rectangles.Rectangle) return Raw_Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => Raw_Rect.Dimension (Value.Width),
+         Height => Raw_Rect.Dimension (Value.Height)));
 
-   function To_Address
-     (Value : in SDL.Video.Rectangles.Rectangle_Arrays) return System.Address is
-       (if Value'Length = 0
-        then System.Null_Address
-        else Value (Value'First)'Address);
+   function To_Public
+     (Value : in Raw_Rect.Rectangle) return SDL.Video.Rectangles.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Natural_Dimension (Value.Width),
+         Height => SDL.Natural_Dimension (Value.Height)));
 
    function To_Raw
      (Value : in Flash_Operations) return Raw_Video.Flash_Operation is
@@ -308,10 +313,26 @@ package body SDL.Video.Windows is
 
    function SDL_Get_Window_Safe_Area
      (Value : in System.Address;
-      Area  : access SDL.Video.Rectangles.Rectangle) return CE.bool is
-       (Raw_Video.Get_Window_Safe_Area
-          (To_Window_Pointer (Value),
-           (if Area = null then System.Null_Address else Area.all'Address)));
+      Area  : access SDL.Video.Rectangles.Rectangle) return CE.bool
+   is
+   begin
+      if Area = null then
+         return Raw_Video.Get_Window_Safe_Area (To_Window_Pointer (Value), null);
+      end if;
+
+      declare
+         Converted : aliased Raw_Rect.Rectangle := Raw_Rect.Null_Rectangle;
+         Result    : constant CE.bool :=
+           Raw_Video.Get_Window_Safe_Area
+             (To_Window_Pointer (Value), Converted'Access);
+      begin
+         if Boolean (Result) then
+            Area.all := To_Public (Converted);
+         end if;
+
+         return Result;
+      end;
+   end SDL_Get_Window_Safe_Area;
 
    function SDL_Set_Window_Aspect_Ratio
      (Value   : in System.Address;
@@ -443,16 +464,52 @@ package body SDL.Video.Windows is
    function SDL_Update_Window_Surface_Rects
      (Value      : in System.Address;
       Rectangles : access constant SDL.Video.Rectangles.Rectangle;
-      Total      : in C.int) return CE.bool is
-       (Raw_Video.Update_Window_Surface_Rects
-          (To_Window_Pointer (Value), To_Address (Rectangles), Total));
+      Total      : in C.int) return CE.bool
+   is
+   begin
+      if Rectangles = null then
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), null, Total);
+      end if;
+
+      declare
+         Converted : aliased constant Raw_Rect.Rectangle := To_Raw (Rectangles.all);
+      begin
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), Converted'Access, Total);
+      end;
+   end SDL_Update_Window_Surface_Rects;
 
    function SDL_Update_Window_Surface_Rects
      (Value      : in System.Address;
       Rectangles : in SDL.Video.Rectangles.Rectangle_Arrays;
-      Total      : in C.int) return CE.bool is
-       (Raw_Video.Update_Window_Surface_Rects
-          (To_Window_Pointer (Value), To_Address (Rectangles), Total));
+      Total      : in C.int) return CE.bool
+   is
+      Count : constant C.int := C.int'Min (Total, C.int (Rectangles'Length));
+   begin
+      if Count <= 0 then
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), null, 0);
+      end if;
+
+      declare
+         Converted : Raw_Rect.Rectangle_Array (0 .. C.size_t (Count - 1));
+      begin
+         for Index in Converted'Range loop
+            Converted (Index) :=
+              To_Raw
+                (Rectangles
+                   (Rectangles'First + Index - Converted'First));
+         end loop;
+
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), Converted (Converted'First)'Access, Count);
+      end;
+   end SDL_Update_Window_Surface_Rects;
 
    function SDL_Destroy_Window_Surface
      (Value : in System.Address) return CE.bool is
@@ -484,9 +541,21 @@ package body SDL.Video.Windows is
 
    function SDL_Set_Window_Mouse_Rect
      (Value     : in System.Address;
-      Rectangle : access constant SDL.Video.Rectangles.Rectangle) return CE.bool is
-       (Raw_Video.Set_Window_Mouse_Rect
-          (To_Window_Pointer (Value), To_Address (Rectangle)));
+      Rectangle : access constant SDL.Video.Rectangles.Rectangle) return CE.bool
+   is
+   begin
+      if Rectangle = null then
+         return Raw_Video.Set_Window_Mouse_Rect (To_Window_Pointer (Value), null);
+      end if;
+
+      declare
+         Converted : aliased constant Raw_Rect.Rectangle := To_Raw (Rectangle.all);
+      begin
+         return
+           Raw_Video.Set_Window_Mouse_Rect
+             (To_Window_Pointer (Value), Converted'Access);
+      end;
+   end SDL_Set_Window_Mouse_Rect;
 
    function SDL_Get_Window_Mouse_Rect
      (Value : in System.Address)

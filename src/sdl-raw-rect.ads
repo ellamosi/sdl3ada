@@ -16,6 +16,9 @@ package SDL.Raw.Rect is
    end record
    with Convention => C;
 
+   type Point_Access is access constant Point with
+     Convention => C;
+
    type Point_Array is array (C.size_t range <>) of aliased Point with
      Convention => C;
 
@@ -26,6 +29,12 @@ package SDL.Raw.Rect is
       Height : Dimension;
    end record
    with Convention => C;
+
+   type Rectangle_Access is access constant Rectangle with
+     Convention => C;
+
+   type Rectangle_Array is array (C.size_t range <>) of aliased Rectangle with
+     Convention => C;
 
    Null_Rectangle : constant Rectangle := (others => 0);
 

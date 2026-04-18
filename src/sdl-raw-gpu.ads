@@ -4,9 +4,8 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.Pixels;
 with SDL.Raw.Properties;
-with SDL.Video.Pixel_Formats;
-with SDL.Video.Rectangles;
 
 package SDL.Raw.GPU is
    pragma Preelaborate;
@@ -1048,7 +1047,7 @@ package SDL.Raw.GPU is
 
    procedure Set_Scissor
      (Render_Pass : in Render_Pass_Access;
-      Scissor     : access constant SDL.Video.Rectangles.Rectangle)
+      Scissor     : in System.Address)
    with
      Import        => True,
      Convention    => C,
@@ -1566,14 +1565,14 @@ package SDL.Raw.GPU is
 
    function Get_Pixel_Format_From_Texture_Format
      (Format : in Texture_Formats)
-      return SDL.Video.Pixel_Formats.Pixel_Format_Names
+      return SDL.Raw.Pixels.Pixel_Format_Name
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetPixelFormatFromGPUTextureFormat";
 
    function Get_Texture_Format_From_Pixel_Format
-     (Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
+     (Format : in SDL.Raw.Pixels.Pixel_Format_Name)
       return Texture_Formats
    with
      Import        => True,

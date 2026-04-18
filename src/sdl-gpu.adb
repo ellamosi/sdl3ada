@@ -4,6 +4,7 @@ with Interfaces.C.Strings;
 
 with SDL.Error;
 with SDL.Platform;
+with SDL.Raw.Pixels;
 
 package body SDL.GPU is
    package CE renames Interfaces.C.Extensions;
@@ -757,12 +758,14 @@ package body SDL.GPU is
    function Pixel_Format_From_Texture_Format
      (Format : in Texture_Formats)
       return SDL.Video.Pixel_Formats.Pixel_Format_Names is
-     (Raw.Get_Pixel_Format_From_Texture_Format (Format));
+     (SDL.Video.Pixel_Formats.Pixel_Format_Names
+        (Raw.Get_Pixel_Format_From_Texture_Format (Format)));
 
    function Texture_Format_From_Pixel_Format
      (Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
       return Texture_Formats is
-     (Raw.Get_Texture_Format_From_Pixel_Format (Format));
+     (Raw.Get_Texture_Format_From_Pixel_Format
+        (SDL.Raw.Pixels.Pixel_Format_Name (Format)));
 
    function Create_Buffer
      (Device     : in SDL.GPU.Device;
@@ -2506,7 +2509,7 @@ package body SDL.GPU is
       Raw_Scissor : aliased constant SDL.Video.Rectangles.Rectangle := Scissor;
    begin
       Require_Render_Pass (Self);
-      Raw.Set_Scissor (Self.Internal, Raw_Scissor'Access);
+      Raw.Set_Scissor (Self.Internal, Raw_Scissor'Address);
    end Set_Scissor;
 
    procedure Set_Blend_Constants

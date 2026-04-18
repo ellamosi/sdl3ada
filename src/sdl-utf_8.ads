@@ -1,11 +1,12 @@
-with Interfaces;
+with SDL.Raw.UTF_8;
 
 package SDL.UTF_8 is
    pragma Preelaborate;
 
-   subtype Code_Points is Interfaces.Unsigned_32;
+   subtype Code_Points is SDL.Raw.UTF_8.Code_Points;
 
-   Invalid_Code_Point : constant Code_Points := 16#0000_FFFD#;
+   Invalid_Code_Point : constant Code_Points :=
+     SDL.Raw.UTF_8.Invalid_Unicode_Code_Point;
 
    function Step
      (Item     : in String;

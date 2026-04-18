@@ -4,8 +4,6 @@ with Interfaces.C;
 with System;
 with System.Storage_Elements;
 
-with SDL.Raw.UTF_8;
-
 package body SDL.UTF_8 is
    package C renames Interfaces.C;
    package Raw renames SDL.Raw.UTF_8;

@@ -17,6 +17,20 @@ package SDL.Raw.Audio is
    subtype Property_ID is SDL.Raw.Properties.ID;
    subtype Sample_Format is Interfaces.Unsigned_32;
 
+   Unknown : constant Sample_Format := 16#0000#;
+
+   Sample_Format_U8 : constant Sample_Format := 16#0008#;
+   Sample_Format_S8 : constant Sample_Format := 16#8008#;
+
+   Sample_Format_S16LSB : constant Sample_Format := 16#8010#;
+   Sample_Format_S16MSB : constant Sample_Format := 16#9010#;
+
+   Sample_Format_S32LSB : constant Sample_Format := 16#8020#;
+   Sample_Format_S32MSB : constant Sample_Format := 16#9020#;
+
+   Sample_Format_F32LSB : constant Sample_Format := 16#8120#;
+   Sample_Format_F32MSB : constant Sample_Format := 16#9120#;
+
    type Postmix_Callback is access procedure
      (User_Data   : in System.Address;
       Spec        : in System.Address;

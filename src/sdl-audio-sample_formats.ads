@@ -1,5 +1,7 @@
 with System;
 
+with SDL.Raw.Audio;
+
 package SDL.Audio.Sample_Formats is
    pragma Preelaborate;
 
@@ -16,19 +18,28 @@ package SDL.Audio.Sample_Formats is
       then Big_Endian
       else Little_Endian);
 
-   Unknown : constant SDL.Audio.Sample_Format := 16#0000#;
+   Unknown : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Unknown);
 
-   Sample_Format_U8 : constant SDL.Audio.Sample_Format := 16#0008#;
-   Sample_Format_S8 : constant SDL.Audio.Sample_Format := 16#8008#;
+   Sample_Format_U8 : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_U8);
+   Sample_Format_S8 : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_S8);
 
-   Sample_Format_S16LSB : constant SDL.Audio.Sample_Format := 16#8010#;
-   Sample_Format_S16MSB : constant SDL.Audio.Sample_Format := 16#9010#;
+   Sample_Format_S16LSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_S16LSB);
+   Sample_Format_S16MSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_S16MSB);
 
-   Sample_Format_S32LSB : constant SDL.Audio.Sample_Format := 16#8020#;
-   Sample_Format_S32MSB : constant SDL.Audio.Sample_Format := 16#9020#;
+   Sample_Format_S32LSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_S32LSB);
+   Sample_Format_S32MSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_S32MSB);
 
-   Sample_Format_F32LSB : constant SDL.Audio.Sample_Format := 16#8120#;
-   Sample_Format_F32MSB : constant SDL.Audio.Sample_Format := 16#9120#;
+   Sample_Format_F32LSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_F32LSB);
+   Sample_Format_F32MSB : constant SDL.Audio.Sample_Format :=
+     SDL.Audio.Sample_Format (SDL.Raw.Audio.Sample_Format_F32MSB);
 
    Sample_Format_S16 : constant SDL.Audio.Sample_Format :=
      (if System.Default_Bit_Order = System.High_Order_First

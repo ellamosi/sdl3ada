@@ -92,10 +92,7 @@ package SDL is
    function Initialise (Flags : in Init_Flags := Enable_Everything) return Boolean with
      Inline;
 
-   procedure Quit with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_Quit";
+   procedure Quit;
 
    procedure Finalise renames Quit;
 
@@ -117,10 +114,7 @@ package SDL is
 
    function Get_App_Metadata_Property (Name : in String) return String;
 
-   procedure Quit_Sub_System (Flags : in Init_Flags) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_QuitSubSystem";
+   procedure Quit_Sub_System (Flags : in Init_Flags);
 
    procedure Finalise_Sub_System (Flags : in Init_Flags) renames Quit_Sub_System;
 

@@ -12,7 +12,6 @@ package body SDL.Main is
 
    use type App_Init_Callback;
    use type App_Iterate_Callback;
-   use type App_Event_Callback;
    use type App_Quit_Callback;
    use type CS.chars_ptr;
 

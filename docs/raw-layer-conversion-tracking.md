@@ -66,7 +66,7 @@ state.
 | `SDL.Raw.LoadSO` | present | `complete` | Added and now owns all shared-object loading imports used by `SDL.Libraries`. |
 | `SDL.Raw.Locale` | present | `complete` | Existing raw family now also owns locale-list cleanup via `SDL_free`, and `SDL.Locale` no longer imports SDL symbols directly. |
 | `SDL.Raw.Log` | present | `complete` | Added and now owns all SDL log entry points, including callback and variadic logging APIs, used by `SDL.Log`. |
-| `SDL.Raw.Main` | present | `partial` | Now owns the app-entry callback ABI types split out of `SDL.Raw.Init`, using raw address-based event callback parameters so it no longer depends on public event-layout packages; higher-level callback policy still lives in handwritten main-entry packages. |
+| `SDL.Raw.Main` | present | `complete` | Now owns the app-entry callback ABI types split out of `SDL.Raw.Init`, using raw address-based event callback parameters so it no longer depends on public event-layout packages, while higher-level callback policy remains in handwritten `SDL.Main` wrapper code above raw. |
 | `SDL.Raw.Main_Callbacks` | present | `complete` | Raw support package for the exported `SDL_App*` callback entry points, now bridged through raw callback ABI types without depending on `SDL.Main` or public event-layout packages. |
 | `SDL.Raw.Metal` | present | `complete` | Added as a narrow support family and now owns the Metal view create/destroy/get-layer entry points used by `SDL.Video.Metal`. |
 | `SDL.Raw.MessageBox` | present | `complete` | Added and now owns the message-box entry points used by `SDL.Message_Boxes`, while the public wrapper keeps struct assembly and string policy. |

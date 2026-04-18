@@ -6,6 +6,7 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Raw.C_Pointers;
+with SDL.Raw.Keyboard_Types;
 with SDL.Raw.Properties;
 with SDL.Raw.Rect;
 
@@ -16,17 +17,10 @@ package SDL.Raw.Keyboard is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
 
-   type ID is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
-
-   subtype Key_Modifier is Interfaces.Unsigned_16;
-
-   type Scan_Code is range 0 .. 512 with
-     Convention => C,
-     Size       => 32;
-
-   subtype Key_Code is Interfaces.Unsigned_32;
+   subtype ID is SDL.Raw.Keyboard_Types.ID;
+   subtype Key_Modifier is SDL.Raw.Keyboard_Types.Key_Modifier;
+   subtype Scan_Code is SDL.Raw.Keyboard_Types.Scan_Code;
+   subtype Key_Code is SDL.Raw.Keyboard_Types.Key_Code;
 
    type ID_Array is array (C.ptrdiff_t range <>) of aliased ID with
      Convention => C;

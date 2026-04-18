@@ -20,7 +20,7 @@ Status values:
 - [ ] Raw packages depend only on raw or support packages.
 - [ ] Compatibility packages are frozen and do not gain new low-level behavior.
 - [x] A repository check exists for non-raw imports.
-- [ ] Development docs describe generated raw ownership and review policy.
+- [x] Development docs describe generated raw ownership and review policy.
 
 ## Workstream Board
 
@@ -31,7 +31,7 @@ Status values:
 | W2 Value package migration | Public value-heavy packages stop importing directly | `in progress` | Started with `SDL.Pens`; event payload and other pure helper/value units still need raw-backed cleanup. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `in progress` | `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.MessageBox`, `SDL.Raw.Pen`, `SDL.Raw.Sensor`, and `SDL.Raw.Tray` now exist. `SDL.Audio`, `SDL.Audio.Devices`, `SDL.Audio.Streams`, `SDL.Cameras`, `SDL.Dialogs`, `SDL.HIDAPI`, `SDL.Haptics`, `SDL.Message_Boxes`, `SDL.Sensors`, `SDL.Trays`, joystick/gamepad event polling, and joystick/gamepad maker helpers route through raw; the remaining W3 work is now concentrated in the broader input wrappers. |
 | W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Render` and `SDL.Raw.Video` now exist as starter families for texture/renderer creation plus window creation and property queries. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
-| W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`; compatibility freeze work and final closure remain open. |
+| W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`, and the generated-raw ownership plus compatibility-freeze policy are documented; compatibility package follow-through and final closure remain open. |
 
 ## Existing Raw Families
 

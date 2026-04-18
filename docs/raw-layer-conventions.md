@@ -101,12 +101,34 @@ Current raw packages include:
 - Packages that create owned SDL resources should prefer Ada controlled types
   when that keeps destruction reliable without hiding SDL behavior.
 
+## Generated Raw Ownership
+
+- Generated `SDL.Raw.*` units own the auditable ABI surface: direct C imports,
+  SDL symbol names, C-layout enums and records, callback signatures, and
+  low-level pointer helpers required to mirror SDL arrays and buffers.
+- Handwritten public wrappers own Ada-facing policy: exceptions, ownership,
+  callbacks that need registries or trampolines, string and array conversion,
+  and compatibility naming carried forward for `sdlada` callers.
+- Review new low-level work against the generated-raw target first. If a
+  public or compatibility unit needs a new SDL symbol, add it to the relevant
+  raw family before touching the wrapper above it.
+
 ## Error Handling
 
 - Raw imports return SDL success/failure results directly.
 - Wrapper packages translate failure into existing package-specific exceptions
   with `SDL.Error.Get` so diagnostics remain consistent with the current code
   base.
+
+## Compatibility Freeze
+
+- `SDL.C_Pointers`, `SDL.Events.Controllers`, `SDL.Inputs`, `SDL.RWops`, and
+  `SDL.RWops.Streams` are compatibility or support namespaces, not raw homes.
+- These packages may wrap, rename, or bridge raw-backed behavior for caller
+  compatibility, but they should not accumulate new `Import`, `External_Name`,
+  or ABI-layout responsibilities during conversion.
+- When conversion work touches one of these packages, treat new low-level
+  requirements as a signal to extend the raw family below it instead.
 
 ## Coverage Inventory
 

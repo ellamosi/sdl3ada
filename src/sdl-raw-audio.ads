@@ -4,6 +4,8 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.Properties;
+
 package SDL.Raw.Audio is
    pragma Preelaborate;
 
@@ -12,6 +14,7 @@ package SDL.Raw.Audio is
    package CS renames Interfaces.C.Strings;
 
    subtype Device_ID is Interfaces.Unsigned_32;
+   subtype Property_ID is SDL.Raw.Properties.ID;
    subtype Sample_Format is Interfaces.Unsigned_32;
 
    type Postmix_Callback is access procedure
@@ -26,6 +29,12 @@ package SDL.Raw.Audio is
       Stream            : in System.Address;
       Additional_Amount : in C.int;
       Total_Amount      : in C.int)
+   with Convention => C;
+
+   type Data_Complete_Callback is access procedure
+     (User_Data   : in System.Address;
+      Buffer      : in System.Address;
+      Byte_Length : in C.int)
    with Convention => C;
 
    function Get_Num_Audio_Drivers return C.int
@@ -174,6 +183,25 @@ package SDL.Raw.Audio is
      Convention    => C,
      External_Name => "SDL_CreateAudioStream";
 
+   function Open_Audio_Device_Stream
+     (Device    : in Device_ID;
+      Spec      : in System.Address;
+      Callback  : in Stream_Callback;
+      User_Data : in System.Address) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_OpenAudioDeviceStream";
+
+   function Bind_Audio_Streams
+     (Device      : in Device_ID;
+      Stream_List : in System.Address;
+      Num_Streams : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_BindAudioStreams";
+
    function Bind_Audio_Stream
      (Device : in Device_ID;
       Stream : in System.Address) return CE.bool
@@ -181,6 +209,117 @@ package SDL.Raw.Audio is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_BindAudioStream";
+
+   procedure Unbind_Audio_Streams
+     (Stream_List : in System.Address;
+      Num_Streams : in C.int)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_UnbindAudioStreams";
+
+   procedure Unbind_Audio_Stream
+     (Stream : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_UnbindAudioStream";
+
+   function Get_Audio_Stream_Device
+     (Stream : in System.Address) return Device_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamDevice";
+
+   function Get_Audio_Stream_Properties
+     (Stream : in System.Address) return Property_ID
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamProperties";
+
+   function Get_Audio_Stream_Format
+     (Stream       : in System.Address;
+      Source       : in System.Address;
+      Destination  : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamFormat";
+
+   function Set_Audio_Stream_Format
+     (Stream       : in System.Address;
+      Source       : in System.Address;
+      Destination  : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamFormat";
+
+   function Get_Audio_Stream_Frequency_Ratio
+     (Stream : in System.Address) return C.C_float
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamFrequencyRatio";
+
+   function Set_Audio_Stream_Frequency_Ratio
+     (Stream : in System.Address;
+      Ratio  : in C.C_float) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamFrequencyRatio";
+
+   function Get_Audio_Stream_Gain
+     (Stream : in System.Address) return C.C_float
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamGain";
+
+   function Set_Audio_Stream_Gain
+     (Stream : in System.Address;
+      Gain   : in C.C_float) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamGain";
+
+   function Get_Audio_Stream_Input_Channel_Map
+     (Stream : in System.Address;
+      Count  : access C.int) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamInputChannelMap";
+
+   function Get_Audio_Stream_Output_Channel_Map
+     (Stream : in System.Address;
+      Count  : access C.int) return System.Address
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetAudioStreamOutputChannelMap";
+
+   function Set_Audio_Stream_Input_Channel_Map
+     (Stream : in System.Address;
+      Map    : in System.Address;
+      Count  : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamInputChannelMap";
+
+   function Set_Audio_Stream_Output_Channel_Map
+     (Stream : in System.Address;
+      Map    : in System.Address;
+      Count  : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamOutputChannelMap";
 
    function Put_Audio_Stream_Data
      (Stream      : in System.Address;
@@ -190,6 +329,27 @@ package SDL.Raw.Audio is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_PutAudioStreamData";
+
+   function Put_Audio_Stream_Data_No_Copy
+     (Stream      : in System.Address;
+      Data        : in System.Address;
+      Byte_Length : in C.int;
+      Callback    : in Data_Complete_Callback;
+      User_Data   : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_PutAudioStreamDataNoCopy";
+
+   function Put_Audio_Stream_Planar_Data
+     (Stream           : in System.Address;
+      Channel_Buffers  : in System.Address;
+      Channel_Count    : in C.int;
+      Samples_Per_Chan : in C.int) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_PutAudioStreamPlanarData";
 
    function Get_Audio_Stream_Data
      (Stream      : in System.Address;
@@ -221,6 +381,48 @@ package SDL.Raw.Audio is
      Convention    => C,
      External_Name => "SDL_ClearAudioStream";
 
+   function Flush_Audio_Stream
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_FlushAudioStream";
+
+   function Pause_Audio_Stream_Device
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_PauseAudioStreamDevice";
+
+   function Resume_Audio_Stream_Device
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_ResumeAudioStreamDevice";
+
+   function Audio_Stream_Device_Paused
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_AudioStreamDevicePaused";
+
+   function Lock_Audio_Stream
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_LockAudioStream";
+
+   function Unlock_Audio_Stream
+     (Stream : in System.Address) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_UnlockAudioStream";
+
    procedure Destroy_Audio_Stream
      (Stream : in System.Address)
    with
@@ -237,6 +439,16 @@ package SDL.Raw.Audio is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetAudioStreamGetCallback";
+
+   function Set_Audio_Stream_Put_Callback
+     (Stream    : in System.Address;
+      Callback  : in Stream_Callback;
+      User_Data : in System.Address)
+      return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetAudioStreamPutCallback";
 
    function Load_WAV_IO
      (Source      : in System.Address;

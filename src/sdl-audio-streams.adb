@@ -1,16 +1,15 @@
-with Ada.Streams;
+with Ada.Unchecked_Conversion;
 
 with Interfaces.C;
-with Interfaces.C.Extensions;
 
 with SDL.Error;
+with SDL.Raw.Audio;
 
 package body SDL.Audio.Streams is
    package C renames Interfaces.C;
-   package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Audio;
 
    use type C.C_float;
-   use type C.int;
    use type C.ptrdiff_t;
    use type Ada.Streams.Stream_Element_Offset;
    use type Property_ID;
@@ -28,283 +27,13 @@ package body SDL.Audio.Streams is
    type Channel_Map_Array is array (C.ptrdiff_t range <>) of aliased SDL.C.int with
      Convention => C;
 
-   function SDL_Create_Audio_Stream
-     (Source      : access constant SDL.Audio.Spec;
-      Destination : access constant SDL.Audio.Spec) return Stream_Handle
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateAudioStream";
+   function To_Raw_Stream_Callback is new Ada.Unchecked_Conversion
+     (Source => Stream_Callback,
+      Target => Raw.Stream_Callback);
 
-   function SDL_Open_Audio_Device_Stream
-     (Device    : in SDL.Audio.Device_ID;
-      Spec      : access constant SDL.Audio.Spec;
-      Callback  : in Stream_Callback;
-      User_Data : in System.Address) return Stream_Handle
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenAudioDeviceStream";
-
-   function SDL_Bind_Audio_Streams
-     (Device      : in SDL.Audio.Device_ID;
-      Stream_List : in System.Address;
-      Num_Streams : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BindAudioStreams";
-
-   function SDL_Bind_Audio_Stream
-     (Device       : in SDL.Audio.Device_ID;
-      Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BindAudioStream";
-
-   procedure SDL_Unbind_Audio_Streams
-     (Stream_List : in System.Address;
-      Num_Streams : in C.int)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UnbindAudioStreams";
-
-   procedure SDL_Unbind_Audio_Stream
-     (Audio_Stream : in Stream_Handle)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UnbindAudioStream";
-
-   function SDL_Get_Audio_Stream_Device
-     (Audio_Stream : in Stream_Handle) return SDL.Audio.Device_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamDevice";
-
-   function SDL_Get_Audio_Stream_Properties
-     (Audio_Stream : in Stream_Handle) return Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamProperties";
-
-   function SDL_Get_Audio_Stream_Format
-     (Audio_Stream : in Stream_Handle;
-      Source       : access SDL.Audio.Spec;
-      Destination  : access SDL.Audio.Spec) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamFormat";
-
-   function SDL_Set_Audio_Stream_Format
-     (Audio_Stream : in Stream_Handle;
-      Source       : access constant SDL.Audio.Spec;
-      Destination  : access constant SDL.Audio.Spec) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamFormat";
-
-   function SDL_Get_Audio_Stream_Frequency_Ratio
-     (Audio_Stream : in Stream_Handle) return C.C_float
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamFrequencyRatio";
-
-   function SDL_Set_Audio_Stream_Frequency_Ratio
-     (Audio_Stream : in Stream_Handle;
-      Ratio        : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamFrequencyRatio";
-
-   function SDL_Get_Audio_Stream_Gain
-     (Audio_Stream : in Stream_Handle) return C.C_float
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamGain";
-
-   function SDL_Set_Audio_Stream_Gain
-     (Audio_Stream : in Stream_Handle;
-      Gain         : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamGain";
-
-   function SDL_Get_Audio_Stream_Input_Channel_Map
-     (Audio_Stream : in Stream_Handle;
-      Count        : access C.int) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamInputChannelMap";
-
-   function SDL_Get_Audio_Stream_Output_Channel_Map
-     (Audio_Stream : in Stream_Handle;
-      Count        : access C.int) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamOutputChannelMap";
-
-   function SDL_Set_Audio_Stream_Input_Channel_Map
-     (Audio_Stream : in Stream_Handle;
-      Map          : access constant SDL.C.int;
-      Count        : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamInputChannelMap";
-
-   function SDL_Set_Audio_Stream_Output_Channel_Map
-     (Audio_Stream : in Stream_Handle;
-      Map          : access constant SDL.C.int;
-      Count        : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamOutputChannelMap";
-
-   function SDL_Put_Audio_Stream_Data
-     (Audio_Stream : in Stream_Handle;
-      Data         : in System.Address;
-      Byte_Length  : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PutAudioStreamData";
-
-   function SDL_Put_Audio_Stream_Data_No_Copy
-     (Audio_Stream : in Stream_Handle;
-      Data         : in System.Address;
-      Byte_Length  : in C.int;
-      Callback     : in Data_Complete_Callback;
-      User_Data    : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PutAudioStreamDataNoCopy";
-
-   function SDL_Put_Audio_Stream_Planar_Data
-     (Audio_Stream     : in Stream_Handle;
-      Channel_Buffers  : in System.Address;
-      Channel_Count    : in C.int;
-      Samples_Per_Chan : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PutAudioStreamPlanarData";
-
-   function SDL_Get_Audio_Stream_Data
-     (Audio_Stream : in Stream_Handle;
-      Data         : in System.Address;
-      Byte_Length  : in C.int) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamData";
-
-   function SDL_Get_Audio_Stream_Available
-     (Audio_Stream : in Stream_Handle) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamAvailable";
-
-   function SDL_Get_Audio_Stream_Queued
-     (Audio_Stream : in Stream_Handle) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamQueued";
-
-   function SDL_Flush_Audio_Stream
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_FlushAudioStream";
-
-   function SDL_Clear_Audio_Stream
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ClearAudioStream";
-
-   function SDL_Pause_Audio_Stream_Device
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PauseAudioStreamDevice";
-
-   function SDL_Resume_Audio_Stream_Device
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResumeAudioStreamDevice";
-
-   function SDL_Audio_Stream_Device_Paused
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AudioStreamDevicePaused";
-
-   function SDL_Lock_Audio_Stream
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LockAudioStream";
-
-   function SDL_Unlock_Audio_Stream
-     (Audio_Stream : in Stream_Handle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UnlockAudioStream";
-
-   function SDL_Set_Audio_Stream_Get_Callback
-     (Audio_Stream : in Stream_Handle;
-      Callback     : in Stream_Callback;
-      User_Data    : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamGetCallback";
-
-   function SDL_Set_Audio_Stream_Put_Callback
-     (Audio_Stream : in Stream_Handle;
-      Callback     : in Stream_Callback;
-      User_Data    : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamPutCallback";
-
-   procedure SDL_Destroy_Audio_Stream
-     (Audio_Stream : in Stream_Handle)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DestroyAudioStream";
-
-   procedure SDL_Free (Value : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   function To_Raw_Data_Complete_Callback is new Ada.Unchecked_Conversion
+     (Source => Data_Complete_Callback,
+      Target => Raw.Data_Complete_Callback);
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL audio stream call failed");
@@ -352,7 +81,7 @@ package body SDL.Audio.Streams is
       end if;
 
       if Count <= 0 then
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Empty_Channel_Map;
       end if;
 
@@ -367,11 +96,11 @@ package body SDL.Audio.Streams is
             Result (Index) := Raw_Map (C.ptrdiff_t (Index - 1));
          end loop;
 
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            Raw.Free (Items);
             raise;
       end;
    end Copy_Channel_Map;
@@ -412,9 +141,9 @@ package body SDL.Audio.Streams is
       Close (Self);
 
       Self.Internal :=
-        SDL_Create_Audio_Stream
-          (Source_Spec'Access,
-           Destination_Spec'Access);
+        Raw.Create_Audio_Stream
+          (Source_Spec'Address,
+           Destination_Spec'Address);
 
       if Self.Internal = System.Null_Address then
          Raise_Last_Error ("Audio stream creation failed");
@@ -429,7 +158,10 @@ package body SDL.Audio.Streams is
    begin
       Close (Self);
 
-      Self.Internal := SDL_Create_Audio_Stream (Source_Spec'Access, null);
+      Self.Internal :=
+        Raw.Create_Audio_Stream
+          (Source_Spec'Address,
+           System.Null_Address);
 
       if Self.Internal = System.Null_Address then
          Raise_Last_Error ("Audio stream creation failed");
@@ -439,7 +171,7 @@ package body SDL.Audio.Streams is
    function Device (Self : in Stream) return SDL.Audio.Device_ID is
    begin
       Require_Open (Self);
-      return SDL_Get_Audio_Stream_Device (Self.Internal);
+      return SDL.Audio.Device_ID (Raw.Get_Audio_Stream_Device (Self.Internal));
    end Device;
 
    procedure Open
@@ -456,10 +188,10 @@ package body SDL.Audio.Streams is
       Close (Self);
 
       Self.Internal :=
-        SDL_Open_Audio_Device_Stream
-          (Device    => Device,
-           Spec      => Application_Spec'Access,
-           Callback  => Callback,
+        Raw.Open_Audio_Device_Stream
+          (Device    => Raw.Device_ID (Device),
+           Spec      => Application_Spec'Address,
+           Callback  => To_Raw_Stream_Callback (Callback),
            User_Data => User_Data);
 
       if Self.Internal = System.Null_Address then
@@ -487,10 +219,10 @@ package body SDL.Audio.Streams is
       Close (Self);
 
       Self.Internal :=
-        SDL_Open_Audio_Device_Stream
-          (Device    => Device,
-           Spec      => null,
-           Callback  => Callback,
+        Raw.Open_Audio_Device_Stream
+          (Device    => Raw.Device_ID (Device),
+           Spec      => System.Null_Address,
+           Callback  => To_Raw_Stream_Callback (Callback),
            User_Data => User_Data);
 
       if Self.Internal = System.Null_Address then
@@ -513,7 +245,11 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Bind_Audio_Stream (Device, Self.Internal)) then
+      if not Boolean
+          (Raw.Bind_Audio_Stream
+             (Device => Raw.Device_ID (Device),
+              Stream => Self.Internal))
+      then
          Raise_Last_Error ("Audio stream bind failed");
       end if;
    end Bind;
@@ -545,8 +281,8 @@ package body SDL.Audio.Streams is
          end loop;
 
          if not Boolean
-             (SDL_Bind_Audio_Streams
-                (Device      => Device,
+             (Raw.Bind_Audio_Streams
+                (Device      => Raw.Device_ID (Device),
                  Stream_List => Handles (Handles'First)'Address,
                  Num_Streams => C.int (Streams'Length)))
          then
@@ -558,7 +294,7 @@ package body SDL.Audio.Streams is
    procedure Unbind (Self : in Stream) is
    begin
       Require_Open (Self);
-      SDL_Unbind_Audio_Stream (Self.Internal);
+      Raw.Unbind_Audio_Stream (Self.Internal);
    end Unbind;
 
    procedure Unbind (Streams : in Stream_References) is
@@ -583,7 +319,7 @@ package body SDL.Audio.Streams is
             end;
          end loop;
 
-         SDL_Unbind_Audio_Streams
+         Raw.Unbind_Audio_Streams
            (Stream_List => Handles (Handles'First)'Address,
             Num_Streams => C.int (Streams'Length));
       end;
@@ -600,10 +336,10 @@ package body SDL.Audio.Streams is
       end if;
 
       if not Boolean
-          (SDL_Put_Audio_Stream_Data
-             (Audio_Stream => Self,
-              Data         => Data,
-              Byte_Length  => C.int (Byte_Length)))
+          (Raw.Put_Audio_Stream_Data
+             (Stream      => Self,
+              Data        => Data,
+              Byte_Length => C.int (Byte_Length)))
       then
          Raise_Last_Error ("Audio stream put failed");
       end if;
@@ -630,12 +366,12 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Put_Audio_Stream_Data_No_Copy
-             (Audio_Stream => Self.Internal,
-              Data         => Data,
-              Byte_Length  => C.int (Byte_Length),
-              Callback     => Callback,
-              User_Data    => User_Data))
+          (Raw.Put_Audio_Stream_Data_No_Copy
+             (Stream      => Self.Internal,
+              Data        => Data,
+              Byte_Length => C.int (Byte_Length),
+              Callback    => To_Raw_Data_Complete_Callback (Callback),
+              User_Data   => User_Data))
       then
          Raise_Last_Error ("Audio stream no-copy put failed");
       end if;
@@ -662,8 +398,8 @@ package body SDL.Audio.Streams is
          end loop;
 
          if not Boolean
-             (SDL_Put_Audio_Stream_Planar_Data
-                (Audio_Stream     => Self.Internal,
+             (Raw.Put_Audio_Stream_Planar_Data
+                (Stream           => Self.Internal,
                  Channel_Buffers  => Raw_Buffers (Raw_Buffers'First)'Address,
                  Channel_Count    => C.int (Channel_Buffers'Length),
                  Samples_Per_Chan => C.int (Sample_Count)))
@@ -687,10 +423,10 @@ package body SDL.Audio.Streams is
       end if;
 
       Read_Count :=
-        SDL_Get_Audio_Stream_Data
-          (Audio_Stream => Self.Internal,
-           Data         => Data,
-           Byte_Length  => C.int (Byte_Length));
+        Raw.Get_Audio_Stream_Data
+          (Stream      => Self.Internal,
+           Data        => Data,
+           Byte_Length => C.int (Byte_Length));
 
       if Read_Count < 0 then
          Raise_Last_Error ("Audio stream get failed");
@@ -715,9 +451,10 @@ package body SDL.Audio.Streams is
    end Get;
 
    function Get_Frequency_Ratio (Self : in Stream) return Frequency_Ratio is
-      Ratio : constant C.C_float := SDL_Get_Audio_Stream_Frequency_Ratio (Self.Internal);
+      Ratio : C.C_float;
    begin
       Require_Open (Self);
+      Ratio := Raw.Get_Audio_Stream_Frequency_Ratio (Self.Internal);
 
       if Ratio = 0.0 then
          Raise_Last_Error ("Audio stream frequency-ratio query failed");
@@ -734,18 +471,19 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Frequency_Ratio
-             (Audio_Stream => Self.Internal,
-              Ratio        => C.C_float (Ratio)))
+          (Raw.Set_Audio_Stream_Frequency_Ratio
+             (Stream => Self.Internal,
+              Ratio  => C.C_float (Ratio)))
       then
          Raise_Last_Error ("Audio stream frequency-ratio update failed");
       end if;
    end Set_Frequency_Ratio;
 
    function Get_Gain (Self : in Stream) return Float is
-      Gain : constant C.C_float := SDL_Get_Audio_Stream_Gain (Self.Internal);
+      Gain : C.C_float;
    begin
       Require_Open (Self);
+      Gain := Raw.Get_Audio_Stream_Gain (Self.Internal);
 
       if Gain < 0.0 and then SDL.Error.Get /= "" then
          Raise_Last_Error ("Audio stream gain query failed");
@@ -762,9 +500,9 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Gain
-             (Audio_Stream => Self.Internal,
-              Gain         => C.C_float (Gain)))
+          (Raw.Set_Audio_Stream_Gain
+             (Stream => Self.Internal,
+              Gain   => C.C_float (Gain)))
       then
          Raise_Last_Error ("Audio stream gain update failed");
       end if;
@@ -775,7 +513,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      Queued := SDL_Get_Audio_Stream_Queued (Self.Internal);
+      Queued := Raw.Get_Audio_Stream_Queued (Self.Internal);
 
       if Queued < 0 then
          Raise_Last_Error ("Audio stream queued-byte query failed");
@@ -789,7 +527,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      Available := SDL_Get_Audio_Stream_Available (Self.Internal);
+      Available := Raw.Get_Audio_Stream_Available (Self.Internal);
 
       if Available < 0 then
          Raise_Last_Error ("Audio stream available-byte query failed");
@@ -809,10 +547,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Get_Audio_Stream_Format
-             (Audio_Stream => Self.Internal,
-              Source       => Input_Spec'Access,
-              Destination  => Output_Spec'Access))
+          (Raw.Get_Audio_Stream_Format
+             (Stream      => Self.Internal,
+              Source      => Input_Spec'Address,
+              Destination => Output_Spec'Address))
       then
          Raise_Last_Error ("Audio stream format query failed");
       end if;
@@ -832,10 +570,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Format
-             (Audio_Stream => Self.Internal,
-              Source       => Input_Spec'Access,
-              Destination  => Output_Spec'Access))
+          (Raw.Set_Audio_Stream_Format
+             (Stream      => Self.Internal,
+              Source      => Input_Spec'Address,
+              Destination => Output_Spec'Address))
       then
          Raise_Last_Error ("Audio stream format update failed");
       end if;
@@ -850,10 +588,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Format
-             (Audio_Stream => Self.Internal,
-              Source       => Input_Spec'Access,
-              Destination  => null))
+          (Raw.Set_Audio_Stream_Format
+             (Stream      => Self.Internal,
+              Source      => Input_Spec'Address,
+              Destination => System.Null_Address))
       then
          Raise_Last_Error ("Audio stream input-format update failed");
       end if;
@@ -868,10 +606,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Format
-             (Audio_Stream => Self.Internal,
-              Source       => null,
-              Destination  => Output_Spec'Access))
+          (Raw.Set_Audio_Stream_Format
+             (Stream      => Self.Internal,
+              Source      => System.Null_Address,
+              Destination => Output_Spec'Address))
       then
          Raise_Last_Error ("Audio stream output-format update failed");
       end if;
@@ -886,9 +624,9 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       Items :=
-        SDL_Get_Audio_Stream_Input_Channel_Map
-          (Audio_Stream => Self.Internal,
-           Count        => Count'Access);
+        Raw.Get_Audio_Stream_Input_Channel_Map
+          (Stream => Self.Internal,
+           Count  => Count'Access);
       return Copy_Channel_Map (Items => Items, Count => Count);
    end Get_Input_Channel_Map;
 
@@ -901,9 +639,9 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       Items :=
-        SDL_Get_Audio_Stream_Output_Channel_Map
-          (Audio_Stream => Self.Internal,
-           Count        => Count'Access);
+        Raw.Get_Audio_Stream_Output_Channel_Map
+          (Stream => Self.Internal,
+           Count  => Count'Access);
       return Copy_Channel_Map (Items => Items, Count => Count);
    end Get_Output_Channel_Map;
 
@@ -925,10 +663,10 @@ package body SDL.Audio.Streams is
       end loop;
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Input_Channel_Map
-             (Audio_Stream => Self.Internal,
-              Map          => Raw_Map (Raw_Map'First)'Access,
-              Count        => C.int (Map'Length)))
+          (Raw.Set_Audio_Stream_Input_Channel_Map
+             (Stream => Self.Internal,
+              Map    => Raw_Map (Raw_Map'First)'Address,
+              Count  => C.int (Map'Length)))
       then
          Raise_Last_Error ("Audio stream input channel-map update failed");
       end if;
@@ -943,10 +681,10 @@ package body SDL.Audio.Streams is
       Get_Format (Self, Input_Spec, Output_Spec);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Input_Channel_Map
-             (Audio_Stream => Self.Internal,
-              Map          => null,
-              Count        => Input_Spec.Channels))
+          (Raw.Set_Audio_Stream_Input_Channel_Map
+             (Stream => Self.Internal,
+              Map    => System.Null_Address,
+              Count  => Input_Spec.Channels))
       then
          Raise_Last_Error ("Audio stream input channel-map reset failed");
       end if;
@@ -970,10 +708,10 @@ package body SDL.Audio.Streams is
       end loop;
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Output_Channel_Map
-             (Audio_Stream => Self.Internal,
-              Map          => Raw_Map (Raw_Map'First)'Access,
-              Count        => C.int (Map'Length)))
+          (Raw.Set_Audio_Stream_Output_Channel_Map
+             (Stream => Self.Internal,
+              Map    => Raw_Map (Raw_Map'First)'Address,
+              Count  => C.int (Map'Length)))
       then
          Raise_Last_Error ("Audio stream output channel-map update failed");
       end if;
@@ -988,19 +726,20 @@ package body SDL.Audio.Streams is
       Get_Format (Self, Input_Spec, Output_Spec);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Output_Channel_Map
-             (Audio_Stream => Self.Internal,
-              Map          => null,
-              Count        => Output_Spec.Channels))
+          (Raw.Set_Audio_Stream_Output_Channel_Map
+             (Stream => Self.Internal,
+              Map    => System.Null_Address,
+              Count  => Output_Spec.Channels))
       then
          Raise_Last_Error ("Audio stream output channel-map reset failed");
       end if;
    end Clear_Output_Channel_Map;
 
    function Get_Properties (Self : in Stream) return Property_ID is
-      Props : constant Property_ID := SDL_Get_Audio_Stream_Properties (Self.Internal);
+      Props : Property_ID;
    begin
       Require_Open (Self);
+      Props := Property_ID (Raw.Get_Audio_Stream_Properties (Self.Internal));
 
       if Props = Null_Property_ID then
          Raise_Last_Error ("Audio stream property query failed");
@@ -1012,14 +751,14 @@ package body SDL.Audio.Streams is
    function Device_Paused (Self : in Stream) return Boolean is
    begin
       Require_Open (Self);
-      return Boolean (SDL_Audio_Stream_Device_Paused (Self.Internal));
+      return Boolean (Raw.Audio_Stream_Device_Paused (Self.Internal));
    end Device_Paused;
 
    procedure Pause (Self : in Stream) is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Pause_Audio_Stream_Device (Self.Internal)) then
+      if not Boolean (Raw.Pause_Audio_Stream_Device (Self.Internal)) then
          Raise_Last_Error ("Audio stream device pause failed");
       end if;
    end Pause;
@@ -1028,7 +767,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Resume_Audio_Stream_Device (Self.Internal)) then
+      if not Boolean (Raw.Resume_Audio_Stream_Device (Self.Internal)) then
          Raise_Last_Error ("Audio stream device resume failed");
       end if;
    end Resume;
@@ -1037,7 +776,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Lock_Audio_Stream (Self.Internal)) then
+      if not Boolean (Raw.Lock_Audio_Stream (Self.Internal)) then
          Raise_Last_Error ("Audio stream lock failed");
       end if;
    end Lock;
@@ -1046,7 +785,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Unlock_Audio_Stream (Self.Internal)) then
+      if not Boolean (Raw.Unlock_Audio_Stream (Self.Internal)) then
          Raise_Last_Error ("Audio stream unlock failed");
       end if;
    end Unlock;
@@ -1055,7 +794,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Flush_Audio_Stream (Self.Internal)) then
+      if not Boolean (Raw.Flush_Audio_Stream (Self.Internal)) then
          Raise_Last_Error ("Audio stream flush failed");
       end if;
    end Flush;
@@ -1064,7 +803,7 @@ package body SDL.Audio.Streams is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Clear_Audio_Stream (Self.Internal)) then
+      if not Boolean (Raw.Clear_Audio_Stream (Self.Internal)) then
          Raise_Last_Error ("Audio stream clear failed");
       end if;
    end Clear;
@@ -1078,10 +817,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Get_Callback
-             (Audio_Stream => Self.Internal,
-              Callback     => Callback,
-              User_Data    => User_Data))
+          (Raw.Set_Audio_Stream_Get_Callback
+             (Stream    => Self.Internal,
+              Callback  => To_Raw_Stream_Callback (Callback),
+              User_Data => User_Data))
       then
          Raise_Last_Error ("Audio stream get-callback update failed");
       end if;
@@ -1096,10 +835,10 @@ package body SDL.Audio.Streams is
       Require_Open (Self);
 
       if not Boolean
-          (SDL_Set_Audio_Stream_Put_Callback
-             (Audio_Stream => Self.Internal,
-              Callback     => Callback,
-              User_Data    => User_Data))
+          (Raw.Set_Audio_Stream_Put_Callback
+             (Stream    => Self.Internal,
+              Callback  => To_Raw_Stream_Callback (Callback),
+              User_Data => User_Data))
       then
          Raise_Last_Error ("Audio stream put-callback update failed");
       end if;
@@ -1108,7 +847,7 @@ package body SDL.Audio.Streams is
    procedure Close (Self : in out Stream) is
    begin
       if Self.Is_Open then
-         SDL_Destroy_Audio_Stream (Self.Internal);
+         Raw.Destroy_Audio_Stream (Self.Internal);
          Self.Internal := System.Null_Address;
       end if;
    end Close;

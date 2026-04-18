@@ -1,133 +1,34 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C.Extensions;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.Sensor;
 
 package body SDL.Sensors is
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Sensor;
 
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
+   use type Raw.ID_Pointers.Pointer;
    use type SDL.C_Pointers.Sensor_Pointer;
    use type SDL.Properties.Property_ID;
    use type System.Address;
 
-   type ID_Arrays is array (C.ptrdiff_t range <>) of aliased ID with
-     Convention => C;
-
-   package ID_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => ID,
-      Element_Array      => ID_Arrays,
-      Default_Terminator => 0);
-
-   use type ID_Pointers.Pointer;
-
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => ID_Pointers.Pointer,
+     (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   function To_Raw_ID (Value : in ID) return Raw.ID is
+     (Raw.ID (Value));
 
-   function SDL_Get_Sensors
-     (Count : access C.int) return ID_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensors";
+   function To_Public_ID (Value : in Raw.ID) return ID is
+     (ID (Value));
 
-   function SDL_Get_Sensor_Name_For_ID
-     (Instance : in ID) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorNameForID";
-
-   function SDL_Get_Sensor_Type_For_ID
-     (Instance : in ID) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorTypeForID";
-
-   function SDL_Get_Sensor_Non_Portable_Type_For_ID
-     (Instance : in ID) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorNonPortableTypeForID";
-
-   function SDL_Open_Sensor
-     (Instance : in ID) return SDL.C_Pointers.Sensor_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenSensor";
-
-   function SDL_Get_Sensor_From_ID
-     (Instance : in ID) return SDL.C_Pointers.Sensor_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorFromID";
-
-   function SDL_Get_Sensor_Properties
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorProperties";
-
-   function SDL_Get_Sensor_Name
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorName";
-
-   function SDL_Get_Sensor_Type
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorType";
-
-   function SDL_Get_Sensor_Non_Portable_Type
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorNonPortableType";
-
-   function SDL_Get_Sensor_ID
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorID";
-
-   function SDL_Get_Sensor_Data
-     (Self       : in SDL.C_Pointers.Sensor_Pointer;
-      Data       : in System.Address;
-      Value_Count : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSensorData";
-
-   procedure SDL_Close_Sensor
-     (Self : in SDL.C_Pointers.Sensor_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseSensor";
+   function To_Public_Type is new Ada.Unchecked_Conversion
+     (Source => Raw.Types,
+      Target => Types);
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL sensor call failed");
@@ -153,63 +54,65 @@ package body SDL.Sensors is
       end if;
    end Require_Valid;
 
-   procedure Free (Items : in out ID_Pointers.Pointer);
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer);
 
-   procedure Free (Items : in out ID_Pointers.Pointer) is
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer) is
    begin
       if Items /= null then
-         SDL_Free (To_Address (Items));
+         Raw.Free (To_Address (Items));
          Items := null;
       end if;
    end Free;
 
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists;
 
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists
    is
-      Raw : ID_Pointers.Pointer := Items;
+      Raw_Items : Raw.ID_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Last_Error ("Sensor enumeration failed");
       end if;
 
       declare
-         Source : constant ID_Arrays :=
-           ID_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.ID_Arrays :=
+           Raw.ID_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : ID_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
             Result (Index) :=
-              Source (Source'First + C.ptrdiff_t (Index - Result'First));
+              To_Public_ID
+                (Source (Source'First + C.ptrdiff_t (Index - Result'First)));
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_IDs;
 
    function Get_Sensors return ID_Lists is
       Count : aliased C.int := 0;
-      Items : constant ID_Pointers.Pointer := SDL_Get_Sensors (Count'Access);
+      Items : constant Raw.ID_Pointers.Pointer := Raw.Get_Sensors (Count'Access);
    begin
       return Copy_IDs (Items, Count);
    end Get_Sensors;
 
    function Name (Instance : in ID) return String is
-      Value : constant CS.chars_ptr := SDL_Get_Sensor_Name_For_ID (Instance);
+      Value : constant CS.chars_ptr :=
+        Raw.Get_Sensor_Name_For_ID (To_Raw_ID (Instance));
    begin
       if Value = CS.Null_Ptr then
          return "";
@@ -220,12 +123,12 @@ package body SDL.Sensors is
 
    function Get_Type (Instance : in ID) return Types is
    begin
-      return SDL_Get_Sensor_Type_For_ID (Instance);
+      return To_Public_Type (Raw.Get_Sensor_Type_For_ID (To_Raw_ID (Instance)));
    end Get_Type;
 
    function Get_Non_Portable_Type (Instance : in ID) return C.int is
    begin
-      return SDL_Get_Sensor_Non_Portable_Type_For_ID (Instance);
+      return Raw.Get_Sensor_Non_Portable_Type_For_ID (To_Raw_ID (Instance));
    end Get_Non_Portable_Type;
 
    function Open (Instance : in ID) return Sensor is
@@ -243,7 +146,7 @@ package body SDL.Sensors is
    begin
       Close (Self);
 
-      Internal := SDL_Open_Sensor (Instance);
+      Internal := Raw.Open_Sensor (To_Raw_ID (Instance));
       if Internal = null then
          Raise_Last_Error ("SDL_OpenSensor failed");
       end if;
@@ -255,7 +158,7 @@ package body SDL.Sensors is
    function Get (Instance : in ID) return Sensor is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => SDL_Get_Sensor_From_ID (Instance),
+              Internal => Raw.Get_Sensor_From_ID (To_Raw_ID (Instance)),
               Owns     => False);
    end Get;
 
@@ -268,7 +171,7 @@ package body SDL.Sensors is
    procedure Close (Self : in out Sensor) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         SDL_Close_Sensor (Self.Internal);
+         Raw.Close_Sensor (Self.Internal);
       end if;
 
       Self.Internal := null;
@@ -285,7 +188,7 @@ package body SDL.Sensors is
          return 0;
       end if;
 
-      Result := SDL_Get_Sensor_ID (Self.Internal);
+      Result := To_Public_ID (Raw.Get_Sensor_ID (Self.Internal));
       if Result = 0 then
          Raise_Last_Error ("SDL_GetSensorID failed");
       end if;
@@ -300,7 +203,8 @@ package body SDL.Sensors is
    begin
       Require_Valid (Self);
 
-      Props := SDL_Get_Sensor_Properties (Self.Internal);
+      Props := SDL.Properties.Property_ID
+        (Raw.Get_Sensor_Properties (Self.Internal));
       if Props = SDL.Properties.Null_Property_ID then
          Raise_Last_Error ("SDL_GetSensorProperties failed");
       end if;
@@ -313,7 +217,7 @@ package body SDL.Sensors is
    begin
       Require_Valid (Self);
 
-      Value := SDL_Get_Sensor_Name (Self.Internal);
+      Value := Raw.Get_Sensor_Name (Self.Internal);
       if Value = CS.Null_Ptr then
          return "";
       end if;
@@ -324,13 +228,13 @@ package body SDL.Sensors is
    function Get_Type (Self : in Sensor) return Types is
    begin
       Require_Valid (Self);
-      return SDL_Get_Sensor_Type (Self.Internal);
+      return To_Public_Type (Raw.Get_Sensor_Type (Self.Internal));
    end Get_Type;
 
    function Get_Non_Portable_Type (Self : in Sensor) return C.int is
    begin
       Require_Valid (Self);
-      return SDL_Get_Sensor_Non_Portable_Type (Self.Internal);
+      return Raw.Get_Sensor_Non_Portable_Type (Self.Internal);
    end Get_Non_Portable_Type;
 
    procedure Get_Data
@@ -345,7 +249,7 @@ package body SDL.Sensors is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Get_Sensor_Data
+          (Raw.Get_Sensor_Data
              (Self.Internal, Buffer_Address, C.int (Data'Length)))
       then
          Raise_Last_Error ("SDL_GetSensorData failed");
@@ -367,4 +271,9 @@ package body SDL.Sensors is
    begin
       return Self.Internal;
    end Get_Internal;
+
+   procedure Update is
+   begin
+      Raw.Update;
+   end Update;
 end SDL.Sensors;

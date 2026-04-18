@@ -29,10 +29,12 @@ Current raw packages include:
 - `SDL.Raw.Main`
 - `SDL.Raw.Misc`
 - `SDL.Raw.Mutex`
+- `SDL.Raw.Pen`
 - `SDL.Raw.Platform`
 - `SDL.Raw.Power`
 - `SDL.Raw.Process`
 - `SDL.Raw.Properties`
+- `SDL.Raw.Sensor`
 - `SDL.Raw.Storage`
 - `SDL.Raw.System`
 - `SDL.Raw.Timer`

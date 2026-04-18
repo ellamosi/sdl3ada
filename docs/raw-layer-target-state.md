@@ -84,8 +84,8 @@ should not grow into a second raw layer.
 | `SDL.Inputs.Keyboards`, `SDL.Inputs.Mice`, `SDL.Inputs.Joysticks`, `SDL.Inputs.Joysticks.Game_Controllers` | public wrappers | add `SDL.Raw.Keyboard`, `SDL.Raw.Mouse`, `SDL.Raw.Joystick`, `SDL.Raw.Gamepad` | Device queries, string conversion, arrays, and borrowed handles stay handwritten. |
 | `SDL.Inputs.Mice.Cursors` | thick wrapper | add or reuse `SDL.Raw.Mouse` and `SDL.Raw.Surface` | Cursor construction and ownership stay handwritten. |
 | `SDL.Inputs.Joysticks.Makers`, `SDL.Inputs.Joysticks.Game_Controllers.Makers` | public makers | no direct imports | Open/close helpers remain wrappers only. |
-| `SDL.Pens` | public value or thin wrapper layer | add `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
-| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | add `SDL.Raw.Sensor`, `SDL.Raw.Haptic`, `SDL.Raw.Camera`, `SDL.Raw.HIDAPI` | Ownership, copying, and runtime checks stay handwritten. |
+| `SDL.Pens` | public value or thin wrapper layer | keep `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
+| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | keep `SDL.Raw.Sensor`; add `SDL.Raw.Haptic`, `SDL.Raw.Camera`, `SDL.Raw.HIDAPI` | Ownership, copying, and runtime checks stay handwritten. |
 
 ### Video, Render, And GPU
 
@@ -130,8 +130,8 @@ public wrapper work is added:
   `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
   `SDL.Raw.Events`, `SDL.Raw.Gamepad`,
   `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`,
-  `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Pixels`,
-  `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Sensor`, `SDL.Raw.Surface`,
+  `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
+  `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Surface`,
   `SDL.Raw.Tray`, `SDL.Raw.Video`, `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.

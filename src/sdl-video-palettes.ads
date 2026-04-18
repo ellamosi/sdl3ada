@@ -4,6 +4,8 @@ with Interfaces.C;
 with Interfaces.C.Pointers;
 with System;
 
+with SDL.Raw.Pixels;
+
 package SDL.Video.Palettes is
    pragma Preelaborate;
    pragma Elaborate_Body;
@@ -89,17 +91,8 @@ private
       Element_Array      => Colour_Arrays,
       Default_Terminator => (others => 0));
 
-   type Internal_Palette is
-      record
-         Total     : C.int;
-         Colours   : Colour_Array_Pointer.Pointer;
-         Version   : Interfaces.Unsigned_32;
-         Ref_Count : C.int;
-      end record with
-     Convention => C;
-
-   type Internal_Palette_Access is access Internal_Palette with
-     Convention => C;
+   subtype Internal_Palette is SDL.Raw.Pixels.Palette;
+   subtype Internal_Palette_Access is SDL.Raw.Pixels.Palette_Access;
 
    type Palette is tagged limited
       record

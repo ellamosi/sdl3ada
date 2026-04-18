@@ -3,10 +3,12 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Video;
 
 package body SDL.Video.GL is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Video;
 
    use type System.Address;
 
@@ -67,27 +69,14 @@ package body SDL.Video.GL is
      (Source => Profiles,
       Target => C.int);
 
-   function SDL_GL_Set_Attribute
-     (Attr  : in Attributes;
-      Value : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GL_SetAttribute";
-
-   function SDL_GL_Get_Attribute
-     (Attr  : in Attributes;
-      Value : access C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GL_GetAttribute";
+   function To_Raw (Value : in Attributes) return Raw.GL_Attribute is
+     (Raw.GL_Attribute'Val (Attributes'Pos (Value)));
 
    function Get_Attribute_Int (Attr : in Attributes) return C.int;
    function Get_Attribute_Int (Attr : in Attributes) return C.int is
       Value : aliased C.int := 0;
    begin
-      if not Boolean (SDL_GL_Get_Attribute (Attr, Value'Access)) then
+      if not Boolean (Raw.Get_GL_Attribute (To_Raw (Attr), Value'Access)) then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
 
@@ -102,7 +91,7 @@ package body SDL.Video.GL is
       Value : in C.int)
    is
    begin
-      if not Boolean (SDL_GL_Set_Attribute (Attr, Value)) then
+      if not Boolean (Raw.Set_GL_Attribute (To_Raw (Attr), Value)) then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
    end Set_Attribute_Int;
@@ -331,37 +320,23 @@ package body SDL.Video.GL is
      (Self : in out Contexts;
       From : in SDL.Video.Windows.Window)
    is
-      function SDL_GL_Create_Context
-        (Window : in System.Address) return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_CreateContext";
-
-      Raw : constant System.Address :=
-        SDL_GL_Create_Context (SDL.Video.Windows.Get_Internal (From));
+      Context : constant System.Address :=
+        Raw.Create_GL_Context (SDL.Video.Windows.Get_Internal (From));
    begin
-      if Raw = System.Null_Address then
+      if Context = System.Null_Address then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
 
-      Self.Internal := Raw;
+      Self.Internal := Context;
       Self.Owns := True;
    end Create;
 
    overriding
    procedure Finalize (Self : in out Contexts) is
-      function SDL_GL_Destroy_Context
-        (Context : in System.Address) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_DestroyContext";
-
       Ignored : CE.bool;
    begin
       if Self.Owns and then Self.Internal /= System.Null_Address then
-         Ignored := SDL_GL_Destroy_Context (Self.Internal);
+         Ignored := Raw.Destroy_GL_Context (Self.Internal);
          pragma Unreferenced (Ignored);
       end if;
 
@@ -370,15 +345,10 @@ package body SDL.Video.GL is
    end Finalize;
 
    function Get_Current return Contexts is
-      function SDL_GL_Get_Current_Context return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_GetCurrentContext";
    begin
       return Result : constant Contexts :=
         (Ada.Finalization.Limited_Controlled with
-         Internal => SDL_GL_Get_Current_Context,
+         Internal => Raw.Get_Current_GL_Context,
          Owns     => False)
       do
          if Result.Internal = System.Null_Address then
@@ -388,46 +358,25 @@ package body SDL.Video.GL is
    end Get_Current;
 
    function Get_Current_Window return SDL.Video.Windows.Window is
-      function SDL_GL_Get_Current_Window return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_GetCurrentWindow";
-
-      function SDL_Get_Window_ID
-        (Value : in System.Address) return SDL.Video.Windows.ID
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetWindowID";
-
-      Window_Ptr : constant System.Address := SDL_GL_Get_Current_Window;
+      Window_Ptr : constant System.Address := Raw.Get_Current_GL_Window;
    begin
       if Window_Ptr = System.Null_Address then
          return SDL.Video.Windows.Get (0);
       end if;
 
-      return SDL.Video.Windows.Get (SDL_Get_Window_ID (Window_Ptr));
+      return SDL.Video.Windows.Get
+        (SDL.Video.Windows.ID (Raw.Get_Window_ID (Window_Ptr)));
    end Get_Current_Window;
 
    procedure Get_Drawable_Size
      (Window        : in SDL.Video.Windows.Window;
       Width, Height : out SDL.Natural_Dimension)
    is
-      function SDL_Get_Window_Size_In_Pixels
-        (Value  : in System.Address;
-         Width  : access C.int;
-         Height : access C.int) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetWindowSizeInPixels";
-
       Raw_Width  : aliased C.int := 0;
       Raw_Height : aliased C.int := 0;
    begin
       if not Boolean
-          (SDL_Get_Window_Size_In_Pixels
+          (Raw.Get_Window_Size_In_Pixels
              (SDL.Video.Windows.Get_Internal (Window),
               Raw_Width'Access,
               Raw_Height'Access))
@@ -443,16 +392,9 @@ package body SDL.Video.GL is
      (Self : in Contexts;
       To   : in SDL.Video.Windows.Window)
    is
-      function SDL_GL_Make_Current
-        (Window  : in System.Address;
-         Context : in System.Address) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_MakeCurrent";
    begin
       if not Boolean
-          (SDL_GL_Make_Current
+          (Raw.Make_GL_Current
              (SDL.Video.Windows.Get_Internal (To), Self.Internal))
       then
          raise SDL_GL_Error with SDL.Error.Get;
@@ -487,51 +429,29 @@ package body SDL.Video.GL is
    end Unbind_Texture;
 
    function Get_Proc_Address (Name : in String) return Function_Pointer is
-      function SDL_EGL_Get_Proc_Address
-        (Proc : in C.char_array) return Function_Pointer
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_EGL_GetProcAddress";
    begin
-      return SDL_EGL_Get_Proc_Address (C.To_C (Name));
+      return Raw.EGL_Get_Proc_Address (C.To_C (Name));
    end Get_Proc_Address;
 
    function Get_Current_Display return EGL_Display is
-      function SDL_EGL_Get_Current_Display return EGL_Display
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_EGL_GetCurrentDisplay";
    begin
-      return SDL_EGL_Get_Current_Display;
+      return Raw.Get_Current_EGL_Display;
    end Get_Current_Display;
 
    function Get_Current_Config return EGL_Config is
-      function SDL_EGL_Get_Current_Config return EGL_Config
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_EGL_GetCurrentConfig";
    begin
-      return SDL_EGL_Get_Current_Config;
+      return Raw.Get_Current_EGL_Config;
    end Get_Current_Config;
 
    function Get_Window_Surface
      (Window : in SDL.Video.Windows.Window) return EGL_Surface
    is
-      function SDL_EGL_Get_Window_Surface
-        (Value : in System.Address) return EGL_Surface
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_EGL_GetWindowSurface";
    begin
       if SDL.Video.Windows.Is_Null (Window) then
          return System.Null_Address;
       end if;
 
-      return SDL_EGL_Get_Window_Surface (SDL.Video.Windows.Get_Internal (Window));
+      return Raw.Get_EGL_Window_Surface (SDL.Video.Windows.Get_Internal (Window));
    end Get_Window_Surface;
 
    procedure Set_Attribute_Callbacks
@@ -540,83 +460,56 @@ package body SDL.Video.GL is
       Context_Attributes  : in EGL_Integer_Array_Callback := null;
       User_Data           : in System.Address := System.Null_Address)
    is
-      procedure SDL_EGL_Set_Attribute_Callbacks
-        (Platform_Attributes : in EGL_Attribute_Array_Callback;
-         Surface_Attributes  : in EGL_Integer_Array_Callback;
-         Context_Attributes  : in EGL_Integer_Array_Callback;
-         User_Data           : in System.Address)
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_EGL_SetAttributeCallbacks";
+      function To_Raw is new Ada.Unchecked_Conversion
+        (Source => EGL_Attribute_Array_Callback,
+         Target => Raw.EGL_Attribute_Array_Callback);
+
+      function To_Raw is new Ada.Unchecked_Conversion
+        (Source => EGL_Integer_Array_Callback,
+         Target => Raw.EGL_Integer_Array_Callback);
    begin
-      SDL_EGL_Set_Attribute_Callbacks
-        (Platform_Attributes => Platform_Attributes,
-         Surface_Attributes  => Surface_Attributes,
-         Context_Attributes  => Context_Attributes,
+      Raw.Set_EGL_Attribute_Callbacks
+        (Platform_Attributes => To_Raw (Platform_Attributes),
+         Surface_Attributes  => To_Raw (Surface_Attributes),
+         Context_Attributes  => To_Raw (Context_Attributes),
          User_Data           => User_Data);
    end Set_Attribute_Callbacks;
 
    procedure Reset_Attributes is
-      procedure SDL_GL_Reset_Attributes
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_ResetAttributes";
    begin
-      SDL_GL_Reset_Attributes;
+      Raw.Reset_GL_Attributes;
    end Reset_Attributes;
 
    function Get_Sub_Program
      (Name : in String) return Access_To_Sub_Program is
-      function SDL_GL_Get_Proc_Address
-        (Proc : in C.char_array) return Access_To_Sub_Program
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_GetProcAddress";
+      function To_Sub_Program is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Access_To_Sub_Program);
    begin
-      return SDL_GL_Get_Proc_Address (C.To_C (Name));
+      return To_Sub_Program (Raw.GL_Get_Proc_Address (C.To_C (Name)));
    end Get_Sub_Program;
 
    function Get_Subprogram return Access_To_Sub_Program is
-      function SDL_GL_Get_Proc_Address
-        (Proc : in C.char_array) return Access_To_Sub_Program
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_GetProcAddress";
+      function To_Sub_Program is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Access_To_Sub_Program);
    begin
-      return SDL_GL_Get_Proc_Address (C.To_C (Subprogram_Name));
+      return To_Sub_Program (Raw.GL_Get_Proc_Address (C.To_C (Subprogram_Name)));
    end Get_Subprogram;
 
    function Supports (Extension : in String) return Boolean is
-      function SDL_GL_Extension_Supported
-        (Name : in CS.chars_ptr) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_ExtensionSupported";
-
       C_Name : CS.chars_ptr := CS.New_String (Extension);
       Result : constant Boolean :=
-        Boolean (SDL_GL_Extension_Supported (C_Name));
+        Boolean (Raw.GL_Extension_Supported (C_Name));
    begin
       CS.Free (C_Name);
       return Result;
    end Supports;
 
    function Get_Swap_Interval return Swap_Intervals is
-      function SDL_GL_Get_Swap_Interval
-        (Interval : access C.int) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_GetSwapInterval";
-
       Interval : aliased C.int := 0;
       Ignored  : constant CE.bool :=
-        SDL_GL_Get_Swap_Interval (Interval'Access);
+        Raw.Get_GL_Swap_Interval (Interval'Access);
       pragma Unreferenced (Ignored);
    begin
       case Interval is
@@ -631,15 +524,9 @@ package body SDL.Video.GL is
 
    procedure Set_Swap_Interval
      (Interval : in Allowed_Swap_Intervals) is
-      function SDL_GL_Set_Swap_Interval
-        (Value : in C.int) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_SetSwapInterval";
    begin
       if not Boolean
-          (SDL_GL_Set_Swap_Interval
+          (Raw.Set_GL_Swap_Interval
              (case Interval is
                  when Adaptive_VSync   => -1,
                  when Not_Synchronised => 0,
@@ -650,53 +537,30 @@ package body SDL.Video.GL is
    end Set_Swap_Interval;
 
    procedure Swap (Window : in out SDL.Video.Windows.Window) is
-      function SDL_GL_Swap_Window
-        (Value : in System.Address) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_SwapWindow";
    begin
       if not Boolean
-          (SDL_GL_Swap_Window (SDL.Video.Windows.Get_Internal (Window)))
+          (Raw.Swap_GL_Window (SDL.Video.Windows.Get_Internal (Window)))
       then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
    end Swap;
 
    procedure Load_Library is
-      function SDL_GL_Load_Library
-        (Path : in CS.chars_ptr) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_LoadLibrary";
    begin
-      if not Boolean (SDL_GL_Load_Library (CS.Null_Ptr)) then
+      if not Boolean (Raw.Load_GL_Library (CS.Null_Ptr)) then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
    end Load_Library;
 
    procedure Load_Library (Path : in String) is
-      function SDL_GL_Load_Library
-        (Value : in C.char_array) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_LoadLibrary";
    begin
-      if not Boolean (SDL_GL_Load_Library (C.To_C (Path))) then
+      if not Boolean (Raw.Load_GL_Library (C.To_C (Path))) then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
    end Load_Library;
 
    procedure Unload_Library is
-      procedure SDL_GL_Unload_Library
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GL_UnloadLibrary";
    begin
-      SDL_GL_Unload_Library;
+      Raw.Unload_GL_Library;
    end Unload_Library;
 end SDL.Video.GL;

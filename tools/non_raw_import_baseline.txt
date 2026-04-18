@@ -11,5 +11,4 @@ src/sdl-events-events.adb 21
 src/sdl-video-gl.adb 24
 src/sdl-video-renderers.adb 83
 src/sdl-video-surfaces.adb 59
-src/sdl-video-textures.adb 27
 src/sdl-video-windows.adb 74

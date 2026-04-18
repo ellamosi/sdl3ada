@@ -1,11 +1,12 @@
-with Interfaces.C.Extensions;
+with Ada.Unchecked_Conversion;
 
 with SDL.Error;
+with SDL.Raw.Render;
 with SDL.Video.Palettes.Internal;
 with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Textures is
-   package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Render;
    package Palette_Internal renames SDL.Video.Palettes.Internal;
    package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
@@ -15,6 +16,40 @@ package body SDL.Video.Textures is
    SDL_PROP_TEXTURE_FORMAT_NUMBER : constant String := "SDL.texture.format";
    SDL_PROP_TEXTURE_HEIGHT_NUMBER : constant String := "SDL.texture.height";
    SDL_PROP_TEXTURE_WIDTH_NUMBER  : constant String := "SDL.texture.width";
+
+   function To_Internal_Surface_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
+
+   function To_Scale_Mode (Value : in Raw.Texture_Scale_Mode) return Scale_Modes is
+   begin
+      case Integer (Value) is
+         when -1 =>
+            return Invalid;
+         when 0 =>
+            return Nearest;
+         when 1 =>
+            return Linear;
+         when 2 =>
+            return Pixel_Art;
+         when others =>
+            return Invalid;
+      end case;
+   end To_Scale_Mode;
+
+   function To_Raw (Value : in Scale_Modes) return Raw.Texture_Scale_Mode is
+   begin
+      case Value is
+         when Invalid =>
+            return -1;
+         when Nearest =>
+            return 0;
+         when Linear =>
+            return 1;
+         when Pixel_Art =>
+            return 2;
+      end case;
+   end To_Raw;
 
    procedure Raise_Texture_Error
      (Default_Message : in String := "SDL texture call failed");
@@ -52,15 +87,8 @@ package body SDL.Video.Textures is
       Kind              : out Kinds;
       Size              : out SDL.Sizes)
    is
-      function SDL_Get_Texture_Properties
-        (Value : in System.Address) return SDL.Properties.Property_ID
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureProperties";
-
       Props         : constant SDL.Properties.Property_Set :=
-        SDL.Properties.Reference (SDL_Get_Texture_Properties (Self.Internal));
+        SDL.Properties.Reference (Raw.Get_Texture_Properties (Self.Internal));
       Access_Number : constant SDL.Properties.Property_Numbers :=
         SDL.Properties.Get_Number (Props, SDL_PROP_TEXTURE_ACCESS_NUMBER, 0);
    begin
@@ -98,32 +126,21 @@ package body SDL.Video.Textures is
    function Get_Properties
      (Self : in Texture) return SDL.Properties.Property_ID
    is
-      function SDL_Get_Texture_Properties
-        (Value : in System.Address) return SDL.Properties.Property_ID
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureProperties";
    begin
       Require_Texture (Self);
-      return SDL_Get_Texture_Properties (Self.Internal);
+      return Raw.Get_Texture_Properties (Self.Internal);
    end Get_Properties;
 
    procedure Lock
      (Self   : in out Texture;
       Pixels : out Pixel_Pointer_Type)
    is
-      function SDL_Lock_Texture
-        (Value  : in System.Address;
-         Area   : in System.Address;
-         Target : out Pixel_Pointer_Type;
-         Pitch  : out SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LockTexture";
+      function To_Pixel_Pointer_Type is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Pixel_Pointer_Type);
 
-      Dummy_Pitch : SDL.Video.Pixels.Pitches := 0;
+      Raw_Pixels  : System.Address := System.Null_Address;
+      Dummy_Pitch : Raw.Texture_Pitch := 0;
    begin
       Require_Texture (Self);
 
@@ -132,12 +149,13 @@ package body SDL.Video.Textures is
       end if;
 
       if not Boolean
-          (SDL_Lock_Texture
-             (Self.Internal, System.Null_Address, Pixels, Dummy_Pitch))
+          (Raw.Lock_Texture
+             (Self.Internal, System.Null_Address, Raw_Pixels, Dummy_Pitch))
       then
          Raise_Texture_Error;
       end if;
 
+      Pixels := To_Pixel_Pointer_Type (Raw_Pixels);
       Self.Locked := True;
    end Lock;
 
@@ -147,17 +165,13 @@ package body SDL.Video.Textures is
       Pixels : out Pixel_Pointer_Type;
       Pitch  : out SDL.Video.Pixels.Pitches)
    is
-      function SDL_Lock_Texture
-        (Value  : in System.Address;
-         Area   : in System.Address;
-         Target : out Pixel_Pointer_Type;
-         Pitch  : out SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LockTexture";
+      function To_Pixel_Pointer_Type is new Ada.Unchecked_Conversion
+        (Source => System.Address,
+         Target => Pixel_Pointer_Type);
 
       Raw_Area : aliased constant SDL.Video.Rectangles.Rectangle := Area;
+      Raw_Pixels : System.Address := System.Null_Address;
+      Raw_Pitch  : Raw.Texture_Pitch := 0;
    begin
       Require_Texture (Self);
 
@@ -166,29 +180,21 @@ package body SDL.Video.Textures is
       end if;
 
       if not Boolean
-          (SDL_Lock_Texture
-             (Self.Internal, Raw_Area'Address, Pixels, Pitch))
+          (Raw.Lock_Texture
+             (Self.Internal, Raw_Area'Address, Raw_Pixels, Raw_Pitch))
       then
          Raise_Texture_Error;
       end if;
 
+      Pixels := To_Pixel_Pointer_Type (Raw_Pixels);
+      Pitch := SDL.Video.Pixels.Pitches (Raw_Pitch);
       Self.Locked := True;
    end Lock_Area;
 
    function Lock_To_Surface
      (Self : in out Texture) return SDL.Video.Surfaces.Surface
    is
-      function SDL_Lock_Texture_To_Surface
-        (Value   : in System.Address;
-         Area    : in System.Address;
-         Surface : access SDL.Video.Surfaces.Internal_Surface_Pointer)
-         return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LockTextureToSurface";
-
-      Internal : aliased SDL.Video.Surfaces.Internal_Surface_Pointer := null;
+      Internal : aliased System.Address := System.Null_Address;
    begin
       Require_Texture (Self);
 
@@ -197,14 +203,15 @@ package body SDL.Video.Textures is
       end if;
 
       if not Boolean
-          (SDL_Lock_Texture_To_Surface
+          (Raw.Lock_Texture_To_Surface
              (Self.Internal, System.Null_Address, Internal'Access))
       then
          Raise_Texture_Error;
       end if;
 
       Self.Locked := True;
-      return Surface_Internal.Make_From_Pointer (Internal, Owns => False);
+      return Surface_Internal.Make_From_Pointer
+        (To_Internal_Surface_Pointer (Internal), Owns => False);
    end Lock_To_Surface;
 
    function Lock_To_Surface
@@ -212,18 +219,8 @@ package body SDL.Video.Textures is
       Area : in SDL.Video.Rectangles.Rectangle)
       return SDL.Video.Surfaces.Surface
    is
-      function SDL_Lock_Texture_To_Surface
-        (Value   : in System.Address;
-         Area    : in System.Address;
-         Surface : access SDL.Video.Surfaces.Internal_Surface_Pointer)
-         return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LockTextureToSurface";
-
       Raw_Area : aliased constant SDL.Video.Rectangles.Rectangle := Area;
-      Internal : aliased SDL.Video.Surfaces.Internal_Surface_Pointer := null;
+      Internal : aliased System.Address := System.Null_Address;
    begin
       Require_Texture (Self);
 
@@ -232,27 +229,24 @@ package body SDL.Video.Textures is
       end if;
 
       if not Boolean
-          (SDL_Lock_Texture_To_Surface
+          (Raw.Lock_Texture_To_Surface
              (Self.Internal, Raw_Area'Address, Internal'Access))
       then
          Raise_Texture_Error;
       end if;
 
       Self.Locked := True;
-      return Surface_Internal.Make_From_Pointer (Internal, Owns => False);
+      return Surface_Internal.Make_From_Pointer
+        (To_Internal_Surface_Pointer (Internal), Owns => False);
    end Lock_To_Surface;
 
    procedure Unlock (Self : in out Texture) is
-      procedure SDL_Unlock_Texture (Value : in System.Address) with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UnlockTexture";
    begin
       if Self.Internal = System.Null_Address or else not Self.Locked then
          return;
       end if;
 
-      SDL_Unlock_Texture (Self.Internal);
+      Raw.Unlock_Texture (Self.Internal);
       Self.Locked := False;
    end Unlock;
 
@@ -261,21 +255,15 @@ package body SDL.Video.Textures is
       Pixels : in System.Address;
       Pitch  : in SDL.Video.Pixels.Pitches)
    is
-      function SDL_Update_Texture
-        (Value  : in System.Address;
-         Area   : in System.Address;
-         Pixels : in System.Address;
-         Pitch  : in SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UpdateTexture";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Update_Texture
-             (Self.Internal, System.Null_Address, Pixels, Pitch))
+          (Raw.Update_Texture
+              (Self.Internal,
+              System.Null_Address,
+              Pixels,
+              Raw.Texture_Pitch (Pitch)))
       then
          Raise_Texture_Error;
       end if;
@@ -287,23 +275,16 @@ package body SDL.Video.Textures is
       Pixels : in System.Address;
       Pitch  : in SDL.Video.Pixels.Pitches)
    is
-      function SDL_Update_Texture
-        (Value  : in System.Address;
-         Area   : in System.Address;
-         Pixels : in System.Address;
-         Pitch  : in SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UpdateTexture";
-
       Raw_Area : aliased constant SDL.Video.Rectangles.Rectangle := Area;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Update_Texture
-             (Self.Internal, Raw_Area'Address, Pixels, Pitch))
+          (Raw.Update_Texture
+              (Self.Internal,
+              Raw_Area'Address,
+              Pixels,
+              Raw.Texture_Pitch (Pitch)))
       then
          Raise_Texture_Error;
       end if;
@@ -319,34 +300,20 @@ package body SDL.Video.Textures is
       V_Pixels : in System.Address;
       V_Pitch  : in SDL.Video.Pixels.Pitches)
    is
-      function SDL_Update_YUV_Texture
-        (Value    : in System.Address;
-         Area     : in System.Address;
-         Y_Pixels : in System.Address;
-         Y_Pitch  : in SDL.Video.Pixels.Pitches;
-         U_Pixels : in System.Address;
-         U_Pitch  : in SDL.Video.Pixels.Pitches;
-         V_Pixels : in System.Address;
-         V_Pitch  : in SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UpdateYUVTexture";
-
       Raw_Area : aliased constant SDL.Video.Rectangles.Rectangle := Area;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Update_YUV_Texture
+          (Raw.Update_YUV_Texture
              (Self.Internal,
               Raw_Area'Address,
               Y_Pixels,
-              Y_Pitch,
+              Raw.Texture_Pitch (Y_Pitch),
               U_Pixels,
-              U_Pitch,
+              Raw.Texture_Pitch (U_Pitch),
               V_Pixels,
-              V_Pitch))
+              Raw.Texture_Pitch (V_Pitch)))
       then
          Raise_Texture_Error;
       end if;
@@ -360,30 +327,18 @@ package body SDL.Video.Textures is
       UV_Pixels : in System.Address;
       UV_Pitch  : in SDL.Video.Pixels.Pitches)
    is
-      function SDL_Update_NV_Texture
-        (Value     : in System.Address;
-         Area      : in System.Address;
-         Y_Pixels  : in System.Address;
-         Y_Pitch   : in SDL.Video.Pixels.Pitches;
-         UV_Pixels : in System.Address;
-         UV_Pitch  : in SDL.Video.Pixels.Pitches) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UpdateNVTexture";
-
       Raw_Area : aliased constant SDL.Video.Rectangles.Rectangle := Area;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Update_NV_Texture
+          (Raw.Update_NV_Texture
              (Self.Internal,
               Raw_Area'Address,
               Y_Pixels,
-              Y_Pitch,
+              Raw.Texture_Pitch (Y_Pitch),
               UV_Pixels,
-              UV_Pitch))
+              Raw.Texture_Pitch (UV_Pitch)))
       then
          Raise_Texture_Error;
       end if;
@@ -393,18 +348,11 @@ package body SDL.Video.Textures is
      (Self    : in out Texture;
       Palette : in SDL.Video.Palettes.Palette)
    is
-      function SDL_Set_Texture_Palette
-        (Value   : in System.Address;
-         Palette : in System.Address) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTexturePalette";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Set_Texture_Palette
+          (Raw.Set_Texture_Palette
              (Self.Internal, SDL.Video.Palettes.Get_Internal (Palette)))
       then
          Raise_Texture_Error;
@@ -414,18 +362,11 @@ package body SDL.Video.Textures is
    function Get_Palette
      (Self : in Texture) return SDL.Video.Palettes.Palette
    is
-      function SDL_Get_Texture_Palette
-        (Value : in System.Address) return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTexturePalette";
-
       Internal : System.Address;
    begin
       Require_Texture (Self);
 
-      Internal := SDL_Get_Texture_Palette (Self.Internal);
+      Internal := Raw.Get_Texture_Palette (Self.Internal);
       return Result : SDL.Video.Palettes.Palette do
          Palette_Internal.Copy_From_Pointer (Internal, Result);
       end return;
@@ -435,78 +376,57 @@ package body SDL.Video.Textures is
      (Self : in out Texture;
       Mode : in Scale_Modes)
    is
-      function SDL_Set_Texture_Scale_Mode
-        (Value : in System.Address;
-         Scale : in Scale_Modes) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureScaleMode";
    begin
       Require_Texture (Self);
 
-      if not Boolean (SDL_Set_Texture_Scale_Mode (Self.Internal, Mode)) then
+      if not Boolean
+          (Raw.Set_Texture_Scale_Mode (Self.Internal, To_Raw (Mode)))
+      then
          Raise_Texture_Error;
       end if;
    end Set_Scale_Mode;
 
    function Get_Scale_Mode (Self : in Texture) return Scale_Modes is
-      function SDL_Get_Texture_Scale_Mode
-        (Value : in System.Address;
-         Scale : access Scale_Modes) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureScaleMode";
-
-      Result : aliased Scale_Modes := Invalid;
+      Result : aliased Raw.Texture_Scale_Mode := To_Raw (Invalid);
    begin
       Require_Texture (Self);
 
-      if not Boolean (SDL_Get_Texture_Scale_Mode (Self.Internal, Result'Access)) then
+      if not Boolean
+          (Raw.Get_Texture_Scale_Mode (Self.Internal, Result'Access))
+      then
          Raise_Texture_Error;
       end if;
 
-      return Result;
+      return To_Scale_Mode (Result);
    end Get_Scale_Mode;
 
    function Get_Blend_Mode
      (Self : in Texture) return SDL.Video.Blend_Modes
    is
-      function SDL_Get_Texture_Blend_Mode
-        (Value : in System.Address;
-         Mode  : access SDL.Video.Blend_Modes) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureBlendMode";
-
-      Result : aliased SDL.Video.Blend_Modes := SDL.Video.None;
+      Result : aliased Raw.Blend_Mode := Raw.Blend_Mode (SDL.Video.None);
    begin
       Require_Texture (Self);
 
-      if not Boolean (SDL_Get_Texture_Blend_Mode (Self.Internal, Result'Access)) then
+      if not Boolean
+          (Raw.Get_Texture_Blend_Mode (Self.Internal, Result'Access))
+      then
          Raise_Texture_Error;
       end if;
 
-      return Result;
+      return SDL.Video.Blend_Modes (Result);
    end Get_Blend_Mode;
 
    procedure Set_Blend_Mode
      (Self : in out Texture;
       Mode : in SDL.Video.Blend_Modes)
    is
-      function SDL_Set_Texture_Blend_Mode
-        (Value : in System.Address;
-         Mode  : in SDL.Video.Blend_Modes) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureBlendMode";
    begin
       Require_Texture (Self);
 
-      if not Boolean (SDL_Set_Texture_Blend_Mode (Self.Internal, Mode)) then
+      if not Boolean
+          (Raw.Set_Texture_Blend_Mode
+             (Self.Internal, Raw.Blend_Mode (Mode)))
+      then
          Raise_Texture_Error;
       end if;
    end Set_Blend_Mode;
@@ -514,24 +434,14 @@ package body SDL.Video.Textures is
    function Get_Colour
      (Self : in Texture) return SDL.Video.Palettes.RGB_Colour
    is
-      function SDL_Get_Texture_Color_Mod
-        (Value : in System.Address;
-         Red   : access SDL.Video.Palettes.Colour_Component;
-         Green : access SDL.Video.Palettes.Colour_Component;
-         Blue  : access SDL.Video.Palettes.Colour_Component) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureColorMod";
-
-      Red   : aliased SDL.Video.Palettes.Colour_Component := 0;
-      Green : aliased SDL.Video.Palettes.Colour_Component := 0;
-      Blue  : aliased SDL.Video.Palettes.Colour_Component := 0;
+      Red   : aliased Raw.Colour_Component := 0;
+      Green : aliased Raw.Colour_Component := 0;
+      Blue  : aliased Raw.Colour_Component := 0;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Get_Texture_Color_Mod
+          (Raw.Get_Texture_Color_Mod
              (Self.Internal,
               Red'Access,
               Green'Access,
@@ -548,24 +458,14 @@ package body SDL.Video.Textures is
       Red, Green  : out Float;
       Blue        : out Float)
    is
-      function SDL_Get_Texture_Color_Mod_Float
-        (Value : in System.Address;
-         Red   : access Float;
-         Green : access Float;
-         Blue  : access Float) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureColorModFloat";
-
-      Raw_Red   : aliased Float := 0.0;
-      Raw_Green : aliased Float := 0.0;
-      Raw_Blue  : aliased Float := 0.0;
+      Raw_Red   : aliased Raw.C.C_float := 0.0;
+      Raw_Green : aliased Raw.C.C_float := 0.0;
+      Raw_Blue  : aliased Raw.C.C_float := 0.0;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Get_Texture_Color_Mod_Float
+          (Raw.Get_Texture_Color_Mod_Float
              (Self.Internal,
               Raw_Red'Access,
               Raw_Green'Access,
@@ -574,29 +474,20 @@ package body SDL.Video.Textures is
          Raise_Texture_Error;
       end if;
 
-      Red := Raw_Red;
-      Green := Raw_Green;
-      Blue := Raw_Blue;
+      Red := Float (Raw_Red);
+      Green := Float (Raw_Green);
+      Blue := Float (Raw_Blue);
    end Get_Colour;
 
    procedure Set_Colour
      (Self   : in out Texture;
       Colour : in SDL.Video.Palettes.RGB_Colour)
    is
-      function SDL_Set_Texture_Color_Mod
-        (Value : in System.Address;
-         Red   : in SDL.Video.Palettes.Colour_Component;
-         Green : in SDL.Video.Palettes.Colour_Component;
-         Blue  : in SDL.Video.Palettes.Colour_Component) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureColorMod";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Set_Texture_Color_Mod
+          (Raw.Set_Texture_Color_Mod
              (Self.Internal, Colour.Red, Colour.Green, Colour.Blue))
       then
          Raise_Texture_Error;
@@ -608,20 +499,15 @@ package body SDL.Video.Textures is
       Red, Green : in Float;
       Blue       : in Float)
    is
-      function SDL_Set_Texture_Color_Mod_Float
-        (Value : in System.Address;
-         Red   : in Float;
-         Green : in Float;
-         Blue  : in Float) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureColorModFloat";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Set_Texture_Color_Mod_Float (Self.Internal, Red, Green, Blue))
+          (Raw.Set_Texture_Color_Mod_Float
+             (Self.Internal,
+              Raw.C.C_float (Red),
+              Raw.C.C_float (Green),
+              Raw.C.C_float (Blue)))
       then
          Raise_Texture_Error;
       end if;
@@ -630,20 +516,12 @@ package body SDL.Video.Textures is
    function Get_Alpha
      (Self : in Texture) return SDL.Video.Palettes.Colour_Component
    is
-      function SDL_Get_Texture_Alpha_Mod
-        (Value : in System.Address;
-         Alpha : access SDL.Video.Palettes.Colour_Component) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureAlphaMod";
-
-      Result : aliased SDL.Video.Palettes.Colour_Component := 0;
+      Result : aliased Raw.Colour_Component := 0;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Get_Texture_Alpha_Mod (Self.Internal, Result'Access))
+          (Raw.Get_Texture_Alpha_Mod (Self.Internal, Result'Access))
       then
          Raise_Texture_Error;
       end if;
@@ -652,43 +530,28 @@ package body SDL.Video.Textures is
    end Get_Alpha;
 
    function Get_Alpha_Float (Self : in Texture) return Float is
-      function SDL_Get_Texture_Alpha_Mod_Float
-        (Value : in System.Address;
-         Alpha : access Float) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureAlphaModFloat";
-
-      Result : aliased Float := 0.0;
+      Result : aliased Raw.C.C_float := 0.0;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Get_Texture_Alpha_Mod_Float (Self.Internal, Result'Access))
+          (Raw.Get_Texture_Alpha_Mod_Float (Self.Internal, Result'Access))
       then
          Raise_Texture_Error;
       end if;
 
-      return Result;
+      return Float (Result);
    end Get_Alpha_Float;
 
    procedure Set_Alpha
      (Self  : in out Texture;
       Alpha : in SDL.Video.Palettes.Colour_Component)
    is
-      function SDL_Set_Texture_Alpha_Mod
-        (Value : in System.Address;
-         Alpha : in SDL.Video.Palettes.Colour_Component) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureAlphaMod";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Set_Texture_Alpha_Mod (Self.Internal, Alpha))
+          (Raw.Set_Texture_Alpha_Mod (Self.Internal, Alpha))
       then
          Raise_Texture_Error;
       end if;
@@ -698,18 +561,12 @@ package body SDL.Video.Textures is
      (Self  : in out Texture;
       Alpha : in Float)
    is
-      function SDL_Set_Texture_Alpha_Mod_Float
-        (Value : in System.Address;
-         Alpha : in Float) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_SetTextureAlphaModFloat";
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Set_Texture_Alpha_Mod_Float (Self.Internal, Alpha))
+          (Raw.Set_Texture_Alpha_Mod_Float
+             (Self.Internal, Raw.C.C_float (Alpha)))
       then
          Raise_Texture_Error;
       end if;
@@ -748,31 +605,22 @@ package body SDL.Video.Textures is
 
    procedure Get_Size
      (Self          : in Texture;
-      Width, Height : out Float)
+     Width, Height : out Float)
    is
-      function SDL_Get_Texture_Size
-        (Value  : in System.Address;
-         Width  : access Float;
-         Height : access Float) return CE.bool
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetTextureSize";
-
-      Raw_Width  : aliased Float := 0.0;
-      Raw_Height : aliased Float := 0.0;
+      Raw_Width  : aliased Raw.C.C_float := 0.0;
+      Raw_Height : aliased Raw.C.C_float := 0.0;
    begin
       Require_Texture (Self);
 
       if not Boolean
-          (SDL_Get_Texture_Size
+          (Raw.Get_Texture_Size
              (Self.Internal, Raw_Width'Access, Raw_Height'Access))
       then
          Raise_Texture_Error;
       end if;
 
-      Width := Raw_Width;
-      Height := Raw_Height;
+      Width := Float (Raw_Width);
+      Height := Float (Raw_Height);
    end Get_Size;
 
    function Get_Size (Self : in Texture) return SDL.Sizes is
@@ -787,13 +635,9 @@ package body SDL.Video.Textures is
 
    overriding
    procedure Finalize (Self : in out Texture) is
-      procedure SDL_Destroy_Texture (Value : in System.Address) with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_DestroyTexture";
    begin
       if Self.Owns and then Self.Internal /= System.Null_Address then
-         SDL_Destroy_Texture (Self.Internal);
+         Raw.Destroy_Texture (Self.Internal);
       end if;
 
       Self.Internal := System.Null_Address;

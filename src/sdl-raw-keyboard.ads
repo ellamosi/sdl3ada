@@ -24,6 +24,8 @@ package SDL.Raw.Keyboard is
      Convention => C,
      Size       => 32;
 
+   subtype Key_Code is Interfaces.Unsigned_32;
+
    type ID_Array is array (C.ptrdiff_t range <>) of aliased ID with
      Convention => C;
 
@@ -83,6 +85,59 @@ package SDL.Raw.Keyboard is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetKeyboardState";
+
+   function Get_Scancode_From_Name
+     (Value : in C.char_array) return Scan_Code
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetScancodeFromName";
+
+   function Get_Scancode_Name
+     (Value : in Scan_Code) return CS.chars_ptr
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetScancodeName";
+
+   function Get_Key_From_Name
+     (Value : in C.char_array) return Key_Code
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetKeyFromName";
+
+   function Get_Key_Name
+     (Value : in Key_Code) return CS.chars_ptr
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetKeyName";
+
+   function Set_Scancode_Name
+     (Value : in Scan_Code;
+      Text  : in CS.chars_ptr) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetScancodeName";
+
+   function Get_Key_From_Scan_Code
+     (Value     : in Scan_Code;
+      Modifiers : in Key_Modifier;
+      Key_Event : in CE.bool) return Key_Code
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetKeyFromScancode";
+
+   function Get_Scan_Code_From_Key
+     (Value     : in Key_Code;
+      Modifiers : access Key_Modifier) return Scan_Code
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetScancodeFromKey";
 
    function Get_Mod_State return Key_Modifier
    with

@@ -55,7 +55,7 @@ state.
 | `SDL.Raw.Gamepad` | present | `complete` | Now owns the broader gamepad mapping, metadata, binding ABI, touchpad, sensor, rumble, and symbol entry points used by `SDL.Inputs.Joysticks.Game_Controllers`; pure event polling remains split into `SDL.Raw.Gamepad_Events`, and both the public wrapper and maker now route through raw. |
 | `SDL.Raw.Gamepad_Events` | present | `complete` | Pure support split that owns the gamepad event-polling entry points used by `SDL.Events.Joysticks.Game_Controllers`. |
 | `SDL.Raw.GPU` | present | `partial` | It no longer depends on public rectangle or pixel-format value packages, but it still needs broader normalization to become a strict raw mirror. |
-| `SDL.Raw.Haptic` | present | `partial` | Raw haptic now owns typed haptic and joystick handle entry points plus ID-list helpers, leaving the public effect ABI record layout as the remaining normalization item for this family. |
+| `SDL.Raw.Haptic` | present | `complete` | Raw haptic now owns the haptic effect ABI records and union plus typed haptic/joystick handle entry points and ID-list helpers used by `SDL.Haptics`, leaving only public ownership and policy wrappers above raw. |
 | `SDL.Raw.HIDAPI` | present | `complete` | Added and now owns the HIDAPI ABI enums, wide-string helpers, device-info struct, and entry points used by `SDL.HIDAPI`. |
 | `SDL.Raw.Hints` | present | `complete` | Added and now owns all hint query, mutation, and callback registration imports used by `SDL.Hints`. |
 | `SDL.Raw.Init` | present | `complete` | Now pure-safe, covers init/quit/metadata imports, and is consumed from the `SDL` body so the public top-level package no longer imports SDL symbols directly. |
@@ -155,7 +155,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Cameras` | public thick wrapper | `complete` | Public package now routes camera discovery, open/close, permission, property, format, and frame entry points through `SDL.Raw.Camera`, while keeping public spec-value conversion and surface ownership policy handwritten above the raw ABI layer. |
 | `SDL.Dialogs` | public wrapper | `complete` | Public package now routes dialog ABI types and entry points through `SDL.Raw.Dialog`, while keeping callback lifetime, filter assembly, and property policy handwritten. |
 | `SDL.HIDAPI` | public thick wrapper | `complete` | Public package now routes HID device enumeration, I/O, wide-string queries, and device-info ABI through `SDL.Raw.HIDAPI`, while keeping UTF conversion, ownership, and error policy handwritten. |
-| `SDL.Haptics` | public thick wrapper | `complete` | Public package now routes haptic device enumeration, ownership, effect control, and rumble entry points through `SDL.Raw.Haptic`, while the public effect ABI record layout remains a later normalization task. |
+| `SDL.Haptics` | public thick wrapper | `complete` | Public package now routes haptic device enumeration, ownership, effect control, and rumble entry points through `SDL.Raw.Haptic`, while re-exporting raw-owned effect ABI types and keeping ownership and error policy handwritten above raw. |
 | `SDL.Message_Boxes` | public wrapper | `complete` | Public package now routes all SDL message-box entry points through `SDL.Raw.MessageBox`. |
 | `SDL.Trays` | public thick wrapper | `complete` | Public package now routes tray, menu, and entry ABI calls through `SDL.Raw.Tray`, while callback registry policy, string lifetime, and menu-tree ownership remain handwritten. |
 

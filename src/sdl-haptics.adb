@@ -3,7 +3,6 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
-with SDL.Raw.Haptic;
 
 package body SDL.Haptics is
    package Raw renames SDL.Raw.Haptic;
@@ -301,7 +300,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
       return Boolean
-        (Raw.Haptic_Effect_Supported (Self.Internal, Copy'Address));
+        (Raw.Haptic_Effect_Supported (Self.Internal, Copy'Access));
    end Effect_Supported;
 
    function Create_Effect
@@ -314,7 +313,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       Result :=
-        Raw.Create_Haptic_Effect (Self.Internal, Copy'Address);
+        Raw.Create_Haptic_Effect (Self.Internal, Copy'Access);
       if Result < 0 then
          Raise_Last_Error ("SDL_CreateHapticEffect failed");
       end if;
@@ -332,7 +331,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Update_Haptic_Effect (Self.Internal, Item, Copy'Address))
+          (Raw.Update_Haptic_Effect (Self.Internal, Item, Copy'Access))
       then
          Raise_Last_Error ("SDL_UpdateHapticEffect failed");
       end if;

@@ -11,8 +11,6 @@ src/sdl-events-events.adb 21
 src/sdl-events-keyboards.adb 7
 src/sdl-events-touches.adb 5
 src/sdl-main-sdlmain_callback_apps.adb 4
-src/sdl-rwops-streams.adb 3
-src/sdl-rwops.adb 5
 src/sdl-video-displays.adb 17
 src/sdl-video-gl.adb 24
 src/sdl-video-metal.adb 3

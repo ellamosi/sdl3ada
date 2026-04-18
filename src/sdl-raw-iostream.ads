@@ -98,6 +98,12 @@ package SDL.Raw.IOStream is
    type IO_Stream_Access is access all IO_Stream_Object with
      Convention => C;
 
+   procedure Free (Memory : in System.Address)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    function IO_From_File
      (File : in C.char_array;
       Mode : in C.char_array) return SDL.C_Pointers.IO_Stream_Pointer

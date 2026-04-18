@@ -31,6 +31,10 @@ package body SDL.Video.Renderers is
      (Source => System.Address,
       Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
 
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Video.Window_Pointer);
+
    function To_Address
      (Value : access constant SDL.Events.Events.Events) return System.Address is
        (if Value = null then System.Null_Address else Value.all'Address);
@@ -404,7 +408,7 @@ package body SDL.Video.Renderers is
 
    function SDL_Get_Window_ID
      (Value : in System.Address) return SDL.Video.Windows.ID is
-       (SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (Value)));
+       (SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (To_Window_Pointer (Value))));
 
    function SDL_Get_Renderer_Properties
      (Value : in System.Address) return SDL.Properties.Property_ID is

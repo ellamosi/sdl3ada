@@ -23,6 +23,10 @@ package body SDL.Events.Events is
      (Source => Raw_Events.Event_Filter,
       Target => Event_Filter);
 
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Video.Window_Pointer);
+
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
 
@@ -239,7 +243,8 @@ package body SDL.Events.Events is
          return 0;
       end if;
 
-      return SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (Window));
+      return SDL.Video.Windows.ID
+        (Raw_Video.Get_Window_ID (To_Window_Pointer (Window)));
    end Get_Window_ID;
 
    function Get_Description (Event : in Events) return String is

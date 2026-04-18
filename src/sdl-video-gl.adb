@@ -11,6 +11,8 @@ package body SDL.Video.GL is
    package Raw renames SDL.Raw.Video;
 
    use type System.Address;
+   use type Raw.GL_Context_Pointer;
+   use type Raw.Window_Pointer;
 
    type Attributes is
      (Attribute_Red_Size,
@@ -71,6 +73,18 @@ package body SDL.Video.GL is
 
    function To_Raw (Value : in Attributes) return Raw.GL_Attribute is
      (Raw.GL_Attribute'Val (Attributes'Pos (Value)));
+
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Window_Pointer);
+
+   function To_GL_Context_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.GL_Context_Pointer);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => Raw.GL_Context_Pointer,
+      Target => System.Address);
 
    function Get_Attribute_Int (Attr : in Attributes) return C.int;
    function Get_Attribute_Int (Attr : in Attributes) return C.int is
@@ -320,14 +334,15 @@ package body SDL.Video.GL is
      (Self : in out Contexts;
       From : in SDL.Video.Windows.Window)
    is
-      Context : constant System.Address :=
-        Raw.Create_GL_Context (SDL.Video.Windows.Get_Internal (From));
+      Context : constant Raw.GL_Context_Pointer :=
+        Raw.Create_GL_Context
+          (To_Window_Pointer (SDL.Video.Windows.Get_Internal (From)));
    begin
-      if Context = System.Null_Address then
+      if Context = null then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
 
-      Self.Internal := Context;
+      Self.Internal := To_Address (Context);
       Self.Owns := True;
    end Create;
 
@@ -336,7 +351,7 @@ package body SDL.Video.GL is
       Ignored : CE.bool;
    begin
       if Self.Owns and then Self.Internal /= System.Null_Address then
-         Ignored := Raw.Destroy_GL_Context (Self.Internal);
+         Ignored := Raw.Destroy_GL_Context (To_GL_Context_Pointer (Self.Internal));
          pragma Unreferenced (Ignored);
       end if;
 
@@ -348,7 +363,7 @@ package body SDL.Video.GL is
    begin
       return Result : constant Contexts :=
         (Ada.Finalization.Limited_Controlled with
-         Internal => Raw.Get_Current_GL_Context,
+         Internal => To_Address (Raw.Get_Current_GL_Context),
          Owns     => False)
       do
          if Result.Internal = System.Null_Address then
@@ -358,9 +373,9 @@ package body SDL.Video.GL is
    end Get_Current;
 
    function Get_Current_Window return SDL.Video.Windows.Window is
-      Window_Ptr : constant System.Address := Raw.Get_Current_GL_Window;
+      Window_Ptr : constant Raw.Window_Pointer := Raw.Get_Current_GL_Window;
    begin
-      if Window_Ptr = System.Null_Address then
+      if Window_Ptr = null then
          return SDL.Video.Windows.Get (0);
       end if;
 
@@ -377,7 +392,7 @@ package body SDL.Video.GL is
    begin
       if not Boolean
           (Raw.Get_Window_Size_In_Pixels
-             (SDL.Video.Windows.Get_Internal (Window),
+             (To_Window_Pointer (SDL.Video.Windows.Get_Internal (Window)),
               Raw_Width'Access,
               Raw_Height'Access))
       then
@@ -395,7 +410,8 @@ package body SDL.Video.GL is
    begin
       if not Boolean
           (Raw.Make_GL_Current
-             (SDL.Video.Windows.Get_Internal (To), Self.Internal))
+             (To_Window_Pointer (SDL.Video.Windows.Get_Internal (To)),
+              To_GL_Context_Pointer (Self.Internal)))
       then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;
@@ -451,7 +467,8 @@ package body SDL.Video.GL is
          return System.Null_Address;
       end if;
 
-      return Raw.Get_EGL_Window_Surface (SDL.Video.Windows.Get_Internal (Window));
+      return Raw.Get_EGL_Window_Surface
+        (To_Window_Pointer (SDL.Video.Windows.Get_Internal (Window)));
    end Get_Window_Surface;
 
    procedure Set_Attribute_Callbacks
@@ -539,7 +556,8 @@ package body SDL.Video.GL is
    procedure Swap (Window : in out SDL.Video.Windows.Window) is
    begin
       if not Boolean
-          (Raw.Swap_GL_Window (SDL.Video.Windows.Get_Internal (Window)))
+          (Raw.Swap_GL_Window
+             (To_Window_Pointer (SDL.Video.Windows.Get_Internal (Window))))
       then
          raise SDL_GL_Error with SDL.Error.Get;
       end if;

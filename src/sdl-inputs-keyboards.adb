@@ -286,7 +286,8 @@ package body SDL.Inputs.Keyboards is
          return 0;
       end if;
 
-      return SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (Window));
+      return SDL.Video.Windows.ID
+        (Raw_Video.Get_Window_ID (Raw_Video.Window_Pointer (To_Raw_Window (Window))));
    end Get_Focus;
 
    function Get_State return Key_State_Access is

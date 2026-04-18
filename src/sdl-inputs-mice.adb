@@ -27,6 +27,10 @@ package body SDL.Inputs.Mice is
      (Source => SDL.Raw.C_Pointers.Windows_Pointer,
       Target => System.Address);
 
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Video.Window_Pointer);
+
    function To_Raw_Motion_Transform_Callback is new Ada.Unchecked_Conversion
      (Source => Motion_Transform_Callback,
       Target => Raw.Motion_Transform_Callback);
@@ -115,7 +119,8 @@ package body SDL.Inputs.Mice is
          return 0;
       end if;
 
-      return SDL.Video.Windows.ID (Raw_Video.Get_Window_ID (Window));
+      return SDL.Video.Windows.ID
+        (Raw_Video.Get_Window_ID (To_Window_Pointer (Window)));
    end Window_ID;
 
    function Relative_Mode_Enabled (Window : in System.Address) return Boolean;

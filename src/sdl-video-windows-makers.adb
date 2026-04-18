@@ -1,3 +1,4 @@
+with Ada.Unchecked_Conversion;
 with System;
 
 with SDL.Error;
@@ -7,6 +8,15 @@ package body SDL.Video.Windows.Makers is
    package Raw renames SDL.Raw.Video;
 
    use type System.Address;
+   use type Raw.Window_Pointer;
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => Raw.Window_Pointer,
+      Target => System.Address);
+
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Window_Pointer);
 
    SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER  : constant String := "SDL.window.create.flags";
    SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER : constant String := "SDL.window.create.height";
@@ -23,7 +33,7 @@ package body SDL.Video.Windows.Makers is
       Flags    : in SDL.Video.Windows.Window_Flags := SDL.Video.Windows.Windowed)
    is
       Props    : constant SDL.Properties.Property_Set := SDL.Properties.Create;
-      Internal : System.Address := System.Null_Address;
+      Internal : Raw.Window_Pointer := null;
    begin
       SDL.Properties.Set_String
         (Props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, Title);
@@ -51,12 +61,12 @@ package body SDL.Video.Windows.Makers is
       Internal :=
         Raw.Create_Window_With_Properties (SDL.Properties.Get_ID (Props));
 
-      if Internal = System.Null_Address then
+      if Internal = null then
          raise Window_Error with SDL.Error.Get;
       end if;
 
       SDL.Video.Windows.Finalize (Win);
-      Win.Internal := Internal;
+      Win.Internal := To_Address (Internal);
       Win.Owns := True;
    end Create;
 
@@ -82,15 +92,15 @@ package body SDL.Video.Windows.Makers is
      (Win        : in out SDL.Video.Windows.Window;
       Properties : in SDL.Properties.Property_Set)
    is
-      Internal : constant System.Address :=
+      Internal : constant Raw.Window_Pointer :=
         Raw.Create_Window_With_Properties (SDL.Properties.Get_ID (Properties));
    begin
-      if Internal = System.Null_Address then
+      if Internal = null then
          raise Window_Error with SDL.Error.Get;
       end if;
 
       SDL.Video.Windows.Finalize (Win);
-      Win.Internal := Internal;
+      Win.Internal := To_Address (Internal);
       Win.Owns := True;
    end Create;
 
@@ -101,21 +111,21 @@ package body SDL.Video.Windows.Makers is
       Size     : in SDL.Positive_Sizes;
       Flags    : in SDL.Video.Windows.Window_Flags)
    is
-      Internal : constant System.Address :=
+      Internal : constant Raw.Window_Pointer :=
         Raw.Create_Popup_Window
-          (Parent => Parent.Get_Internal,
+          (Parent => To_Window_Pointer (Parent.Get_Internal),
            X      => Position.X,
            Y      => Position.Y,
            Width  => Size.Width,
            Height => Size.Height,
            Flags  => Raw.Window_Flags (Flags));
    begin
-      if Internal = System.Null_Address then
+      if Internal = null then
          raise Window_Error with SDL.Error.Get;
       end if;
 
       SDL.Video.Windows.Finalize (Win);
-      Win.Internal := Internal;
+      Win.Internal := To_Address (Internal);
       Win.Owns := True;
    end Create_Popup;
 

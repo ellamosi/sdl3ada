@@ -4,7 +4,7 @@ with Interfaces;
 with Interfaces.C;
 with System;
 
-private with SDL.C_Pointers;
+with SDL.C_Pointers;
 with SDL.Raw.IOStream;
 with SDL.Raw.Properties;
 
@@ -26,18 +26,18 @@ package SDL.RWops is
    subtype Uint64 is Interfaces.Unsigned_64;
    subtype Sint64 is Interfaces.Integer_64;
 
-   subtype IO_Status is SDL.Raw.IOStream.Status;
-   Ready      : constant IO_Status := SDL.Raw.IOStream.Ready;
-   Error      : constant IO_Status := SDL.Raw.IOStream.Error;
-   End_Of_File : constant IO_Status := SDL.Raw.IOStream.End_Of_File;
-   Not_Ready  : constant IO_Status := SDL.Raw.IOStream.Not_Ready;
-   Read_Only  : constant IO_Status := SDL.Raw.IOStream.Read_Only;
-   Write_Only : constant IO_Status := SDL.Raw.IOStream.Write_Only;
+   subtype IO_Status is SDL.Raw.IOStream.IO_Status;
+   Ready      : constant IO_Status := SDL.Raw.IOStream.IO_Status_Ready;
+   Error      : constant IO_Status := SDL.Raw.IOStream.IO_Status_Error;
+   End_Of_File : constant IO_Status := SDL.Raw.IOStream.IO_Status_Eof;
+   Not_Ready  : constant IO_Status := SDL.Raw.IOStream.IO_Status_Not_Ready;
+   Read_Only  : constant IO_Status := SDL.Raw.IOStream.IO_Status_Readonly;
+   Write_Only : constant IO_Status := SDL.Raw.IOStream.IO_Status_Writeonly;
 
    subtype Property_ID is SDL.Raw.Properties.ID;
    Null_Property_ID : constant Property_ID := SDL.Raw.Properties.No_Properties;
 
-   subtype Handle is SDL.Raw.IOStream.Stream_Access;
+   subtype Handle is SDL.C_Pointers.IO_Stream_Pointer;
    subtype IO_Stream_Interface is SDL.Raw.IOStream.IO_Stream_Interface;
    subtype Size_Callback is SDL.Raw.IOStream.Size_Callback;
    subtype Seek_Callback is SDL.Raw.IOStream.Seek_Callback;
@@ -50,8 +50,14 @@ package SDL.RWops is
      Interfaces.Unsigned_32
        (SDL.Raw.IOStream.IO_Stream_Interface'Size / System.Storage_Unit);
 
-   function Create_Interface return IO_Stream_Interface
-     renames SDL.Raw.IOStream.Create_Interface;
+   function Create_Interface return IO_Stream_Interface is
+     (Version => IO_Stream_Interface_Size,
+      Size    => null,
+      Seek    => null,
+      Read    => null,
+      Write   => null,
+      Flush   => null,
+      Close   => null);
 
    type RWops is limited private;
 
@@ -85,23 +91,23 @@ package SDL.RWops is
    Error_Or_EOF : constant Sizes := 0;
 
    Windows_Handle_Property : constant String :=
-     SDL.Raw.IOStream.Windows_Handle_Property;
+     SDL.Raw.IOStream.Iostream_Windows_Handle_Pointer_Property;
    Stdio_File_Property : constant String :=
-     SDL.Raw.IOStream.Stdio_File_Property;
+     SDL.Raw.IOStream.Iostream_Stdio_File_Pointer_Property;
    File_Descriptor_Property : constant String :=
-     SDL.Raw.IOStream.File_Descriptor_Property;
+     SDL.Raw.IOStream.Iostream_File_Descriptor_Number_Property;
    Android_AAsset_Property : constant String :=
-     SDL.Raw.IOStream.Android_AAsset_Property;
+     SDL.Raw.IOStream.Iostream_Android_Aasset_Pointer_Property;
    Memory_Pointer_Property : constant String :=
-     SDL.Raw.IOStream.Memory_Pointer_Property;
+     SDL.Raw.IOStream.Iostream_Memory_Pointer_Property;
    Memory_Size_Property : constant String :=
-     SDL.Raw.IOStream.Memory_Size_Property;
+     SDL.Raw.IOStream.Iostream_Memory_Size_Number_Property;
    Memory_Free_Function_Property : constant String :=
-     SDL.Raw.IOStream.Memory_Free_Function_Property;
+     SDL.Raw.IOStream.Iostream_Memory_Free_Func_Pointer_Property;
    Dynamic_Memory_Property : constant String :=
-     SDL.Raw.IOStream.Dynamic_Memory_Property;
+     SDL.Raw.IOStream.Iostream_Dynamic_Memory_Pointer_Property;
    Dynamic_Chunk_Size_Property : constant String :=
-     SDL.Raw.IOStream.Dynamic_Chunk_Size_Property;
+     SDL.Raw.IOStream.Iostream_Dynamic_Chunksize_Number_Property;
 
    function Base_Path return UTF_Strings.UTF_String;
    pragma Obsolescent

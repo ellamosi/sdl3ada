@@ -13,7 +13,7 @@ package body SDL.RWops is
    use type SDL.C_Pointers.IO_Stream_Pointer;
    use type Ada.Streams.Stream_Element_Offset;
    use type C.size_t;
-   use type Raw.Status;
+   use type Raw.IO_Status;
    use type System.Address;
 
    Empty_Bytes : constant Ada.Streams.Stream_Element_Array (1 .. 0) :=
@@ -166,9 +166,9 @@ package body SDL.RWops is
       Returned_Offset :=
         Offsets
           (Raw.Seek_IO
-             (Context => Get_Handle (Context),
-              Offset  => Raw.Offsets (Offset),
-              Origin  => Raw.Whence'Val (Whence_Type'Pos (Whence))));
+             (Get_Handle (Context),
+              Interfaces.Integer_64 (Offset),
+              Raw.IO_Whence'Val (Whence_Type'Pos (Whence))));
 
       if Returned_Offset = Error_Offset then
          raise RWops_Error with SDL.Error.Get;
@@ -234,9 +234,9 @@ package body SDL.RWops is
 
       return Natural
         (Raw.Read_IO
-           (Context => Get_Handle (Context),
-            Pointer => Destination,
-            Size    => C.size_t (Size)));
+           (Get_Handle (Context),
+            Destination,
+            C.size_t (Size)));
    end Read;
 
    function Write
@@ -253,9 +253,9 @@ package body SDL.RWops is
 
       return Natural
         (Raw.Write_IO
-           (Context => Get_Handle (Context),
-            Pointer => Source,
-            Size    => C.size_t (Size)));
+           (Get_Handle (Context),
+            Source,
+            C.size_t (Size)));
    end Write;
 
    procedure Put
@@ -316,8 +316,8 @@ package body SDL.RWops is
    begin
       return Opened
         (Raw.IO_From_Mem
-           (Memory => Memory,
-            Size   => C.size_t (Size)));
+           (Memory,
+            C.size_t (Size)));
    end From_Memory;
 
    procedure From_Memory
@@ -335,8 +335,8 @@ package body SDL.RWops is
    begin
       return Opened
         (Raw.IO_From_Const_Mem
-           (Memory => Memory,
-            Size   => C.size_t (Size)));
+           (Memory,
+            C.size_t (Size)));
    end From_Const_Memory;
 
    procedure From_Const_Memory
@@ -366,8 +366,8 @@ package body SDL.RWops is
    begin
       return Opened
         (Raw.Open_IO
-           (Interface_Definition => Definition'Access,
-            User_Data            => User_Data));
+           (Definition'Access,
+            User_Data));
    end Open;
 
    procedure Open
@@ -401,9 +401,9 @@ package body SDL.RWops is
 
       Buffer :=
         Raw.Load_File_IO
-          (Source    => Get_Handle (Source),
-           Data_Size => Data_Size'Access,
-           Close_IO  => To_C_Bool (Close_After));
+          (Get_Handle (Source),
+           Data_Size'Access,
+           To_C_Bool (Close_After));
 
       if Buffer = System.Null_Address then
          Raise_Last_Error;
@@ -469,10 +469,10 @@ package body SDL.RWops is
 
       if not Boolean
           (Raw.Save_File_IO
-             (Destination => Get_Handle (Destination),
-              Data        => Data,
-              Data_Size   => C.size_t (Size),
-              Close_IO    => To_C_Bool (Close_After)))
+             (Get_Handle (Destination),
+              Data,
+              C.size_t (Size),
+              To_C_Bool (Close_After)))
       then
          Raise_Last_Error;
       end if;
@@ -496,9 +496,9 @@ package body SDL.RWops is
    begin
       if not Boolean
           (Raw.Save_File
-             (File      => C.To_C (File_Name),
-              Data      => Data,
-              Data_Size => C.size_t (Size)))
+             (C.To_C (File_Name),
+              Data,
+              C.size_t (Size)))
       then
          Raise_Last_Error;
       end if;
@@ -509,7 +509,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U8 (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_8 (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -521,7 +521,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S8 (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_8 (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -533,7 +533,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U16LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_16_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -545,7 +545,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S16LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_16_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -557,7 +557,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U16BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_16_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -569,7 +569,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S16BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_16_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -581,7 +581,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U32LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_32_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -593,7 +593,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S32LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_32_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -605,7 +605,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U32BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_32_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -617,7 +617,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S32BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_32_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -629,7 +629,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U64LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_64_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -641,7 +641,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S64LE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_64_Le (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -653,7 +653,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_U64BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_U_64_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -665,7 +665,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Src);
 
-      if not Boolean (Raw.Read_S64BE (Get_Handle (Src), Value'Access)) then
+      if not Boolean (Raw.Read_S_64_Be (Get_Handle (Src), Value'Access)) then
          Raise_Last_Error;
       end if;
 
@@ -676,7 +676,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U8 (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_8 (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_U_8;
@@ -685,7 +685,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S8 (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_8 (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_8;
@@ -694,7 +694,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U16LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_16_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_LE_16;
@@ -703,7 +703,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S16LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_16_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_LE_16;
@@ -712,7 +712,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U16BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_16_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_BE_16;
@@ -721,7 +721,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S16BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_16_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_BE_16;
@@ -730,7 +730,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U32LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_32_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_LE_32;
@@ -739,7 +739,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S32LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_32_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_LE_32;
@@ -748,7 +748,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U32BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_32_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_BE_32;
@@ -757,7 +757,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S32BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_32_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_BE_32;
@@ -766,7 +766,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U64LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_64_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_LE_64;
@@ -775,7 +775,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S64LE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_64_Le (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_LE_64;
@@ -784,7 +784,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_U64BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_U_64_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_BE_64;
@@ -793,7 +793,7 @@ package body SDL.RWops is
    begin
       Ensure_Valid (Destination);
 
-      if not Boolean (Raw.Write_S64BE (Get_Handle (Destination), Value)) then
+      if not Boolean (Raw.Write_S_64_Be (Get_Handle (Destination), Value)) then
          Raise_Last_Error;
       end if;
    end Write_S_BE_64;

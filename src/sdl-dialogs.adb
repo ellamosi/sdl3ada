@@ -1,38 +1,24 @@
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 with Interfaces.C.Extensions;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Dialog;
 
 package body SDL.Dialogs is
+   package Raw renames SDL.Raw.Dialog;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
 
-   type Internal_File_Filter is record
-      Name    : CS.chars_ptr := CS.Null_Ptr;
-      Pattern : CS.chars_ptr := CS.Null_Ptr;
-   end record with
-     Convention => C;
-
    type Internal_File_Filter_Arrays is
-     array (Natural range <>) of aliased Internal_File_Filter
+     array (Natural range <>) of aliased Raw.File_Filter
    with Convention => C;
 
    type Internal_File_Filter_Array_Access is access Internal_File_Filter_Arrays;
 
    type String_Pointer_Lists is array (Natural range <>) of CS.chars_ptr;
    type String_Pointer_List_Access is access String_Pointer_Lists;
-
-   type C_String_Pointer_Arrays is array (C.ptrdiff_t range <>) of aliased CS.chars_ptr
-   with Convention => C;
-
-   package C_String_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => CS.chars_ptr,
-      Element_Array      => C_String_Pointer_Arrays,
-      Default_Terminator => CS.Null_Ptr);
 
    type Dialog_Context is record
       Callback         : File_Dialog_Callback := null;
@@ -56,7 +42,7 @@ package body SDL.Dialogs is
      (Object => String_Pointer_Lists, Name => String_Pointer_List_Access);
 
    use type C.ptrdiff_t;
-   use type C_String_Pointers.Pointer;
+   use type Raw.File_Lists.Pointer;
    use type CS.chars_ptr;
    use type System.Address;
 
@@ -71,57 +57,8 @@ package body SDL.Dialogs is
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (if Value then CE.bool'Val (1) else CE.bool'Val (0));
 
-   type Internal_File_Dialog_Callback is access procedure
-     (User_Data : in System.Address;
-      File_List : in C_String_Pointers.Pointer;
-      Filter    : in C.int)
-   with Convention => C;
-
-   procedure SDL_Show_Open_File_Dialog
-     (Callback         : in Internal_File_Dialog_Callback;
-      User_Data        : in System.Address;
-      Window           : in System.Address;
-      Filters          : in System.Address;
-      Filter_Count     : in C.int;
-      Default_Location : in CS.chars_ptr;
-      Allow_Many       : in CE.bool)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowOpenFileDialog";
-
-   procedure SDL_Show_Save_File_Dialog
-     (Callback         : in Internal_File_Dialog_Callback;
-      User_Data        : in System.Address;
-      Window           : in System.Address;
-      Filters          : in System.Address;
-      Filter_Count     : in C.int;
-      Default_Location : in CS.chars_ptr)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowSaveFileDialog";
-
-   procedure SDL_Show_Open_Folder_Dialog
-     (Callback         : in Internal_File_Dialog_Callback;
-      User_Data        : in System.Address;
-      Window           : in System.Address;
-      Default_Location : in CS.chars_ptr;
-      Allow_Many       : in CE.bool)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowOpenFolderDialog";
-
-   procedure SDL_Show_File_Dialog_With_Properties
-     (Kind       : in File_Dialog_Type;
-      Callback   : in Internal_File_Dialog_Callback;
-      User_Data  : in System.Address;
-      Properties : in SDL.Properties.Property_ID)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowFileDialogWithProperties";
+   function To_Raw (Kind : in File_Dialog_Type) return Raw.File_Dialog_Type is
+     (Raw.File_Dialog_Type'Val (File_Dialog_Type'Pos (Kind)));
 
    procedure Release (Context : in out Dialog_Context_Access);
 
@@ -210,7 +147,7 @@ package body SDL.Dialogs is
       end;
    end Create_Context;
 
-   function To_Files (List : in C_String_Pointers.Pointer) return File_Path_Lists is
+   function To_Files (List : in Raw.File_Lists.Pointer) return File_Path_Lists is
       Count : Natural := 0;
    begin
       if List = null or else List.all = CS.Null_Ptr then
@@ -219,7 +156,7 @@ package body SDL.Dialogs is
 
       loop
          declare
-            Position : constant C_String_Pointers.Pointer :=
+            Position : constant Raw.File_Lists.Pointer :=
               List + C.ptrdiff_t (Count);
          begin
             exit when Position = null or else Position.all = CS.Null_Ptr;
@@ -231,7 +168,7 @@ package body SDL.Dialogs is
       return Result : File_Path_Lists (1 .. Count) do
          for Index in Result'Range loop
             declare
-               Position : constant C_String_Pointers.Pointer :=
+               Position : constant Raw.File_Lists.Pointer :=
                  List + C.ptrdiff_t (Index - Result'First);
             begin
                Result (Index) := US.To_Unbounded_String (CS.Value (Position.all));
@@ -242,13 +179,13 @@ package body SDL.Dialogs is
 
    procedure Dialog_Trampoline
      (User_Data : in System.Address;
-      File_List : in C_String_Pointers.Pointer;
+      File_List : in Raw.File_Lists.Pointer;
       Filter    : in C.int)
    with Convention => C;
 
    procedure Dialog_Trampoline
      (User_Data : in System.Address;
-      File_List : in C_String_Pointers.Pointer;
+      File_List : in Raw.File_Lists.Pointer;
       Filter    : in C.int)
    is
       Context : Dialog_Context_Access := To_Context (User_Data);
@@ -317,7 +254,7 @@ package body SDL.Dialogs is
       Context : Dialog_Context_Access :=
         Create_Context (Callback, User_Data, Default_Location, Filters);
    begin
-      SDL_Show_Open_File_Dialog
+      Raw.Show_Open_File_Dialog
         (Callback         => Dialog_Trampoline'Access,
          User_Data        => To_Address (Context),
          Window           => Window,
@@ -341,7 +278,7 @@ package body SDL.Dialogs is
       Context : Dialog_Context_Access :=
         Create_Context (Callback, User_Data, Default_Location, Filters);
    begin
-      SDL_Show_Save_File_Dialog
+      Raw.Show_Save_File_Dialog
         (Callback         => Dialog_Trampoline'Access,
          User_Data        => To_Address (Context),
          Window           => Window,
@@ -364,7 +301,7 @@ package body SDL.Dialogs is
       Context : Dialog_Context_Access :=
         Create_Context (Callback, User_Data, Default_Location, (1 .. 0 => <>));
    begin
-      SDL_Show_Open_Folder_Dialog
+      Raw.Show_Open_Folder_Dialog
         (Callback         => Dialog_Trampoline'Access,
          User_Data        => To_Address (Context),
          Window           => Window,
@@ -537,8 +474,8 @@ package body SDL.Dialogs is
    begin
       SDL.Properties.Copy (Properties, Effective_Properties);
 
-      SDL_Show_File_Dialog_With_Properties
-        (Kind       => Kind,
+      Raw.Show_File_Dialog_With_Properties
+        (Kind       => To_Raw (Kind),
          Callback   => Dialog_Trampoline'Access,
          User_Data  => To_Address (Context),
          Properties => SDL.Properties.Get_ID (Effective_Properties));
@@ -572,8 +509,8 @@ package body SDL.Dialogs is
             SDL.Properties.Property_Numbers (Filters'Length));
       end if;
 
-      SDL_Show_File_Dialog_With_Properties
-        (Kind       => Kind,
+      Raw.Show_File_Dialog_With_Properties
+        (Kind       => To_Raw (Kind),
          Callback   => Dialog_Trampoline'Access,
          User_Data  => To_Address (Context),
          Properties => SDL.Properties.Get_ID (Effective_Properties));

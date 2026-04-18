@@ -109,7 +109,7 @@ should not grow into a second raw layer.
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
 | `SDL.RWops`, `SDL.RWops.Streams` | compatibility wrapper | keep `SDL.Raw.IOStream` | Public RWops compatibility stays handwritten; raw stays `SDL_IOStream`-shaped. |
-| `SDL.Dialogs` | public wrapper | add `SDL.Raw.Dialog` | Callback lifetime and file-filter ergonomics stay handwritten. |
+| `SDL.Dialogs` | public wrapper | keep `SDL.Raw.Dialog` | Callback lifetime and file-filter ergonomics stay handwritten. |
 | `SDL.Message_Boxes` | public wrapper | keep `SDL.Raw.MessageBox` | UI struct assembly stays handwritten. |
 | `SDL.Trays` | thick wrapper | add `SDL.Raw.Tray` | Menu-tree ownership and callbacks stay handwritten. |
 
@@ -127,7 +127,7 @@ public wrapper work is added:
   `SDL.Raw.System`, `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`,
   `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
-  `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
+  `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`,
   `SDL.Raw.Events`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Surface`,

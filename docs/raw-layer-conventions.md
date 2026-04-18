@@ -18,6 +18,7 @@ Current raw packages include:
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
 - `SDL.Raw.CPUInfo`
+- `SDL.Raw.Dialog`
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
 - `SDL.Raw.Gamepad`

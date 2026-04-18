@@ -1,104 +1,25 @@
-with Interfaces.C;
-with Interfaces.C.Extensions;
+with System;
 
 with SDL.Error;
+with SDL.Raw.Rect;
 
 package body SDL.Video.Rectangles is
-   package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Rect;
 
-   function SDL_Has_Rect_Intersection
-     (A, B : access constant Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_HasRectIntersection";
+   function Address_Of
+     (Points : in Point_Arrays) return System.Address is
+     (if Points'Length = 0 then System.Null_Address else Points (Points'First)'Address);
 
-   function SDL_Get_Rect_Intersection
-     (A, B   : access constant Rectangle;
-      Result : access Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectIntersection";
-
-   function SDL_Get_Rect_Union
-     (A, B   : access constant Rectangle;
-      Result : access Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectUnion";
-
-   function SDL_Get_Rect_Enclosing_Points
-     (Points  : in Point_Arrays;
-      Count   : in C.int;
-      Clip    : access constant Rectangle;
-      Result  : access Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectEnclosingPoints";
-
-   function SDL_Get_Rect_And_Line_Intersection
-     (Rect : access constant Rectangle;
-      X1   : access C.int;
-      Y1   : access C.int;
-      X2   : access C.int;
-      Y2   : access C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectAndLineIntersection";
-
-   function SDL_Has_Rect_Intersection_Float
-     (A, B : access constant Float_Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_HasRectIntersectionFloat";
-
-   function SDL_Get_Rect_Intersection_Float
-     (A, B   : access constant Float_Rectangle;
-      Result : access Float_Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectIntersectionFloat";
-
-   function SDL_Get_Rect_Union_Float
-     (A, B   : access constant Float_Rectangle;
-      Result : access Float_Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectUnionFloat";
-
-   function SDL_Get_Rect_Enclosing_Points_Float
-     (Points  : in Float_Point_Arrays;
-      Count   : in C.int;
-      Clip    : access constant Float_Rectangle;
-      Result  : access Float_Rectangle) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectEnclosingPointsFloat";
-
-   function SDL_Get_Rect_And_Line_Intersection_Float
-     (Rect : access constant Float_Rectangle;
-      X1   : access Float;
-      Y1   : access Float;
-      X2   : access Float;
-      Y2   : access Float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRectAndLineIntersectionFloat";
+   function Address_Of
+     (Points : in Float_Point_Arrays) return System.Address is
+     (if Points'Length = 0 then System.Null_Address else Points (Points'First)'Address);
 
    function Has_Intersected (A, B : in Rectangle) return Boolean is
       Left  : aliased Rectangle := A;
       Right : aliased Rectangle := B;
    begin
-      return Boolean (SDL_Has_Rect_Intersection (Left'Access, Right'Access));
+      return Boolean
+        (Raw.Has_Rect_Intersection (Left'Address, Right'Address));
    end Has_Intersected;
 
    function Intersects
@@ -110,8 +31,8 @@ package body SDL.Video.Rectangles is
       Result : aliased Rectangle := Null_Rectangle;
       Found  : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_Intersection
-             (Left'Access, Right'Access, Result'Access));
+          (Raw.Get_Rect_Intersection
+             (Left'Address, Right'Address, Result'Address));
    begin
       if Found then
          Intersection := Result;
@@ -128,7 +49,7 @@ package body SDL.Video.Rectangles is
       Result : aliased Rectangle := Null_Rectangle;
       Ignored : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_Union (Left'Access, Right'Access, Result'Access));
+          (Raw.Get_Rect_Union (Left'Address, Right'Address, Result'Address));
       pragma Unreferenced (Ignored);
    begin
       return Result;
@@ -143,11 +64,11 @@ package body SDL.Video.Rectangles is
       Result  : aliased Rectangle := Null_Rectangle;
       Found   : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_Enclosing_Points
-             (Points,
+          (Raw.Get_Rect_Enclosing_Points
+             (Address_Of (Points),
               C.int (Points'Length),
-              Clipped'Access,
-              Result'Access));
+              Clipped'Address,
+              Result'Address));
    begin
       if Found then
          Enclosed := Result;
@@ -165,11 +86,11 @@ package body SDL.Video.Rectangles is
       Result : aliased Rectangle := Null_Rectangle;
    begin
       if not Boolean
-          (SDL_Get_Rect_Enclosing_Points
-             (Points,
+          (Raw.Get_Rect_Enclosing_Points
+             (Address_Of (Points),
               C.int (Points'Length),
-              null,
-              Result'Access))
+              System.Null_Address,
+              Result'Address))
       then
          raise Rectangle_Error with SDL.Error.Get;
       end if;
@@ -188,8 +109,8 @@ package body SDL.Video.Rectangles is
       Y2   : aliased C.int := Line.Finish.Y;
       Hit  : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_And_Line_Intersection
-             (Area'Access, X1'Access, Y1'Access, X2'Access, Y2'Access));
+          (Raw.Get_Rect_And_Line_Intersection
+             (Area'Address, X1'Access, Y1'Access, X2'Access, Y2'Access));
    begin
       if Hit then
          Line := (Start => (X => X1, Y => Y1), Finish => (X => X2, Y => Y2));
@@ -203,7 +124,7 @@ package body SDL.Video.Rectangles is
       Right : aliased Float_Rectangle := B;
    begin
       return Boolean
-        (SDL_Has_Rect_Intersection_Float (Left'Access, Right'Access));
+        (Raw.Has_Rect_Intersection_Float (Left'Address, Right'Address));
    end Has_Intersected;
 
    function Intersects
@@ -215,8 +136,8 @@ package body SDL.Video.Rectangles is
       Result : aliased Float_Rectangle := (others => 0.0);
       Found  : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_Intersection_Float
-             (Left'Access, Right'Access, Result'Access));
+          (Raw.Get_Rect_Intersection_Float
+             (Left'Address, Right'Address, Result'Address));
    begin
       if Found then
          Intersection := Result;
@@ -233,8 +154,8 @@ package body SDL.Video.Rectangles is
       Result : aliased Float_Rectangle := (others => 0.0);
       Ignored : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_Union_Float
-             (Left'Access, Right'Access, Result'Access));
+          (Raw.Get_Rect_Union_Float
+             (Left'Address, Right'Address, Result'Address));
       pragma Unreferenced (Ignored);
    begin
       return Result;
@@ -256,11 +177,11 @@ package body SDL.Video.Rectangles is
       end loop;
 
       if Boolean
-          (SDL_Get_Rect_Enclosing_Points_Float
-             (Converted,
+          (Raw.Get_Rect_Enclosing_Points_Float
+             (Address_Of (Converted),
               C.int (Converted'Length),
-              Clipped'Access,
-              Result'Access))
+              Clipped'Address,
+              Result'Address))
       then
          Enclosed := Result;
          return True;
@@ -284,11 +205,11 @@ package body SDL.Video.Rectangles is
       end loop;
 
       if not Boolean
-          (SDL_Get_Rect_Enclosing_Points_Float
-             (Converted,
+          (Raw.Get_Rect_Enclosing_Points_Float
+             (Address_Of (Converted),
               C.int (Converted'Length),
-              null,
-              Result'Access))
+              System.Null_Address,
+              Result'Address))
       then
          raise Rectangle_Error with SDL.Error.Get;
       end if;
@@ -307,8 +228,8 @@ package body SDL.Video.Rectangles is
       Y2   : aliased Float := Float (Line.Finish.Y);
       Hit  : constant Boolean :=
         Boolean
-          (SDL_Get_Rect_And_Line_Intersection_Float
-             (Area'Access, X1'Access, Y1'Access, X2'Access, Y2'Access));
+          (Raw.Get_Rect_And_Line_Intersection_Float
+             (Area'Address, X1'Access, Y1'Access, X2'Access, Y2'Access));
    begin
       if Hit then
          Line :=

@@ -17,19 +17,28 @@ Current raw packages include:
 - `SDL.Raw.Assert`
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
+- `SDL.Raw.CPUInfo`
+- `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
+- `SDL.Raw.Hints`
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
 - `SDL.Raw.Locale`
+- `SDL.Raw.LoadSO`
+- `SDL.Raw.Log`
 - `SDL.Raw.Main`
 - `SDL.Raw.Misc`
 - `SDL.Raw.Mutex`
+- `SDL.Raw.Platform`
+- `SDL.Raw.Power`
 - `SDL.Raw.Process`
 - `SDL.Raw.Properties`
 - `SDL.Raw.Storage`
 - `SDL.Raw.System`
+- `SDL.Raw.Timer`
 - `SDL.Raw.Thread`
 - `SDL.Raw.Time`
+- `SDL.Raw.Version`
 
 ## Naming
 

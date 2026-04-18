@@ -1,6 +1,7 @@
 with Interfaces;
 with Interfaces.C;
 with Interfaces.C.Extensions;
+with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
@@ -92,6 +93,27 @@ package SDL.Raw.Filesystem is
       File_Name      : in CS.chars_ptr) return Enumeration_Results
    with Convention => C;
 
+   type Glob_Result_Array is array (C.ptrdiff_t range <>) of aliased CS.chars_ptr
+   with Convention => C;
+
+   package Glob_Result_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => CS.chars_ptr,
+      Element_Array      => Glob_Result_Array,
+      Default_Terminator => null);
+
+   procedure Free (Mem : in CS.chars_ptr)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
+   procedure Free (Mem : in Glob_Result_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    function Get_Base_Path return CS.chars_ptr
    with
      Import        => True,
@@ -164,7 +186,7 @@ package SDL.Raw.Filesystem is
      (Path    : in CS.chars_ptr;
       Pattern : in CS.chars_ptr;
       Flags   : in Glob_Flags;
-      Count   : access C.int) return System.Address
+      Count   : access C.int) return Glob_Result_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,

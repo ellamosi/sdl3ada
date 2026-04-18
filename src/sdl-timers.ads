@@ -1,17 +1,17 @@
-with Interfaces;
 with System;
+with SDL.Raw.Timer;
 
 package SDL.Timers is
    pragma Pure;
 
-   subtype Timer_ID is Interfaces.Unsigned_32;
+   subtype Timer_ID is SDL.Raw.Timer.Timer_ID;
 
    No_Timer : constant Timer_ID := 0;
 
-   subtype Timer_Intervals is Interfaces.Unsigned_32;
+   subtype Timer_Intervals is SDL.Raw.Timer.Timer_Intervals;
 
-   type Milliseconds is new Interfaces.Unsigned_64;
-   type Nanoseconds is new Interfaces.Unsigned_64;
+   subtype Milliseconds is SDL.Raw.Timer.Tick_Values;
+   subtype Nanoseconds is SDL.Raw.Timer.Nanoseconds;
 
    type Timer_Callback is access function
      (User_Data : in System.Address;
@@ -26,27 +26,19 @@ package SDL.Timers is
    with Convention => C;
 
    function Ticks return Milliseconds with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetTicks";
+     Inline;
 
    function Ticks_NS return Nanoseconds with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetTicksNS";
+     Inline;
 
    procedure Wait_Delay (MS : in Milliseconds) with
      Inline;
 
    procedure Wait_Delay_NS (NS : in Nanoseconds) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DelayNS";
+     Inline;
 
    procedure Wait_Delay_Precise (NS : in Nanoseconds) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DelayPrecise";
+     Inline;
 
    function Add_Timer
      (Interval  : in Timer_Intervals;
@@ -78,17 +70,13 @@ package SDL.Timers is
    function Remove (Timer : in Timer_ID) return Boolean renames Remove_Timer;
 
    package Performance is
-      type Counts is new Interfaces.Unsigned_64;
-      type Frequencies is new Interfaces.Unsigned_64;
+      subtype Counts is SDL.Raw.Timer.Tick_Values;
+      subtype Frequencies is SDL.Raw.Timer.Tick_Values;
 
       function Get_Counter return Counts with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetPerformanceCounter";
+        Inline;
 
       function Get_Frequency return Frequencies with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GetPerformanceFrequency";
+        Inline;
    end Performance;
 end SDL.Timers;

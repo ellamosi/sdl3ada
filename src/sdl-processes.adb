@@ -6,10 +6,12 @@ with System.Storage_Elements;
 
 with SDL.C_Pointers;
 with SDL.Error;
+with SDL.Raw.IOStream;
 
 package body SDL.Processes is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package IO_Raw renames SDL.Raw.IOStream;
    package Raw renames SDL.Raw.Process;
    package SSE renames System.Storage_Elements;
 
@@ -33,27 +35,6 @@ package body SDL.Processes is
    function To_IO_Stream_Pointer is new Ada.Unchecked_Conversion
      (Source => System.Address,
       Target => SDL.C_Pointers.IO_Stream_Pointer);
-
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   function SDL_Write_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
-      Ptr     : in System.Address;
-      Size    : in C.size_t) return C.size_t
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_WriteIO";
-
-   function SDL_Close_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseIO";
 
    procedure Raise_Last_Error;
    procedure Require_Valid (Self : in Process);
@@ -203,7 +184,7 @@ package body SDL.Processes is
             return;
          end if;
 
-         if not Boolean (SDL_Close_IO (To_IO_Stream_Pointer (Address))) then
+         if not Boolean (IO_Raw.Close_IO (To_IO_Stream_Pointer (Address))) then
             Raise_Last_Error;
          end if;
 
@@ -333,7 +314,7 @@ package body SDL.Processes is
 
       while Remaining > 0 loop
          Bytes_Written :=
-           SDL_Write_IO
+           IO_Raw.Write_IO
              (Context => Stream,
               Ptr     => Address,
               Size    => Remaining);
@@ -395,12 +376,12 @@ package body SDL.Processes is
          Value : constant String :=
            CS.Value (To_Chars_Ptr (Buffer), Data_Size);
       begin
-         SDL_Free (Buffer);
+         Raw.Free (Buffer);
          Exit_Code := Status;
          return Value;
       exception
          when others =>
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
             raise;
       end;
    end Read_All_Output;

@@ -63,4 +63,7 @@ docs are the parity matrix and validation matrix under `docs/coverage/`.
 
 - [docs/main-entry-patterns.md](main-entry-patterns.md)
 - [docs/raw-layer-conventions.md](raw-layer-conventions.md)
+- [docs/raw-layer-target-state.md](raw-layer-target-state.md)
+- [docs/raw-layer-conversion-plan.md](raw-layer-conversion-plan.md)
+- [docs/raw-layer-conversion-tracking.md](raw-layer-conversion-tracking.md)
 - [docs/coverage/README.md](coverage/README.md)

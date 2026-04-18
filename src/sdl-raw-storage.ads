@@ -254,7 +254,7 @@ package SDL.Raw.Storage is
       Path    : in CS.chars_ptr;
       Pattern : in CS.chars_ptr;
       Flags   : in SDL.Raw.Filesystem.Glob_Flags;
-      Count   : access C.int) return System.Address
+      Count   : access C.int) return SDL.Raw.Filesystem.Glob_Result_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,

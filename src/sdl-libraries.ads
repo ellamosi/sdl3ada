@@ -1,5 +1,7 @@
 with Ada.Finalization;
 
+with SDL.Raw.LoadSO;
+
 package SDL.Libraries is
    pragma Preelaborate;
 
@@ -18,11 +20,7 @@ package SDL.Libraries is
    function Load_Sub_Program
      (From_Library : in Handles) return Access_To_Sub_Program;
 private
-   type Internal_Handle is null record with
-     Convention => C;
-
-   type Internal_Handle_Access is access all Internal_Handle with
-     Convention => C;
+   subtype Internal_Handle_Access is SDL.Raw.LoadSO.Shared_Object_Access;
 
    type Handles is new Ada.Finalization.Limited_Controlled with record
       Internal : Internal_Handle_Access;

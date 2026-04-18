@@ -5,11 +5,13 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Hints;
 
 package body SDL.Hints is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Hints;
 
    type String_Access is access all String;
 
@@ -42,6 +44,9 @@ package body SDL.Hints is
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
+
+   function To_Raw_Priority (Value : in Priorities) return Raw.Priorities is
+     (Raw.Priorities'Val (Priorities'Pos (Value)));
 
    protected Callback_Registry is
       procedure Add (Context : in Callback_Context_Access);
@@ -115,13 +120,6 @@ package body SDL.Hints is
          Context := null;
       end Remove;
    end Callback_Registry;
-
-   type Internal_Hint_Callback is access procedure
-     (User_Data : in System.Address;
-      Name      : in CS.chars_ptr;
-      Old_Value : in CS.chars_ptr;
-      New_Value : in CS.chars_ptr)
-   with Convention => C;
 
    Accelerometer_As_Joystick_Name                : aliased constant String := "SDL_ACCELEROMETER_AS_JOYSTICK";
    Allow_Alt_Tab_While_Grabbed_Name              : aliased constant String := "SDL_ALLOW_ALT_TAB_WHILE_GRABBED";
@@ -540,55 +538,6 @@ package body SDL.Hints is
    function String_Value (Value : in CS.chars_ptr) return String is
      (if Value = CS.Null_Ptr then "" else CS.Value (Value));
 
-   function SDL_Get_Hint (C_Str : in C.char_array) return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetHint";
-
-   function SDL_Get_Hint_Boolean
-     (Name          : in C.char_array;
-      Default_Value : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetHintBoolean";
-
-   function SDL_Set_Hint (Name, Value : in C.char_array) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetHint";
-
-   function SDL_Set_Hint_With_Priority
-     (Name, Value : in C.char_array;
-      P           : in Priorities) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetHintWithPriority";
-
-   function SDL_Reset_Hint (Name : in C.char_array) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResetHint";
-
-   function SDL_Add_Hint_Callback
-     (Name      : in C.char_array;
-      Callback  : in Internal_Hint_Callback;
-      User_Data : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AddHintCallback";
-
-   procedure SDL_Remove_Hint_Callback
-     (Name      : in C.char_array;
-      Callback  : in Internal_Hint_Callback;
-      User_Data : in System.Address)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RemoveHintCallback";
-
    procedure Raise_Invalid_Callback;
 
    procedure Raise_Invalid_Callback is
@@ -623,10 +572,15 @@ package body SDL.Hints is
    end Hint_Trampoline;
 
    function Get (Name : in String) return String is
-      C_Str : constant CS.chars_ptr := SDL_Get_Hint (C.To_C (Name));
+      C_Str : constant CS.chars_ptr := Raw.Get_Hint (C.To_C (Name));
    begin
       return String_Value (C_Str);
    end Get;
+
+   procedure Clear is
+   begin
+      Raw.Reset_Hints;
+   end Clear;
 
    function Get (Name : in Hint) return String is
    begin
@@ -638,7 +592,7 @@ package body SDL.Hints is
       Default : in Boolean := False) return Boolean
    is
    begin
-      return Boolean (SDL_Get_Hint_Boolean (C.To_C (Name), To_C_Bool (Default)));
+      return Boolean (Raw.Get_Hint_Boolean (C.To_C (Name), To_C_Bool (Default)));
    end Get_Boolean;
 
    function Get_Boolean
@@ -651,7 +605,7 @@ package body SDL.Hints is
 
    procedure Set (Name : in String; Value : in String) is
    begin
-      if not Boolean (SDL_Set_Hint (C.To_C (Name), C.To_C (Value))) then
+      if not Boolean (Raw.Set_Hint (C.To_C (Name), C.To_C (Value))) then
          raise Hint_Error with SDL.Error.Get;
       end if;
    end Set;
@@ -667,7 +621,10 @@ package body SDL.Hints is
       Priority : in Priorities)
    is
    begin
-      if not Boolean (SDL_Set_Hint_With_Priority (C.To_C (Name), C.To_C (Value), Priority)) then
+      if not Boolean
+          (Raw.Set_Hint_With_Priority
+             (C.To_C (Name), C.To_C (Value), To_Raw_Priority (Priority)))
+      then
          raise Hint_Error with SDL.Error.Get;
       end if;
    end Set;
@@ -682,7 +639,7 @@ package body SDL.Hints is
    end Set;
 
    function Clear (Name : in String) return Boolean is
-     (Boolean (SDL_Reset_Hint (C.To_C (Name))));
+     (Boolean (Raw.Reset_Hint (C.To_C (Name))));
 
    function Clear (Name : in Hint) return Boolean is
      (Clear (Value (Name)));
@@ -707,7 +664,7 @@ package body SDL.Hints is
       Callback_Registry.Add (Context);
 
       if not Boolean
-          (SDL_Add_Hint_Callback
+          (Raw.Add_Hint_Callback
              (Name      => C.To_C (Name),
               Callback  => Hint_Trampoline'Access,
               User_Data => To_Address (Context)))
@@ -749,7 +706,7 @@ package body SDL.Hints is
          return;
       end if;
 
-      SDL_Remove_Hint_Callback
+      Raw.Remove_Hint_Callback
         (Name      => C.To_C (Name),
          Callback  => Hint_Trampoline'Access,
          User_Data => To_Address (Context));

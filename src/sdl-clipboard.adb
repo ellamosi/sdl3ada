@@ -8,22 +8,13 @@ package body SDL.Clipboard is
    package CS renames Interfaces.C.Strings;
    package Raw renames SDL.Raw.Clipboard;
 
+   use type Raw.Byte_Pointers.Pointer;
+   use type Raw.Mime_Type_Pointers.Pointer;
    use type CS.chars_ptr;
    use type Raw.Sizes;
-   use type System.Address;
 
    Empty_Bytes : constant Ada.Streams.Stream_Element_Array (1 .. 0) :=
      [others => 0];
-
-   procedure SDL_Free (Memory : in CS.chars_ptr) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL clipboard call failed");
@@ -33,11 +24,11 @@ package body SDL.Clipboard is
       Default_Message : in String) return UTF_Strings.UTF_8_String;
 
    function Copy_Buffer
-     (Buffer      : in System.Address;
+     (Buffer      : in Raw.Byte_Pointers.Pointer;
       Byte_Length : in Raw.Sizes) return Ada.Streams.Stream_Element_Array;
 
    function Copy_Mime_Type_List
-     (Items : in System.Address;
+     (Items : in Raw.Mime_Type_Pointers.Pointer;
       Count : in Raw.Sizes) return Mime_Type_Lists;
 
    procedure Raise_Last_Error
@@ -64,81 +55,86 @@ package body SDL.Clipboard is
       declare
          Result : constant UTF_Strings.UTF_8_String := CS.Value (Value);
       begin
-         SDL_Free (Value);
+         Raw.Free (Value);
          return Result;
       exception
          when others =>
-            SDL_Free (Value);
+            Raw.Free (Value);
             raise;
       end;
    end Copy_Text;
 
    function Copy_Buffer
-     (Buffer      : in System.Address;
+     (Buffer      : in Raw.Byte_Pointers.Pointer;
       Byte_Length : in Raw.Sizes) return Ada.Streams.Stream_Element_Array
    is
    begin
       if Byte_Length = 0 then
-         if Buffer /= System.Null_Address then
-            SDL_Free (Buffer);
+         if Buffer /= null then
+            Raw.Free (Buffer);
          end if;
 
          return Empty_Bytes;
       end if;
 
-      if Buffer = System.Null_Address then
+      if Buffer = null then
          Raise_Last_Error ("SDL clipboard data retrieval failed");
       end if;
 
       declare
          Bytes : Ada.Streams.Stream_Element_Array
            (1 .. Ada.Streams.Stream_Element_Offset (Byte_Length));
-         for Bytes'Address use Buffer;
-         pragma Import (Ada, Bytes);
-
-         Result : constant Ada.Streams.Stream_Element_Array := Bytes;
       begin
-         SDL_Free (Buffer);
-         return Result;
+         for Index in Bytes'Range loop
+            declare
+               Position : constant Raw.Byte_Pointers.Pointer :=
+                 Buffer + C.ptrdiff_t (Integer (Index) - Integer (Bytes'First));
+            begin
+               Bytes (Index) := Ada.Streams.Stream_Element (Position.all);
+            end;
+         end loop;
+
+         Raw.Free (Buffer);
+         return Bytes;
       exception
          when others =>
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
             raise;
       end;
    end Copy_Buffer;
 
    function Copy_Mime_Type_List
-     (Items : in System.Address;
+     (Items : in Raw.Mime_Type_Pointers.Pointer;
       Count : in Raw.Sizes) return Mime_Type_Lists
    is
    begin
-      if Items = System.Null_Address then
+      if Items = null then
          Raise_Last_Error ("SDL clipboard MIME-type query failed");
       end if;
 
       if Count = 0 then
-         SDL_Free (Items);
+         Raw.Free (Items);
          return [];
       end if;
 
       declare
-         Raw_Items : CS.chars_ptr_array (0 .. Count - 1);
-         for Raw_Items'Address use Items;
-         pragma Import (Ada, Raw_Items);
-
          Result : Mime_Type_Lists (1 .. Natural (Count));
       begin
          for Index in Result'Range loop
-            Result (Index) :=
-              US.To_Unbounded_String
-                (CS.Value (Raw_Items (C.size_t (Index - 1))));
+            declare
+               Position : constant Raw.Mime_Type_Pointers.Pointer :=
+                 Items + C.ptrdiff_t (Index - Result'First);
+            begin
+               Result (Index) :=
+                 US.To_Unbounded_String (CS.Value (Position.all));
+            end;
          end loop;
 
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            Raw.Free (Items);
             raise;
       end;
    end Copy_Mime_Type_List;
@@ -243,7 +239,7 @@ package body SDL.Clipboard is
      (Mime_Type : in String) return Ada.Streams.Stream_Element_Array
    is
       Byte_Length : aliased Raw.Sizes := 0;
-      Buffer      : constant System.Address :=
+      Buffer      : constant Raw.Byte_Pointers.Pointer :=
         Raw.Get_Data (C.To_C (Mime_Type), Byte_Length'Access);
    begin
       return Copy_Buffer (Buffer, Byte_Length);
@@ -256,7 +252,8 @@ package body SDL.Clipboard is
 
    function Get_Mime_Types return Mime_Type_Lists is
       Count : aliased Raw.Sizes := 0;
-      Items : constant System.Address := Raw.Get_Mime_Types (Count'Access);
+      Items : constant Raw.Mime_Type_Pointers.Pointer :=
+        Raw.Get_Mime_Types (Count'Access);
    begin
       return Copy_Mime_Type_List (Items => Items, Count => Count);
    end Get_Mime_Types;

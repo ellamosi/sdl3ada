@@ -79,10 +79,7 @@ package SDL.Log is
    procedure Put_Warn (Message : in String; Category : in Categories := Application) with
      Inline => True;
 
-   procedure Reset_Priorities with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResetLogPriorities";
+   procedure Reset_Priorities;
 
    function Set_Priority_Prefix
      (Priority : in Priorities;
@@ -90,24 +87,15 @@ package SDL.Log is
 
    function Clear_Priority_Prefix (Priority : in Priorities) return Boolean;
 
-   procedure Set_All_Priorities (Priority : in Priorities) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetLogPriorities";
+   procedure Set_All_Priorities (Priority : in Priorities);
 
    procedure Set (Priority : in Priorities) renames Set_All_Priorities;
 
-   procedure Set_Priority (Category : in Categories; Priority : in Priorities) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetLogPriority";
+   procedure Set_Priority (Category : in Categories; Priority : in Priorities);
 
    procedure Set (Category : in Categories; Priority : in Priorities) renames Set_Priority;
 
-   function Get_Priority (Category : in Categories) return Priorities with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetLogPriority";
+   function Get_Priority (Category : in Categories) return Priorities;
 
    procedure Put_Message_V
      (Category  : in Categories;

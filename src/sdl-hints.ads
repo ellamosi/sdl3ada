@@ -214,10 +214,7 @@ package SDL.Hints is
    type Priorities is (Default, Normal, Override) with
      Convention => C;
 
-   procedure Clear with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResetHints";
+   procedure Clear;
 
    function Get (Name : in String) return String with
      Inline => True;

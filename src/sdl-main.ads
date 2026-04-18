@@ -3,7 +3,6 @@ with Interfaces.C;
 with System;
 
 with SDL.Events.Events;
-with SDL.Raw.Init;
 with SDL.Raw.Main;
 
 package SDL.Main is
@@ -12,17 +11,17 @@ package SDL.Main is
 
    Main_Error : exception;
 
-   subtype App_Results is SDL.Raw.Init.App_Results;
+   subtype App_Results is SDL.Raw.Main.App_Results;
    subtype Main_Function is SDL.Raw.Main.Main_Function;
-   subtype App_Init_Callback is SDL.Raw.Init.App_Init_Callback;
-   subtype App_Iterate_Callback is SDL.Raw.Init.App_Iterate_Callback;
-   subtype App_Event_Callback is SDL.Raw.Init.App_Event_Callback;
-   subtype App_Quit_Callback is SDL.Raw.Init.App_Quit_Callback;
+   subtype App_Init_Callback is SDL.Raw.Main.App_Init_Callback;
+   subtype App_Iterate_Callback is SDL.Raw.Main.App_Iterate_Callback;
+   subtype App_Event_Callback is SDL.Raw.Main.App_Event_Callback;
+   subtype App_Quit_Callback is SDL.Raw.Main.App_Quit_Callback;
    subtype Window_Class_Styles is SDL.Raw.Main.Window_Class_Styles;
 
-   App_Continue : constant App_Results := SDL.Raw.Init.App_Continue;
-   App_Success  : constant App_Results := SDL.Raw.Init.App_Success;
-   App_Failure  : constant App_Results := SDL.Raw.Init.App_Failure;
+   App_Continue : constant App_Results := SDL.Raw.Main.App_Continue;
+   App_Success  : constant App_Results := SDL.Raw.Main.App_Success;
+   App_Failure  : constant App_Results := SDL.Raw.Main.App_Failure;
    Default_Window_Class_Style : constant Window_Class_Styles := 0;
 
    type Argument_Lists is array (Positive range <>) of ASU.Unbounded_String;

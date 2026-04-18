@@ -3,14 +3,16 @@ with Interfaces.C;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Filesystem;
 
 package body SDL.Storage is
    package C renames Interfaces.C;
    package CS renames Interfaces.C.Strings;
+   package FS_Raw renames SDL.Raw.Filesystem;
    package Raw renames SDL.Raw.Storage;
 
+   use type FS_Raw.Glob_Result_Pointers.Pointer;
    use type Raw.Storage_Access;
-   use type System.Address;
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL storage call failed");
@@ -27,7 +29,7 @@ package body SDL.Storage is
       Default_Message : in String) return Storage;
 
    function Copy_Glob_Result
-     (Items : in System.Address;
+     (Items : in FS_Raw.Glob_Result_Pointers.Pointer;
       Count : in C.int) return Path_Lists;
 
    function Open_Custom_Internal
@@ -39,11 +41,6 @@ package body SDL.Storage is
       Path    : in CS.chars_ptr;
       Pattern : in CS.chars_ptr;
       Flags   : in Glob_Flags) return Path_Lists;
-
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL storage call failed")
@@ -86,37 +83,38 @@ package body SDL.Storage is
    end Opened;
 
    function Copy_Glob_Result
-     (Items : in System.Address;
+     (Items : in FS_Raw.Glob_Result_Pointers.Pointer;
       Count : in C.int) return Path_Lists
    is
    begin
-      if Items = System.Null_Address then
+      if Items = null then
          Raise_Last_Error ("SDL storage glob failed");
       end if;
 
       if Count < 1 then
-         SDL_Free (Items);
+         FS_Raw.Free (Items);
          return [];
       end if;
 
       declare
-         Raw_Items : CS.chars_ptr_array (0 .. C.size_t (Count - 1));
-         for Raw_Items'Address use Items;
-         pragma Import (Ada, Raw_Items);
-
          Result : Path_Lists (1 .. Positive (Count));
       begin
          for Index in Result'Range loop
-            Result (Index) :=
-              Ada.Strings.Unbounded.To_Unbounded_String
-                (CS.Value (Raw_Items (C.size_t (Index - 1))));
+            declare
+               Position : constant FS_Raw.Glob_Result_Pointers.Pointer :=
+                 Items + C.ptrdiff_t (Index - 1);
+            begin
+               Result (Index) :=
+                 Ada.Strings.Unbounded.To_Unbounded_String
+                   (CS.Value (Position.all));
+            end;
          end loop;
 
-         SDL_Free (Items);
+         FS_Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            FS_Raw.Free (Items);
             raise;
       end;
    end Copy_Glob_Result;
@@ -137,7 +135,7 @@ package body SDL.Storage is
       Flags   : in Glob_Flags) return Path_Lists
    is
       Count : aliased C.int := 0;
-      Items : System.Address;
+      Items : FS_Raw.Glob_Result_Pointers.Pointer;
    begin
       Require_Valid (Self);
 

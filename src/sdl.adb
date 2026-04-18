@@ -1,79 +1,35 @@
 with Interfaces.C.Extensions;
+with SDL.Raw.Init;
 
 package body SDL is
    package CE renames Interfaces.C.Extensions;
+   package Init_Raw renames SDL.Raw.Init;
 
+   use type Init_Raw.Init_Flags;
    use type System.Address;
-
-   function SDL_Init (Flags : in Init_Flags := Enable_Everything) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_Init";
-
-   function SDL_Init_Sub_System (Flags : in Init_Flags) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_InitSubSystem";
-
-   function SDL_Was_Init (Flags : in Init_Flags := Null_Init_Flags) return Init_Flags with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_WasInit";
-
-   function SDL_Is_Main_Thread return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsMainThread";
-
-   function SDL_Run_On_Main_Thread
-     (Callback      : in Main_Thread_Callback;
-      User_Data     : in System.Address;
-      Wait_Complete : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RunOnMainThread";
-
-   function SDL_Set_App_Metadata
-     (App_Name       : in System.Address;
-      App_Version    : in System.Address;
-      App_Identifier : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAppMetadata";
-
-   function SDL_Set_App_Metadata_Property
-     (Name  : in System.Address;
-      Value : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAppMetadataProperty";
-
-   function SDL_Get_App_Metadata_Property
-     (Name : in System.Address) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAppMetadataProperty";
-
-   function C_Strlen (Item : in System.Address) return C.size_t with
-     Import        => True,
-     Convention    => C,
-     External_Name => "strlen";
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
 
+   function To_Raw (Flags : in Init_Flags) return Init_Raw.Init_Flags is
+     (Init_Raw.Init_Flags (Flags));
+
+   function To_Public (Flags : in Init_Raw.Init_Flags) return Init_Flags is
+     (Init_Flags (Flags));
+
    function Initialise (Flags : in Init_Flags := Enable_Everything) return Boolean is
    begin
-      return Boolean (SDL_Init (Flags));
+      return Boolean (Init_Raw.Init (To_Raw (Flags)));
    end Initialise;
+
+   procedure Quit is
+   begin
+      Init_Raw.Quit;
+   end Quit;
 
    function Initialise_Sub_System (Flags : in Init_Flags) return Boolean is
    begin
-      return Boolean (SDL_Init_Sub_System (Flags));
+      return Boolean (Init_Raw.Init_Sub_System (To_Raw (Flags)));
    end Initialise_Sub_System;
 
    function Set_App_Metadata
@@ -86,7 +42,7 @@ package body SDL is
       C_Identifier : aliased C.char_array := C.To_C (App_Identifier);
    begin
       return Boolean
-        (SDL_Set_App_Metadata
+        (Init_Raw.Set_App_Metadata
            (App_Name       => C_Name'Address,
             App_Version    => C_Version'Address,
             App_Identifier => C_Identifier'Address));
@@ -95,7 +51,7 @@ package body SDL is
    function Clear_App_Metadata return Boolean is
    begin
       return Boolean
-        (SDL_Set_App_Metadata
+        (Init_Raw.Set_App_Metadata
            (App_Name       => System.Null_Address,
             App_Version    => System.Null_Address,
             App_Identifier => System.Null_Address));
@@ -109,27 +65,28 @@ package body SDL is
       C_Value : aliased C.char_array := C.To_C (Value);
    begin
       return Boolean
-        (SDL_Set_App_Metadata_Property (C_Name'Address, C_Value'Address));
+        (Init_Raw.Set_App_Metadata_Property (C_Name'Address, C_Value'Address));
    end Set_App_Metadata_Property;
 
    function Clear_App_Metadata_Property (Name : in String) return Boolean is
       C_Name : aliased C.char_array := C.To_C (Name);
    begin
       return Boolean
-        (SDL_Set_App_Metadata_Property (C_Name'Address, System.Null_Address));
+        (Init_Raw.Set_App_Metadata_Property
+           (C_Name'Address, System.Null_Address));
    end Clear_App_Metadata_Property;
 
    function Get_App_Metadata_Property (Name : in String) return String is
       C_Name  : aliased C.char_array := C.To_C (Name);
       Raw     : constant System.Address :=
-        SDL_Get_App_Metadata_Property (C_Name'Address);
+        Init_Raw.Get_App_Metadata_Property (C_Name'Address);
    begin
       if Raw = System.Null_Address then
          return "";
       end if;
 
       declare
-         Length : constant C.size_t := C_Strlen (Raw);
+         Length : constant C.size_t := Init_Raw.Strlen (Raw);
          Value  : C.char_array (0 .. Length);
          for Value'Address use Raw;
          pragma Import (Ada, Value);
@@ -140,12 +97,17 @@ package body SDL is
 
    function What_Was_Initialised return Init_Flags is
    begin
-      return SDL_Was_Init;
+      return To_Public (Init_Raw.Was_Init (To_Raw (Null_Init_Flags)));
    end What_Was_Initialised;
+
+   procedure Quit_Sub_System (Flags : in Init_Flags) is
+   begin
+      Init_Raw.Quit_Sub_System (To_Raw (Flags));
+   end Quit_Sub_System;
 
    function Is_Main_Thread return Boolean is
    begin
-      return Boolean (SDL_Is_Main_Thread);
+      return Boolean (Init_Raw.Is_Main_Thread);
    end Is_Main_Thread;
 
    function Run_On_Main_Thread
@@ -155,14 +117,14 @@ package body SDL is
    is
    begin
       return Boolean
-        (SDL_Run_On_Main_Thread
-           (Callback      => Callback,
+        (Init_Raw.Run_On_Main_Thread
+           (Callback      => Init_Raw.Main_Thread_Callback (Callback),
             User_Data     => User_Data,
             Wait_Complete => To_C_Bool (Wait_Complete)));
    end Run_On_Main_Thread;
 
    function Was_Initialised (Flags : in Init_Flags) return Boolean is
    begin
-      return SDL_Was_Init (Flags) = Flags;
+      return Init_Raw.Was_Init (To_Raw (Flags)) = To_Raw (Flags);
    end Was_Initialised;
 end SDL;

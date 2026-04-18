@@ -6,15 +6,13 @@ with SDL.Error;
 
 package body SDL.Libraries is
    package C renames Interfaces.C;
+   package Raw renames SDL.Raw.LoadSO;
+
+   use type Internal_Handle_Access;
 
    procedure Load (Self : out Handles; Name : in String) is
-      function SDL_Load_Object
-        (C_Str : in C.char_array) return Internal_Handle_Access with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LoadObject";
    begin
-      Self.Internal := SDL_Load_Object (C.To_C (Name));
+      Self.Internal := Raw.Load_Object (C.To_C (Name));
 
       if Self.Internal = null then
          raise Library_Error with SDL.Error.Get;
@@ -22,12 +20,8 @@ package body SDL.Libraries is
    end Load;
 
    procedure Unload (Self : in out Handles) is
-      procedure SDL_Unload_Object (H : in Internal_Handle_Access) with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_UnloadObject";
    begin
-      SDL_Unload_Object (Self.Internal);
+      Raw.Unload_Object (Self.Internal);
       Self.Internal := null;
    end Unload;
 
@@ -37,15 +31,8 @@ package body SDL.Libraries is
       function To_Sub_Program is new Ada.Unchecked_Conversion
         (Source => System.Address, Target => Access_To_Sub_Program);
 
-      function SDL_Load_Function
-        (H : in Internal_Handle_Access;
-         N : in C.char_array) return System.Address with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_LoadFunction";
-
       Func_Ptr : constant System.Address :=
-        SDL_Load_Function (From_Library.Internal, C.To_C (Name));
+        Raw.Load_Function (From_Library.Internal, C.To_C (Name));
 
       use type System.Address;
    begin

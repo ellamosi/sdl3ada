@@ -7,7 +7,6 @@
 # Update this file only when intentional conversion work changes the
 # remaining non-raw import footprint.
 
-src/sdl-events-events.adb 21
 src/sdl-video-renderers.adb 83
 src/sdl-video-surfaces.adb 59
 src/sdl-video-windows.adb 74

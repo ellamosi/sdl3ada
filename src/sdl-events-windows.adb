@@ -3,35 +3,35 @@ package body SDL.Events.Windows is
      (Event_Type : in SDL.Events.Event_Types) return Window_Event_ID is
    begin
       case Event_Type is
-         when 16#0000_0202# =>
+         when SDL.Raw.Event_Layouts.Windows.Shown =>
             return Shown;
-         when 16#0000_0203# =>
+         when SDL.Raw.Event_Layouts.Windows.Hidden =>
             return Hidden;
-         when 16#0000_0204# =>
+         when SDL.Raw.Event_Layouts.Windows.Exposed =>
             return Exposed;
-         when 16#0000_0205# =>
+         when SDL.Raw.Event_Layouts.Windows.Moved =>
             return Moved;
-         when 16#0000_0206# =>
+         when SDL.Raw.Event_Layouts.Windows.Resized =>
             return Resized;
-         when 16#0000_0207# =>
+         when SDL.Raw.Event_Layouts.Windows.Size_Changed =>
             return Size_Changed;
-         when 16#0000_0209# =>
+         when SDL.Raw.Event_Layouts.Windows.Minimised =>
             return Minimised;
-         when 16#0000_020A# =>
+         when SDL.Raw.Event_Layouts.Windows.Maximised =>
             return Maximised;
-         when 16#0000_020B# =>
+         when SDL.Raw.Event_Layouts.Windows.Restored =>
             return Restored;
-         when 16#0000_020C# =>
+         when SDL.Raw.Event_Layouts.Windows.Enter =>
             return Enter;
-         when 16#0000_020D# =>
+         when SDL.Raw.Event_Layouts.Windows.Leave =>
             return Leave;
-         when 16#0000_020E# =>
+         when SDL.Raw.Event_Layouts.Windows.Focus_Gained =>
             return Focus_Gained;
-         when 16#0000_020F# =>
+         when SDL.Raw.Event_Layouts.Windows.Focus_Lost =>
             return Focus_Lost;
-         when 16#0000_0210# =>
+         when SDL.Raw.Event_Layouts.Windows.Close =>
             return Close;
-         when 16#0000_0211# =>
+         when SDL.Raw.Event_Layouts.Windows.Hit_Test =>
             return Hit_Test;
          when others =>
             return None;
@@ -45,35 +45,35 @@ package body SDL.Events.Windows is
          when None | Take_Focus =>
             return Window;
          when Shown =>
-            return 16#0000_0202#;
+            return SDL.Raw.Event_Layouts.Windows.Shown;
          when Hidden =>
-            return 16#0000_0203#;
+            return SDL.Raw.Event_Layouts.Windows.Hidden;
          when Exposed =>
-            return 16#0000_0204#;
+            return SDL.Raw.Event_Layouts.Windows.Exposed;
          when Moved =>
-            return 16#0000_0205#;
+            return SDL.Raw.Event_Layouts.Windows.Moved;
          when Resized =>
-            return 16#0000_0206#;
+            return SDL.Raw.Event_Layouts.Windows.Resized;
          when Size_Changed =>
-            return 16#0000_0207#;
+            return SDL.Raw.Event_Layouts.Windows.Size_Changed;
          when Minimised =>
-            return 16#0000_0209#;
+            return SDL.Raw.Event_Layouts.Windows.Minimised;
          when Maximised =>
-            return 16#0000_020A#;
+            return SDL.Raw.Event_Layouts.Windows.Maximised;
          when Restored =>
-            return 16#0000_020B#;
+            return SDL.Raw.Event_Layouts.Windows.Restored;
          when Enter =>
-            return 16#0000_020C#;
+            return SDL.Raw.Event_Layouts.Windows.Enter;
          when Leave =>
-            return 16#0000_020D#;
+            return SDL.Raw.Event_Layouts.Windows.Leave;
          when Focus_Gained =>
-            return 16#0000_020E#;
+            return SDL.Raw.Event_Layouts.Windows.Focus_Gained;
          when Focus_Lost =>
-            return 16#0000_020F#;
+            return SDL.Raw.Event_Layouts.Windows.Focus_Lost;
          when Close =>
-            return 16#0000_0210#;
+            return SDL.Raw.Event_Layouts.Windows.Close;
          when Hit_Test =>
-            return 16#0000_0211#;
+            return SDL.Raw.Event_Layouts.Windows.Hit_Test;
       end case;
    end To_Event_Type;
 end SDL.Events.Windows;

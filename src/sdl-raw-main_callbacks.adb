@@ -1,5 +1,3 @@
-with SDL.Main;
-
 package body SDL.Raw.Main_Callbacks is
    pragma Warnings (Off, "all instances of");
 
@@ -7,14 +5,14 @@ package body SDL.Raw.Main_Callbacks is
      (App_State : access System.Address;
       ArgC      : in Interfaces.C.int;
       ArgV      : in System.Address)
-      return SDL.Main.App_Results
+      return SDL.Raw.Main.App_Results
    with
      Convention    => C,
      Export        => True,
      External_Name => "SDL_AppInit";
 
    function SDL_AppIterate
-     (App_State : in System.Address) return SDL.Main.App_Results
+     (App_State : in System.Address) return SDL.Raw.Main.App_Results
    with
      Convention    => C,
      Export        => True,
@@ -22,7 +20,7 @@ package body SDL.Raw.Main_Callbacks is
 
    function SDL_AppEvent
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : in System.Address) return SDL.Raw.Main.App_Results
    with
      Convention    => C,
      Export        => True,
@@ -30,7 +28,7 @@ package body SDL.Raw.Main_Callbacks is
 
    procedure SDL_AppQuit
      (App_State : in System.Address;
-      Result    : in SDL.Main.App_Results)
+      Result    : in SDL.Raw.Main.App_Results)
    with
      Convention    => C,
      Export        => True,
@@ -42,21 +40,21 @@ package body SDL.Raw.Main_Callbacks is
      (App_State : access System.Address;
       ArgC      : in Interfaces.C.int;
       ArgV      : in System.Address)
-      return SDL.Main.App_Results is
+      return SDL.Raw.Main.App_Results is
      (App_Init (App_State, ArgC, ArgV));
 
    function SDL_AppIterate
-     (App_State : in System.Address) return SDL.Main.App_Results is
+     (App_State : in System.Address) return SDL.Raw.Main.App_Results is
      (App_Iterate (App_State));
 
    function SDL_AppEvent
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results is
+      Event     : in System.Address) return SDL.Raw.Main.App_Results is
      (App_Event (App_State, Event));
 
    procedure SDL_AppQuit
      (App_State : in System.Address;
-      Result    : in SDL.Main.App_Results) is
+      Result    : in SDL.Raw.Main.App_Results) is
    begin
       App_Quit (App_State, Result);
    end SDL_AppQuit;

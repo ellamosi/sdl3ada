@@ -15,7 +15,6 @@ package SDL.Main is
    subtype Main_Function is SDL.Raw.Main.Main_Function;
    subtype App_Init_Callback is SDL.Raw.Main.App_Init_Callback;
    subtype App_Iterate_Callback is SDL.Raw.Main.App_Iterate_Callback;
-   subtype App_Event_Callback is SDL.Raw.Main.App_Event_Callback;
    subtype App_Quit_Callback is SDL.Raw.Main.App_Quit_Callback;
    subtype Window_Class_Styles is SDL.Raw.Main.Window_Class_Styles;
 
@@ -49,6 +48,11 @@ package SDL.Main is
 
    type Ada_App_Quit_Callback is access procedure
      (Result : in App_Results);
+
+   type App_Event_Callback is access function
+     (App_State : in System.Address;
+      Event     : access SDL.Events.Events.Events) return App_Results
+   with Convention => C;
 
    function Run_App
      (ArgC     : in C.int;

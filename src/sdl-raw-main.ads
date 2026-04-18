@@ -4,8 +4,6 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
-with SDL.Events.Events;
-
 package SDL.Raw.Main is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
@@ -43,7 +41,7 @@ package SDL.Raw.Main is
 
    type App_Event_Callback is access function
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return App_Results
+      Event     : in System.Address) return App_Results
    with Convention => C;
 
    type App_Quit_Callback is access procedure

@@ -1,5 +1,6 @@
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 
 with Interfaces.C.Strings;
@@ -75,6 +76,9 @@ package body SDL.Main is
      (App_State : in System.Address;
       Event     : access SDL.Events.Events.Events) return App_Results
    with Convention => C;
+   function To_Raw_Event_Callback is new Ada.Unchecked_Conversion
+     (Source => App_Event_Callback,
+      Target => SDL.Raw.Main.App_Event_Callback);
    procedure Ada_Callback_Quit
      (App_State : in System.Address;
       Result    : in App_Results)
@@ -432,7 +436,7 @@ package body SDL.Main is
    is
    begin
       return SDL.Raw.Main.Enter_App_Main_Callbacks
-        (ArgC, ArgV, App_Init, App_Iter, App_Event, App_Quit);
+        (ArgC, ArgV, App_Init, App_Iter, To_Raw_Event_Callback (App_Event), App_Quit);
    end Enter_App_Main_Callbacks;
 
    procedure Register_App

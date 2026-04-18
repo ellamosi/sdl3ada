@@ -5,10 +5,14 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Video.Surfaces.Internal;
+with SDL.Video.Textures.Internal;
 
 package body SDL.Video.Renderers is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Surface_Internal renames SDL.Video.Surfaces.Internal;
+   package Texture_Internal renames SDL.Video.Textures.Internal;
 
    use type CS.chars_ptr;
    use type C.size_t;
@@ -31,21 +35,6 @@ package body SDL.Video.Renderers is
 
    procedure Free_Raw_Texture_Handle_Arrays is new Ada.Unchecked_Deallocation
      (Raw_Texture_Handle_Arrays, Raw_Texture_Handle_Array_Access);
-
-   function Make_Surface_From_Pointer
-     (S    : in SDL.Video.Surfaces.Internal_Surface_Pointer;
-      Owns : in Boolean := False) return SDL.Video.Surfaces.Surface
-   with
-     Import     => True,
-     Convention => Ada;
-
-   function Make_Texture_From_Pointer
-     (Internal : in System.Address;
-      Owns     : in Boolean := False) return SDL.Video.Textures.Texture
-   with
-     Import        => True,
-     Convention    => Ada,
-     External_Name => "sdl_video_textures_makers__make_texture_from_pointer";
 
    function Bytes_Address
      (Data : in Ada.Streams.Stream_Element_Array) return System.Address is
@@ -727,7 +716,8 @@ package body SDL.Video.Renderers is
         External_Name => "SDL_GetRenderTarget";
    begin
       Require_Renderer (Self);
-      return Make_Texture_From_Pointer (SDL_Get_Render_Target (Self.Internal));
+      return Texture_Internal.Make_From_Pointer
+        (SDL_Get_Render_Target (Self.Internal));
    end Get_Target;
 
    procedure Set_Logical_Presentation
@@ -2325,7 +2315,7 @@ package body SDL.Video.Renderers is
    begin
       Render_Geometry
         (Self     => Self,
-         Texture  => Make_Texture_From_Pointer (System.Null_Address),
+         Texture  => Texture_Internal.Make_From_Pointer (System.Null_Address),
          Vertices => Vertices);
    end Render_Geometry;
 
@@ -2337,7 +2327,7 @@ package body SDL.Video.Renderers is
    begin
       Render_Geometry
         (Self     => Self,
-         Texture  => Make_Texture_From_Pointer (System.Null_Address),
+         Texture  => Texture_Internal.Make_From_Pointer (System.Null_Address),
          Vertices => Vertices,
          Indices  => Indices);
    end Render_Geometry;
@@ -2477,7 +2467,7 @@ package body SDL.Video.Renderers is
          Raise_Renderer_Error;
       end if;
 
-      return Make_Surface_From_Pointer (Internal, Owns => True);
+      return Surface_Internal.Make_From_Pointer (Internal, Owns => True);
    end Read_Pixels;
 
    function Read_Pixels
@@ -2505,7 +2495,7 @@ package body SDL.Video.Renderers is
          Raise_Renderer_Error;
       end if;
 
-      return Make_Surface_From_Pointer (Internal, Owns => True);
+      return Surface_Internal.Make_From_Pointer (Internal, Owns => True);
    end Read_Pixels;
 
    procedure Present (Self : in out Renderer) is

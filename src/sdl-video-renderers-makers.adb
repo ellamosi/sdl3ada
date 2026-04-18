@@ -3,19 +3,14 @@ with System;
 
 with SDL.Error;
 with SDL.Raw.Render;
+with SDL.Video.Surfaces.Internal;
 with SDL.Video.Windows.Makers;
 
 package body SDL.Video.Renderers.Makers is
    package Raw renames SDL.Raw.Render;
+   package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
    use type System.Address;
-
-   function Get_Internal_Surface
-     (Self : in SDL.Video.Surfaces.Surface)
-      return SDL.Video.Surfaces.Internal_Surface_Pointer
-   with
-     Import     => True,
-     Convention => Ada;
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
@@ -149,7 +144,8 @@ package body SDL.Video.Renderers.Makers is
       Surface : in SDL.Video.Surfaces.Surface)
    is
       Internal : constant System.Address :=
-        Raw.Create_Software_Renderer (To_Address (Get_Internal_Surface (Surface)));
+        Raw.Create_Software_Renderer
+          (To_Address (Surface_Internal.Get_Internal (Surface)));
    begin
       Adopt (Rend, Internal);
    end Create;

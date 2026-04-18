@@ -84,17 +84,4 @@ package SDL.Video.Surfaces.Makers is
      (Self         : in out Surface;
       Src          : SDL.Video.Surfaces.Surface;
       Pixel_Format : SDL.Video.Pixel_Formats.Pixel_Format_Access);
-private
-   function Get_Internal_Surface
-     (Self : in Surface) return Internal_Surface_Pointer
-   with
-     Export     => True,
-     Convention => Ada;
-
-   function Make_Surface_From_Pointer
-     (S    : in Internal_Surface_Pointer;
-      Owns : in Boolean := False) return Surface
-   with
-     Export     => True,
-     Convention => Ada;
 end SDL.Video.Surfaces.Makers;

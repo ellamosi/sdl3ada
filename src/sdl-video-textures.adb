@@ -1,9 +1,13 @@
 with Interfaces.C.Extensions;
 
 with SDL.Error;
+with SDL.Video.Palettes.Internal;
+with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Textures is
    package CE renames Interfaces.C.Extensions;
+   package Palette_Internal renames SDL.Video.Palettes.Internal;
+   package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
    use type System.Address;
 
@@ -11,21 +15,6 @@ package body SDL.Video.Textures is
    SDL_PROP_TEXTURE_FORMAT_NUMBER : constant String := "SDL.texture.format";
    SDL_PROP_TEXTURE_HEIGHT_NUMBER : constant String := "SDL.texture.height";
    SDL_PROP_TEXTURE_WIDTH_NUMBER  : constant String := "SDL.texture.width";
-
-   function Make_Surface_From_Pointer
-     (S    : in SDL.Video.Surfaces.Internal_Surface_Pointer;
-     Owns : in Boolean := False) return SDL.Video.Surfaces.Surface
-   with
-     Import     => True,
-     Convention => Ada;
-
-   procedure Copy_Palette_From_Pointer
-     (Internal : in System.Address;
-      Result   : out SDL.Video.Palettes.Palette)
-   with
-     Import        => True,
-     Convention    => Ada,
-     External_Name => "sdl_video_palettes__copy_palette_from_pointer";
 
    procedure Raise_Texture_Error
      (Default_Message : in String := "SDL texture call failed");
@@ -215,7 +204,7 @@ package body SDL.Video.Textures is
       end if;
 
       Self.Locked := True;
-      return Make_Surface_From_Pointer (Internal, Owns => False);
+      return Surface_Internal.Make_From_Pointer (Internal, Owns => False);
    end Lock_To_Surface;
 
    function Lock_To_Surface
@@ -250,7 +239,7 @@ package body SDL.Video.Textures is
       end if;
 
       Self.Locked := True;
-      return Make_Surface_From_Pointer (Internal, Owns => False);
+      return Surface_Internal.Make_From_Pointer (Internal, Owns => False);
    end Lock_To_Surface;
 
    procedure Unlock (Self : in out Texture) is
@@ -438,7 +427,7 @@ package body SDL.Video.Textures is
 
       Internal := SDL_Get_Texture_Palette (Self.Internal);
       return Result : SDL.Video.Palettes.Palette do
-         Copy_Palette_From_Pointer (Internal, Result);
+         Palette_Internal.Copy_From_Pointer (Internal, Result);
       end return;
    end Get_Palette;
 

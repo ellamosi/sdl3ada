@@ -17,6 +17,7 @@ Current raw packages include:
 - `SDL.Raw.Assert`
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
+- `SDL.Raw.Camera`
 - `SDL.Raw.CPUInfo`
 - `SDL.Raw.Dialog`
 - `SDL.Raw.Error`

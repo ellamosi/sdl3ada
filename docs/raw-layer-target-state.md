@@ -85,7 +85,7 @@ should not grow into a second raw layer.
 | `SDL.Inputs.Mice.Cursors` | thick wrapper | add or reuse `SDL.Raw.Mouse` and `SDL.Raw.Surface` | Cursor construction and ownership stay handwritten. |
 | `SDL.Inputs.Joysticks.Makers`, `SDL.Inputs.Joysticks.Game_Controllers.Makers` | public makers | no direct imports | Open/close helpers remain wrappers only. |
 | `SDL.Pens` | public value or thin wrapper layer | keep `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
-| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | keep `SDL.Raw.Sensor`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`; add `SDL.Raw.Camera` | Ownership, copying, and runtime checks stay handwritten. |
+| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | keep `SDL.Raw.Sensor`, `SDL.Raw.Haptic`, `SDL.Raw.Camera`, `SDL.Raw.HIDAPI` | Ownership, copying, and runtime checks stay handwritten. |
 
 ### Video, Render, And GPU
 
@@ -127,7 +127,7 @@ public wrapper work is added:
   `SDL.Raw.System`, `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`,
   `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
-  `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`,
+  `SDL.Raw.Audio`, `SDL.Raw.Clipboard`,
   `SDL.Raw.Events`, `SDL.Raw.Keyboard`,
   `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
   `SDL.Raw.Rect`, `SDL.Raw.Surface`,

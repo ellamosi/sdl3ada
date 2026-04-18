@@ -113,6 +113,9 @@ Current raw packages include:
 - Callable SDL API coverage is audited from the tracked SDL include tree with
   `docs/coverage/update.sh`, which regenerates `docs/coverage/report.md` and
   `docs/coverage/report.json`.
+- `python3 tools/check_non_raw_imports.py` enforces the checked-in baseline of
+  remaining non-raw direct imports so conversion work can reduce the footprint
+  without allowing it to silently expand again.
 - `docs/coverage/policy.json` carries the checked-in exclusion rules for
   callable SDL
   APIs that are intentionally out of scope for the Ada binding audit.

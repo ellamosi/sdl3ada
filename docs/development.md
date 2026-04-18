@@ -44,6 +44,7 @@ From the repository root:
 ```sh
 docs/coverage/update.sh --ensure-source
 docs/coverage/update.sh --ensure-source --fail-on-missing
+python3 tools/check_non_raw_imports.py
 tools/run_release_baseline.sh
 ```
 
@@ -51,6 +52,11 @@ tools/run_release_baseline.sh
   source checkout if needed and regenerates the callable API coverage report.
 - `--fail-on-missing` turns remaining uncovered tracked symbols into a failing
   exit status.
+- `python3 tools/check_non_raw_imports.py` enforces the checked-in baseline of
+  remaining direct imports outside `SDL.Raw.*`; when intentional conversion
+  work changes that footprint, refresh
+  [`tools/non_raw_import_baseline.txt`](../tools/non_raw_import_baseline.txt)
+  with `python3 tools/check_non_raw_imports.py --write-baseline`.
 - `tools/run_release_baseline.sh` is the repository-wide build and smoke
   baseline.
 

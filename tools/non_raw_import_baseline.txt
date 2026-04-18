@@ -1,0 +1,35 @@
+# Non-raw import baseline
+#
+# Format: <relative-path> <expected-finding-count>
+#
+# Findings are lines outside `SDL.Raw.*` that contain either
+# `External_Name`/`Link_Name` aspects or non-Ada `pragma Import` calls.
+# Update this file only when intentional conversion work changes the
+# remaining non-raw import footprint.
+
+src/sdl-events-events.adb 21
+src/sdl-events-keyboards.adb 7
+src/sdl-events-touches.adb 5
+src/sdl-inputs-joysticks-game_controllers.adb 72
+src/sdl-inputs-joysticks.adb 59
+src/sdl-inputs-keyboards.adb 17
+src/sdl-inputs-keyboards.ads 3
+src/sdl-inputs-mice-cursors.adb 8
+src/sdl-inputs-mice.adb 19
+src/sdl-main-sdlmain_callback_apps.adb 4
+src/sdl-rwops-streams.adb 3
+src/sdl-rwops.adb 5
+src/sdl-video-displays.adb 17
+src/sdl-video-gl.adb 24
+src/sdl-video-metal.adb 3
+src/sdl-video-palettes.adb 4
+src/sdl-video-pixel_formats.adb 8
+src/sdl-video-rectangles.adb 10
+src/sdl-video-renderers.adb 84
+src/sdl-video-surfaces-makers.adb 10
+src/sdl-video-surfaces.adb 60
+src/sdl-video-textures-makers.ads 1
+src/sdl-video-textures.adb 28
+src/sdl-video-vulkan.adb 9
+src/sdl-video-windows.adb 74
+src/sdl-video.adb 8

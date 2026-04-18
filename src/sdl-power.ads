@@ -1,25 +1,16 @@
-with Interfaces.C;
+with SDL.Raw.Power;
 
 package SDL.Power is
    pragma Pure;
 
-   type State is
-     (Error,
-      Unknown,
-      Battery,
-      No_Battery,
-      Charging,
-      Charged) with
-     Convention => C,
-     Size       => Interfaces.C.int'Size;
+   subtype State is SDL.Raw.Power.State;
 
-   for State use
-     (Error      => -1,
-      Unknown    => 0,
-      Battery    => 1,
-      No_Battery => 2,
-      Charging   => 3,
-      Charged    => 4);
+   Error      : constant State := SDL.Raw.Power.State_Error;
+   Unknown    : constant State := SDL.Raw.Power.State_Unknown;
+   Battery    : constant State := SDL.Raw.Power.State_On_Battery;
+   No_Battery : constant State := SDL.Raw.Power.State_No_Battery;
+   Charging   : constant State := SDL.Raw.Power.State_Charging;
+   Charged    : constant State := SDL.Raw.Power.State_Charged;
 
    type Seconds is range 0 .. Integer'Last;
    type Percentage is range 0 .. 100;

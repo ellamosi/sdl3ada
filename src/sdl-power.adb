@@ -1,7 +1,5 @@
 with Interfaces.C;
 
-with SDL.Raw.Power;
-
 package body SDL.Power is
    package C renames Interfaces.C;
    package Raw renames SDL.Raw.Power;

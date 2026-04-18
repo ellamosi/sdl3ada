@@ -1,142 +1,78 @@
 with Interfaces;
-with Interfaces.C;
 with Interfaces.C.Extensions;
 
-with SDL.Power;
+with SDL.Raw.Event_Layouts.Joysticks;
 
 package SDL.Events.Joysticks is
    pragma Pure;
 
    package CE renames Interfaces.C.Extensions;
 
-   use type Event_Types;
+   Axis_Motion     : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Axis_Motion;
+   Ball_Motion     : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Ball_Motion;
+   Hat_Motion      : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Motion;
+   Button_Down     : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Button_Down;
+   Button_Up       : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Button_Up;
+   Device_Added    : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Device_Added;
+   Device_Removed  : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Device_Removed;
+   Battery_Updated : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Battery_Updated;
+   Update_Complete : constant Event_Types :=
+     SDL.Raw.Event_Layouts.Joysticks.Update_Complete;
 
-   Axis_Motion      : constant Event_Types := 16#0000_0600#;
-   Ball_Motion      : constant Event_Types := Axis_Motion + Event_Types (1);
-   Hat_Motion       : constant Event_Types := Axis_Motion + Event_Types (2);
-   Button_Down      : constant Event_Types := Axis_Motion + Event_Types (3);
-   Button_Up        : constant Event_Types := Axis_Motion + Event_Types (4);
-   Device_Added     : constant Event_Types := Axis_Motion + Event_Types (5);
-   Device_Removed   : constant Event_Types := Axis_Motion + Event_Types (6);
-   Battery_Updated  : constant Event_Types := Axis_Motion + Event_Types (7);
-   Update_Complete  : constant Event_Types := Axis_Motion + Event_Types (8);
+   subtype IDs is SDL.Raw.Event_Layouts.Joysticks.ID;
 
-   type IDs is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Axes is SDL.Raw.Event_Layouts.Joysticks.Axis_Index;
+   subtype Axes_Values is SDL.Raw.Event_Layouts.Joysticks.Axis_Value;
 
-   type Axes is range 0 .. 255 with
-     Convention => C,
-     Size       => 8;
+   subtype Axis_Events is SDL.Raw.Event_Layouts.Joysticks.Axis_Event;
 
-   type Axes_Values is range -32_768 .. 32_767 with
-     Convention => C,
-     Size       => 16;
+   subtype Balls is SDL.Raw.Event_Layouts.Joysticks.Ball_Index;
+   subtype Ball_Values is SDL.Raw.Event_Layouts.Joysticks.Ball_Delta;
 
-   type Axis_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-      Axis       : Axes;
-      Padding_1  : Padding_8;
-      Padding_2  : Padding_8;
-      Padding_3  : Padding_8;
-      Value      : Axes_Values;
-      Padding_4  : Padding_16;
-   end record with
-     Convention => C;
+   subtype Ball_Events is SDL.Raw.Event_Layouts.Joysticks.Ball_Event;
 
-   type Balls is range 0 .. 255 with
-     Convention => C,
-     Size       => 8;
+   subtype Hats is SDL.Raw.Event_Layouts.Joysticks.Hat_Index;
+   subtype Hat_Positions is SDL.Raw.Event_Layouts.Joysticks.Hat_Position;
 
-   type Ball_Values is range -32_768 .. 32_767 with
-     Convention => C,
-     Size       => 16;
+   Hat_Centred    : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Centred;
+   Hat_Up         : constant Hat_Positions := SDL.Raw.Event_Layouts.Joysticks.Hat_Up;
+   Hat_Right      : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Right;
+   Hat_Down       : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Down;
+   Hat_Left       : constant Hat_Positions := SDL.Raw.Event_Layouts.Joysticks.Hat_Left;
+   Hat_Right_Up   : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Right_Up;
+   Hat_Right_Down : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Right_Down;
+   Hat_Left_Up    : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Left_Up;
+   Hat_Left_Down  : constant Hat_Positions :=
+     SDL.Raw.Event_Layouts.Joysticks.Hat_Left_Down;
 
-   type Ball_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-      Ball       : Balls;
-      Padding_1  : Padding_8;
-      Padding_2  : Padding_8;
-      Padding_3  : Padding_8;
-      X_Relative : Ball_Values;
-      Y_Relative : Ball_Values;
-   end record with
-     Convention => C;
+   subtype Hat_Events is SDL.Raw.Event_Layouts.Joysticks.Hat_Event;
 
-   type Hats is range 0 .. 255 with
-     Convention => C,
-     Size       => 8;
+   subtype Buttons is SDL.Raw.Event_Layouts.Joysticks.Button_Index;
 
-   type Hat_Positions is mod 2 ** 8 with
-     Convention => C,
-     Size       => 8;
-
-   Hat_Centred    : constant Hat_Positions := 0;
-   Hat_Up         : constant Hat_Positions := 1;
-   Hat_Right      : constant Hat_Positions := 2;
-   Hat_Down       : constant Hat_Positions := 4;
-   Hat_Left       : constant Hat_Positions := 8;
-   Hat_Right_Up   : constant Hat_Positions := Hat_Right or Hat_Up;
-   Hat_Right_Down : constant Hat_Positions := Hat_Right or Hat_Down;
-   Hat_Left_Up    : constant Hat_Positions := Hat_Left or Hat_Up;
-   Hat_Left_Down  : constant Hat_Positions := Hat_Left or Hat_Down;
-
-   type Hat_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-      Hat        : Hats;
-      Position   : Hat_Positions;
-      Padding_1  : Padding_8;
-      Padding_2  : Padding_8;
-   end record with
-     Convention => C;
-
-   type Buttons is range 0 .. 255 with
-     Convention => C,
-     Size       => 8;
-
-   type Button_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-      Button     : Buttons;
-      Down       : CE.bool;
-      Padding_1  : Padding_8;
-      Padding_2  : Padding_8;
-   end record with
-     Convention => C;
+   subtype Button_Events is SDL.Raw.Event_Layouts.Joysticks.Button_Event;
 
    function Get_State (Event : in Button_Events) return SDL.Events.Button_State is
      (if Boolean (Event.Down) then SDL.Events.Pressed else SDL.Events.Released);
 
-   type Device_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-   end record with
-     Convention => C;
+   subtype Device_Events is SDL.Raw.Event_Layouts.Joysticks.Device_Event;
 
-   subtype Battery_Percentages is Interfaces.C.int range -1 .. 100;
+   subtype Battery_Percentages is SDL.Raw.Event_Layouts.Joysticks.Battery_Percentage;
 
-   type Battery_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Which      : IDs;
-      State      : SDL.Power.State;
-      Percent    : Battery_Percentages;
-   end record with
-     Convention => C;
+   subtype Battery_Events is SDL.Raw.Event_Layouts.Joysticks.Battery_Event;
 
    procedure Update;
 

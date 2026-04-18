@@ -1,6 +1,5 @@
 with Interfaces;
-with System;
-
+with SDL.Raw.Event_Layouts;
 with SDL.Raw.Event_Types;
 
 package SDL.Events is
@@ -38,23 +37,9 @@ package SDL.Events is
      Convention => C,
      Size       => 16;
 
-   type Common_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-   end record with
-     Convention => C;
+   subtype Common_Events is SDL.Raw.Event_Layouts.Common_Event;
 
-   subtype Event_Codes is Interfaces.Integer_32;
+   subtype Event_Codes is SDL.Raw.Event_Layouts.Event_Code;
 
-   type User_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Window_ID  : Window_IDs;
-      Code       : Event_Codes;
-      Data_1     : System.Address;
-      Data_2     : System.Address;
-   end record with
-     Convention => C;
+   subtype User_Events is SDL.Raw.Event_Layouts.User_Event;
 end SDL.Events;

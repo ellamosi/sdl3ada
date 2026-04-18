@@ -1,17 +1,21 @@
+with Ada.Unchecked_Conversion;
+with System;
+
 with SDL.Error;
+with SDL.Raw.Gamepad;
 
 package body SDL.Inputs.Joysticks.Game_Controllers.Makers is
+   package Raw renames SDL.Raw.Gamepad;
+
    use type SDL.C_Pointers.Game_Controller_Pointer;
 
-   function SDL_Open_Gamepad
-     (Device : in Instances) return SDL.C_Pointers.Game_Controller_Pointer with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenGamepad";
+   function To_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.C_Pointers.Game_Controller_Pointer);
 
    function Create (Device : in Devices) return Game_Controller is
       Internal : constant SDL.C_Pointers.Game_Controller_Pointer :=
-        SDL_Open_Gamepad (Resolve_Device (Device));
+        To_Pointer (Raw.Open_Gamepad (Raw.ID (Resolve_Device (Device))));
    begin
       if Internal = null then
          raise Game_Controller_Error with SDL.Error.Get;
@@ -31,7 +35,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers.Makers is
       Actual_Controller : out Game_Controller)
    is
       Internal : constant SDL.C_Pointers.Game_Controller_Pointer :=
-        SDL_Open_Gamepad (Resolve_Device (Device));
+        To_Pointer (Raw.Open_Gamepad (Raw.ID (Resolve_Device (Device))));
    begin
       if Internal = null then
          raise Game_Controller_Error with SDL.Error.Get;

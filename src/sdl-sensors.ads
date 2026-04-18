@@ -94,10 +94,7 @@ package SDL.Sensors is
      (Self       : in Sensor;
       Value_Count : in Positive) return Data_Values;
 
-   procedure Update with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UpdateSensors";
+   procedure Update;
 
    function Get_Internal
      (Self : in Sensor) return SDL.C_Pointers.Sensor_Pointer

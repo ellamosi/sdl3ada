@@ -3,8 +3,10 @@ with System;
 with System.Storage_Elements;
 
 with SDL.Properties;
+with SDL.Raw.Video;
 
 package body SDL.Video.Windows.Manager is
+   package Raw renames SDL.Raw.Video;
    package SSE renames System.Storage_Elements;
 
    use type System.Address;
@@ -28,13 +30,6 @@ package body SDL.Video.Windows.Manager is
    function To_C_Address is new Ada.Unchecked_Conversion
      (Source => System.Address,
       Target => C_Address);
-
-   function SDL_Get_Window_Properties
-     (Win : in System.Address) return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetWindowProperties";
 
    function Pointer_Property
      (Props : in SDL.Properties.Property_Set;
@@ -78,7 +73,8 @@ package body SDL.Video.Windows.Manager is
    is
       Props : constant SDL.Properties.Property_Set :=
         SDL.Properties.Reference
-          (SDL_Get_Window_Properties (Get_Internal (Win)));
+          (SDL.Properties.Property_ID
+             (Raw.Get_Window_Properties (Get_Internal (Win))));
    begin
       Info :=
         (Version    => Linked_Version,

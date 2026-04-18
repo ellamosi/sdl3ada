@@ -7,11 +7,13 @@ with System;
 
 with SDL.Audio.Sample_Formats;
 with SDL.Error;
+with SDL.Raw.Audio;
 
 package body SDL.Audio.Devices is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Audio;
 
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
@@ -34,6 +36,10 @@ package body SDL.Audio.Devices is
 
    type External_Data_Ptr is access all External_Data;
 
+   function To_ID_Pointers is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => ID_Pointers.Pointer);
+
    function To_ID_Array_Address is new Ada.Unchecked_Conversion
      (Source => ID_Pointers.Pointer,
       Target => System.Address);
@@ -42,157 +48,19 @@ package body SDL.Audio.Devices is
      (Source => System.Address,
       Target => External_Data_Ptr);
 
-   procedure SDL_free (Value : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.C_Pointers.Audio_Stream_Pointer,
+      Target => System.Address);
 
-   function SDL_Get_Audio_Playback_Devices
-     (Count : access C.int) return ID_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioPlaybackDevices";
-
-   function SDL_Get_Audio_Recording_Devices
-     (Count : access C.int) return ID_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioRecordingDevices";
-
-   function SDL_Get_Audio_Device_Name (Device : in ID) return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceName";
-
-   function SDL_Open_Audio_Device
-     (Device : in ID;
-      Spec   : access constant SDL.Audio.Spec)
-      return ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenAudioDevice";
-
-   function SDL_Get_Audio_Device_Format
-     (Device        : in ID;
-      Spec          : access SDL.Audio.Spec;
-      Sample_Frames : access C.int)
-      return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceFormat";
-
-   function SDL_Pause_Audio_Device (Device : in ID) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PauseAudioDevice";
-
-   function SDL_Resume_Audio_Device (Device : in ID) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResumeAudioDevice";
-
-   function SDL_Audio_Device_Paused (Device : in ID) return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AudioDevicePaused";
-
-   procedure SDL_Close_Audio_Device (Device : in ID) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseAudioDevice";
-
-   function SDL_Create_Audio_Stream
-     (Source      : access constant SDL.Audio.Spec;
-      Destination : access constant SDL.Audio.Spec)
-      return SDL.C_Pointers.Audio_Stream_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateAudioStream";
-
-   function SDL_Bind_Audio_Stream
-     (Device : in ID;
-      Stream : in SDL.C_Pointers.Audio_Stream_Pointer)
-      return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_BindAudioStream";
-
-   function SDL_Put_Audio_Stream_Data
-     (Stream      : in SDL.C_Pointers.Audio_Stream_Pointer;
-      Data        : in System.Address;
-      Byte_Length : in C.int)
-      return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PutAudioStreamData";
-
-   function SDL_Get_Audio_Stream_Data
-     (Stream      : in SDL.C_Pointers.Audio_Stream_Pointer;
-      Data        : in System.Address;
-      Byte_Length : in C.int)
-      return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamData";
-
-   function SDL_Get_Audio_Stream_Queued
-     (Stream : in SDL.C_Pointers.Audio_Stream_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamQueued";
-
-   function SDL_Get_Audio_Stream_Available
-     (Stream : in SDL.C_Pointers.Audio_Stream_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioStreamAvailable";
-
-   function SDL_Clear_Audio_Stream
-     (Stream : in SDL.C_Pointers.Audio_Stream_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ClearAudioStream";
-
-   procedure SDL_Destroy_Audio_Stream
-     (Stream : in SDL.C_Pointers.Audio_Stream_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DestroyAudioStream";
-
-   type Stream_Callback is access procedure
-     (User_Data         : in System.Address;
-      Stream            : in SDL.C_Pointers.Audio_Stream_Pointer;
-      Additional_Amount : in C.int;
-      Total_Amount      : in C.int)
-   with Convention => C;
-
-   function SDL_Set_Audio_Stream_Get_Callback
-     (Stream    : in SDL.C_Pointers.Audio_Stream_Pointer;
-      Callback  : in Stream_Callback;
-      User_Data : in System.Address)
-      return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioStreamGetCallback";
+   function To_Stream_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.C_Pointers.Audio_Stream_Pointer);
 
    procedure Free (Value : in out ID_Pointers.Pointer);
    procedure Free (Value : in out ID_Pointers.Pointer) is
    begin
       if Value /= null then
-         SDL_free (To_ID_Array_Address (Value));
+         Raw.Free (To_ID_Array_Address (Value));
          Value := null;
       end if;
    end Free;
@@ -232,14 +100,15 @@ package body SDL.Audio.Devices is
    is
    begin
       if Is_Capture then
-         return SDL_Get_Audio_Recording_Devices (Count);
+         return To_ID_Pointers (Raw.Get_Audio_Recording_Devices (Count));
       end if;
 
-      return SDL_Get_Audio_Playback_Devices (Count);
+      return To_ID_Pointers (Raw.Get_Audio_Playback_Devices (Count));
    end Enumerate_Devices;
 
    function Device_Name (Device : in ID) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Audio_Device_Name (Device);
+      Name : constant CS.chars_ptr :=
+        Raw.Get_Audio_Device_Name (Raw.Device_ID (Device));
    begin
       if Name = CS.Null_Ptr then
          return "";
@@ -308,9 +177,9 @@ package body SDL.Audio.Devices is
       Bytes_Per_Frame : Natural;
    begin
       if not Boolean
-          (SDL_Get_Audio_Device_Format
-             (Device        => Device,
-              Spec          => Internal_Spec'Access,
+          (Raw.Get_Audio_Device_Format
+             (Device        => Raw.Device_ID (Device),
+              Spec          => Internal_Spec'Address,
               Sample_Frames => Sample_Frames'Access))
       then
          raise Audio_Device_Error with SDL.Error.Get;
@@ -341,14 +210,14 @@ package body SDL.Audio.Devices is
 
    procedure Internal_Playback_Callback
      (User_Data         : in System.Address;
-      Stream            : in SDL.C_Pointers.Audio_Stream_Pointer;
+      Stream            : in System.Address;
       Additional_Amount : in C.int;
       Total_Amount      : in C.int)
    with Convention => C;
 
    procedure Internal_Playback_Callback
      (User_Data         : in System.Address;
-      Stream            : in SDL.C_Pointers.Audio_Stream_Pointer;
+      Stream            : in System.Address;
       Additional_Amount : in C.int;
       Total_Amount      : in C.int)
    is
@@ -369,7 +238,7 @@ package body SDL.Audio.Devices is
          External.Callback (External.User_Data, Data);
 
          if not Boolean
-             (SDL_Put_Audio_Stream_Data
+             (Raw.Put_Audio_Stream_Data
                 (Stream      => Stream,
                  Data        => Data'Address,
                  Byte_Length => C.int (Data'Size / System.Storage_Unit)))
@@ -475,7 +344,10 @@ package body SDL.Audio.Devices is
 
       Close (Self);
 
-      Self.Internal := SDL_Open_Audio_Device (Device_ID, Requested_Spec'Access);
+      Self.Internal :=
+        ID
+          (Raw.Open_Audio_Device
+             (Raw.Device_ID (Device_ID), Requested_Spec'Address));
 
       if Self.Internal = 0 then
          raise Audio_Device_Error with SDL.Error.Get;
@@ -486,7 +358,7 @@ package body SDL.Audio.Devices is
       Self.External.Callback := Callback;
       Self.External.User_Data := User_Data;
 
-      if not Boolean (SDL_Pause_Audio_Device (Self.Internal)) then
+      if not Boolean (Raw.Pause_Audio_Device (Raw.Device_ID (Self.Internal))) then
          Close (Self);
          raise Audio_Device_Error with SDL.Error.Get;
       end if;
@@ -500,7 +372,10 @@ package body SDL.Audio.Devices is
          Target_Spec : aliased constant SDL.Audio.Spec :=
            (if Is_Capture then Requested_Spec else Device_Spec);
       begin
-         Self.Stream := SDL_Create_Audio_Stream (Source_Spec'Access, Target_Spec'Access);
+         Self.Stream :=
+           To_Stream_Pointer
+             (Raw.Create_Audio_Stream
+                (Source_Spec'Address, Target_Spec'Address));
       end;
 
       if Self.Stream = null then
@@ -508,16 +383,19 @@ package body SDL.Audio.Devices is
          raise Audio_Device_Error with SDL.Error.Get;
       end if;
 
-      if not Boolean (SDL_Bind_Audio_Stream (Self.Internal, Self.Stream)) then
+      if not Boolean
+          (Raw.Bind_Audio_Stream
+             (Raw.Device_ID (Self.Internal), To_Address (Self.Stream)))
+      then
          Close (Self);
          raise Audio_Device_Error with SDL.Error.Get;
       end if;
 
       if Callback /= null then
          if not Boolean
-             (SDL_Set_Audio_Stream_Get_Callback
-                (Stream    => Self.Stream,
-                 Callback  => Internal_Playback_Callback'Access,
+             (Raw.Set_Audio_Stream_Get_Callback
+                (Stream    => To_Address (Self.Stream),
+                 Callback  => Internal_Playback_Callback'Unrestricted_Access,
                  User_Data => Self.External'Address))
          then
             Close (Self);
@@ -534,8 +412,8 @@ package body SDL.Audio.Devices is
       Require_Playback (Self);
 
       if not Boolean
-          (SDL_Put_Audio_Stream_Data
-             (Stream      => Self.Stream,
+          (Raw.Put_Audio_Stream_Data
+             (Stream      => To_Address (Self.Stream),
               Data        => Data'Address,
               Byte_Length => C.int (Data'Size / System.Storage_Unit)))
       then
@@ -558,8 +436,8 @@ package body SDL.Audio.Devices is
       end if;
 
       Bytes_Read :=
-        SDL_Get_Audio_Stream_Data
-          (Stream      => Self.Stream,
+        Raw.Get_Audio_Stream_Data
+          (Stream      => To_Address (Self.Stream),
            Data        => Data'Address,
            Byte_Length => C.int (Data'Size / System.Storage_Unit));
 
@@ -576,7 +454,7 @@ package body SDL.Audio.Devices is
          return Stopped;
       end if;
 
-      if Boolean (SDL_Audio_Device_Paused (Self.Internal)) then
+      if Boolean (Raw.Audio_Device_Paused (Raw.Device_ID (Self.Internal))) then
          return Paused;
       end if;
 
@@ -599,8 +477,8 @@ package body SDL.Audio.Devices is
 
       Success :=
         (if Pause
-         then SDL_Pause_Audio_Device (Self.Internal)
-         else SDL_Resume_Audio_Device (Self.Internal));
+         then Raw.Pause_Audio_Device (Raw.Device_ID (Self.Internal))
+         else Raw.Resume_Audio_Device (Raw.Device_ID (Self.Internal)));
 
       if not Boolean (Success) then
          raise Audio_Device_Error with SDL.Error.Get;
@@ -612,7 +490,7 @@ package body SDL.Audio.Devices is
    begin
       Require_Open (Self);
 
-      Bytes_Queued := SDL_Get_Audio_Stream_Queued (Self.Stream);
+      Bytes_Queued := Raw.Get_Audio_Stream_Queued (To_Address (Self.Stream));
 
       if Bytes_Queued < 0 then
          raise Audio_Device_Error with SDL.Error.Get;
@@ -626,7 +504,7 @@ package body SDL.Audio.Devices is
    begin
       Require_Open (Self);
 
-      Bytes_Available := SDL_Get_Audio_Stream_Available (Self.Stream);
+      Bytes_Available := Raw.Get_Audio_Stream_Available (To_Address (Self.Stream));
 
       if Bytes_Available < 0 then
          raise Audio_Device_Error with SDL.Error.Get;
@@ -649,7 +527,7 @@ package body SDL.Audio.Devices is
    begin
       Require_Open (Self);
 
-      if not Boolean (SDL_Clear_Audio_Stream (Self.Stream)) then
+      if not Boolean (Raw.Clear_Audio_Stream (To_Address (Self.Stream))) then
          raise Audio_Device_Error with SDL.Error.Get;
       end if;
    end Clear_Queued;
@@ -657,12 +535,12 @@ package body SDL.Audio.Devices is
    procedure Close (Self : in out Device) is
    begin
       if Self.Stream /= null then
-         SDL_Destroy_Audio_Stream (Self.Stream);
+         Raw.Destroy_Audio_Stream (To_Address (Self.Stream));
          Self.Stream := null;
       end if;
 
       if Self.Opened and then Self.Internal /= 0 then
-         SDL_Close_Audio_Device (Self.Internal);
+         Raw.Close_Audio_Device (Raw.Device_ID (Self.Internal));
       end if;
 
       Self.Internal := 0;

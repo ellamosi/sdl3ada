@@ -69,9 +69,9 @@ should not grow into a second raw layer.
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
 | `SDL.Audio.Sample_Formats` | public value layer | generated `SDL.Raw.Audio` provides ABI enums and predicates | Keep public naming and compatibility aliases handwritten. |
-| `SDL.Audio` | public wrapper | add `SDL.Raw.Audio` | This is a high-value wrapper and should stay handwritten. |
-| `SDL.Audio.Devices` | thick wrapper | add `SDL.Raw.Audio` | Ownership, stream binding, and error policy remain handwritten. |
-| `SDL.Audio.Streams` | thick wrapper | add `SDL.Raw.Audio` | Queueing and callback-lifetime policy stay above raw. |
+| `SDL.Audio` | public wrapper | keep `SDL.Raw.Audio` | This is a high-value wrapper and should stay handwritten. |
+| `SDL.Audio.Devices` | thick wrapper | keep `SDL.Raw.Audio` | Ownership, stream binding, and error policy remain handwritten. |
+| `SDL.Audio.Streams` | thick wrapper | keep `SDL.Raw.Audio` | Queueing and callback-lifetime policy stay above raw. |
 
 ### Events, Input, And Devices
 
@@ -81,24 +81,24 @@ should not grow into a second raw layer.
 | `SDL.Events.Windows`, `SDL.Events.Mice`, `SDL.Events.Touches`, `SDL.Events.Joysticks`, `SDL.Events.Joysticks.Game_Controllers`, `SDL.Events.Cameras`, `SDL.Events.Keyboards`, `SDL.Events.Pens`, `SDL.Events.Sensors`, `SDL.Events.Files` | public value layer | use `SDL.Raw.Events` plus support raw families for cross-header value types | These packages should expose event payload types and constants, but imports move to raw. |
 | `SDL.Events.Controllers` | compatibility shim | no direct imports | This remains a handwritten migration package over public gamepad/event units. |
 | `SDL.Inputs` | compatibility/value layer | no direct imports | Shared input namespace only. |
-| `SDL.Inputs.Keyboards`, `SDL.Inputs.Mice`, `SDL.Inputs.Joysticks`, `SDL.Inputs.Joysticks.Game_Controllers` | public wrappers | add `SDL.Raw.Keyboard`, `SDL.Raw.Mouse`, `SDL.Raw.Joystick`, `SDL.Raw.Gamepad` | Device queries, string conversion, arrays, and borrowed handles stay handwritten. |
+| `SDL.Inputs.Keyboards`, `SDL.Inputs.Mice`, `SDL.Inputs.Joysticks`, `SDL.Inputs.Joysticks.Game_Controllers` | public wrappers | add `SDL.Raw.Keyboard`, `SDL.Raw.Mouse`; keep `SDL.Raw.Joystick`, `SDL.Raw.Gamepad` | Device queries, string conversion, arrays, and borrowed handles stay handwritten. |
 | `SDL.Inputs.Mice.Cursors` | thick wrapper | add or reuse `SDL.Raw.Mouse` and `SDL.Raw.Surface` | Cursor construction and ownership stay handwritten. |
 | `SDL.Inputs.Joysticks.Makers`, `SDL.Inputs.Joysticks.Game_Controllers.Makers` | public makers | no direct imports | Open/close helpers remain wrappers only. |
-| `SDL.Pens` | public value or thin wrapper layer | add `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
-| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | add `SDL.Raw.Sensor`, `SDL.Raw.Haptic`, `SDL.Raw.Camera`, `SDL.Raw.HIDAPI` | Ownership, copying, and runtime checks stay handwritten. |
+| `SDL.Pens` | public value or thin wrapper layer | keep `SDL.Raw.Pen` | Pen IDs, flags, and enums should come from generated raw support. |
+| `SDL.Sensors`, `SDL.Haptics`, `SDL.Cameras`, `SDL.HIDAPI` | thick wrappers | keep `SDL.Raw.Sensor`, `SDL.Raw.Haptic`, `SDL.Raw.Camera`, `SDL.Raw.HIDAPI` | Ownership, copying, and runtime checks stay handwritten. |
 
 ### Video, Render, And GPU
 
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
-| `SDL.Video` | public wrapper | add `SDL.Raw.Video` | Subsystem control and convenience helpers stay public. |
-| `SDL.Video.Displays` | public wrapper | add `SDL.Raw.Video` | Display IDs and mode enumeration stay public, with string and array policy above raw. |
+| `SDL.Video` | public wrapper | keep `SDL.Raw.Video` | Subsystem control and convenience helpers stay public. |
+| `SDL.Video.Displays` | public wrapper | keep `SDL.Raw.Video` | Display IDs and mode enumeration stay public, with string and array policy above raw. |
 | `SDL.Video.Rectangles`, `SDL.Video.Pixels`, `SDL.Video.Pixel_Formats` | public value layer | add `SDL.Raw.Rect`, `SDL.Raw.Pixels`; pixel-format ABI types should come from generated raw support | These are prime examples of public value packages that should stop importing SDL directly. |
 | `SDL.Video.Palettes` | thin wrapper | add `SDL.Raw.Pixels` or `SDL.Raw.Surface` support as needed | Ownership and palette mutation stay handwritten. |
-| `SDL.Video.Windows`, `SDL.Video.Windows.Manager`, `SDL.Video.Windows.Makers` | thick wrapper plus maker/manager support | add `SDL.Raw.Video`, generated support for system window manager structs if needed | All window ownership and platform-handle policy stay handwritten. |
+| `SDL.Video.Windows`, `SDL.Video.Windows.Manager`, `SDL.Video.Windows.Makers` | thick wrapper plus maker/manager support | keep `SDL.Raw.Video`, generated support for system window manager structs if needed | All window ownership and platform-handle policy stay handwritten. |
 | `SDL.Video.Surfaces`, `SDL.Video.Surfaces.Makers` | thick wrapper plus makers | add `SDL.Raw.Surface` | Surface ownership, pixel access policy, and conversion helpers stay handwritten. |
-| `SDL.Video.Textures`, `SDL.Video.Textures.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Texture ownership and update helpers stay handwritten. |
-| `SDL.Video.Renderers`, `SDL.Video.Renderers.Makers` | thick wrapper plus makers | add `SDL.Raw.Render` | Renderer state, readback, and bridge logic stay handwritten. |
+| `SDL.Video.Textures`, `SDL.Video.Textures.Makers` | thick wrapper plus makers | keep `SDL.Raw.Render` | Texture ownership and update helpers stay handwritten. |
+| `SDL.Video.Renderers`, `SDL.Video.Renderers.Makers` | thick wrapper plus makers | keep `SDL.Raw.Render` | Renderer state, readback, and bridge logic stay handwritten. |
 | `SDL.Video.GL` | public wrapper | primarily `SDL.Raw.Video`; support raw packages for any SDL-defined GL-facing value types | All direct imports in the wrapper move to raw, but OpenGL ecosystem headers remain support data, not public wrapper families. |
 | `SDL.Video.Metal` | thick wrapper | add `SDL.Raw.Metal` | Metal view lifetime remains public wrapper policy. |
 | `SDL.Video.Vulkan` | wrapper | add `SDL.Raw.Vulkan` | Loader and surface lifecycle policy stay handwritten. |
@@ -109,9 +109,9 @@ should not grow into a second raw layer.
 | Current packages | Target role | Raw family status | Notes |
 | --- | --- | --- | --- |
 | `SDL.RWops`, `SDL.RWops.Streams` | compatibility wrapper | keep `SDL.Raw.IOStream` | Public RWops compatibility stays handwritten; raw stays `SDL_IOStream`-shaped. |
-| `SDL.Dialogs` | public wrapper | add `SDL.Raw.Dialog` | Callback lifetime and file-filter ergonomics stay handwritten. |
-| `SDL.Message_Boxes` | public wrapper | add `SDL.Raw.MessageBox` | UI struct assembly stays handwritten. |
-| `SDL.Trays` | thick wrapper | add `SDL.Raw.Tray` | Menu-tree ownership and callbacks stay handwritten. |
+| `SDL.Dialogs` | public wrapper | keep `SDL.Raw.Dialog` | Callback lifetime and file-filter ergonomics stay handwritten. |
+| `SDL.Message_Boxes` | public wrapper | keep `SDL.Raw.MessageBox` | UI struct assembly stays handwritten. |
+| `SDL.Trays` | thick wrapper | keep `SDL.Raw.Tray` | Menu-tree ownership and callbacks stay handwritten. |
 
 ## Raw Families To Add Or Normalize
 
@@ -127,12 +127,11 @@ public wrapper work is added:
   `SDL.Raw.System`, `SDL.Raw.Thread`, `SDL.Raw.Time`, `SDL.Raw.Timer`,
   `SDL.Raw.Version`.
 - Add missing raw families that already have public wrappers above them:
-  `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Clipboard`, `SDL.Raw.Dialog`,
-  `SDL.Raw.Events`, `SDL.Raw.Gamepad`,
-  `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`,
-  `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Pixels`,
-  `SDL.Raw.Rect`, `SDL.Raw.Render`, `SDL.Raw.Sensor`, `SDL.Raw.Surface`,
-  `SDL.Raw.Tray`, `SDL.Raw.Video`, `SDL.Raw.Vulkan`.
+  `SDL.Raw.Clipboard`,
+  `SDL.Raw.Events`, `SDL.Raw.Keyboard`,
+  `SDL.Raw.Mouse`, `SDL.Raw.Pixels`,
+  `SDL.Raw.Rect`, `SDL.Raw.Surface`,
+  `SDL.Raw.Vulkan`.
 - Keep support-header policy from `raw-layer-conventions.md` for
   `SDL_stdinc.h`, `SDL_bits.h`, `SDL_endian.h`, and `SDL_intrin.h`.
 

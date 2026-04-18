@@ -1,10 +1,11 @@
-with System;
+with Ada.Unchecked_Conversion;
 
 with SDL.Error;
-with SDL.Properties;
-with SDL.Video.Surfaces.Makers;
+with SDL.Raw.Render;
 
 package body SDL.Video.Textures.Makers is
+   package Raw renames SDL.Raw.Render;
+
    use type System.Address;
 
    SDL_PROP_TEXTURE_ACCESS_NUMBER : constant String := "SDL.texture.access";
@@ -12,39 +13,16 @@ package body SDL.Video.Textures.Makers is
    SDL_PROP_TEXTURE_HEIGHT_NUMBER : constant String := "SDL.texture.height";
    SDL_PROP_TEXTURE_WIDTH_NUMBER  : constant String := "SDL.texture.width";
 
-   function SDL_Create_Texture
-     (Target     : in System.Address;
-      Pixel      : in SDL.Video.Pixel_Formats.Pixel_Format_Names;
-      Kind_Value : in SDL.Video.Textures.Kinds;
-      Width      : in SDL.Dimension;
-      Height     : in SDL.Dimension) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateTexture";
-
-   function SDL_Create_Texture_From_Surface
-     (Renderer : in System.Address;
-      Surface  : in SDL.Video.Surfaces.Internal_Surface_Pointer) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateTextureFromSurface";
-
-   function SDL_Create_Texture_With_Properties
-     (Renderer : in System.Address;
-      Props    : in SDL.Properties.Property_ID) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CreateTextureWithProperties";
-
    function Get_Internal_Surface
      (Self : in SDL.Video.Surfaces.Surface)
       return SDL.Video.Surfaces.Internal_Surface_Pointer
    with
      Import     => True,
      Convention => Ada;
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
+      Target => System.Address);
 
    procedure Populate_Metadata
      (Tex : in out SDL.Video.Textures.Texture);
@@ -116,10 +94,10 @@ package body SDL.Video.Textures.Makers is
       end if;
 
       Internal :=
-        SDL_Create_Texture
+        Raw.Create_Texture
           (Target     => SDL.Video.Renderers.Get_Internal (Renderer),
-           Pixel      => Format,
-           Kind_Value => Kind,
+           Pixel      => Raw.Pixel_Format_Names (Format),
+           Kind_Value => Raw.Texture_Kind (SDL.Video.Textures.Kinds'Pos (Kind)),
            Width      => Size.Width,
            Height     => Size.Height);
 
@@ -141,9 +119,9 @@ package body SDL.Video.Textures.Makers is
       end if;
 
       Internal :=
-        SDL_Create_Texture_From_Surface
+        Raw.Create_Texture_From_Surface
           (SDL.Video.Renderers.Get_Internal (Renderer),
-           Get_Internal_Surface (Surface));
+           To_Address (Get_Internal_Surface (Surface)));
 
       Adopt (Tex, Internal, Owns => True);
    end Create;
@@ -160,7 +138,7 @@ package body SDL.Video.Textures.Makers is
       end if;
 
       Internal :=
-        SDL_Create_Texture_With_Properties
+        Raw.Create_Texture_With_Properties
           (SDL.Video.Renderers.Get_Internal (Renderer),
            SDL.Properties.Get_ID (Properties));
 

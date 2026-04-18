@@ -138,10 +138,7 @@ package SDL.Events.Joysticks is
    end record with
      Convention => C;
 
-   procedure Update with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UpdateJoysticks";
+   procedure Update;
 
    function Is_Polling_Enabled return Boolean;
 

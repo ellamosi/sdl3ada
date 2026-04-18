@@ -15,29 +15,42 @@ layer that supports the tracked SDL callable API audit described in
 Current raw packages include:
 
 - `SDL.Raw.Assert`
+- `SDL.Raw.Audio`
 - `SDL.Raw.AsyncIO`
 - `SDL.Raw.Atomic`
+- `SDL.Raw.Camera`
 - `SDL.Raw.CPUInfo`
+- `SDL.Raw.Dialog`
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
+- `SDL.Raw.Gamepad`
+- `SDL.Raw.Haptic`
+- `SDL.Raw.HIDAPI`
 - `SDL.Raw.Hints`
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
+- `SDL.Raw.Joystick`
 - `SDL.Raw.Locale`
 - `SDL.Raw.LoadSO`
 - `SDL.Raw.Log`
 - `SDL.Raw.Main`
+- `SDL.Raw.MessageBox`
 - `SDL.Raw.Misc`
 - `SDL.Raw.Mutex`
+- `SDL.Raw.Pen`
 - `SDL.Raw.Platform`
 - `SDL.Raw.Power`
 - `SDL.Raw.Process`
 - `SDL.Raw.Properties`
+- `SDL.Raw.Render`
+- `SDL.Raw.Sensor`
 - `SDL.Raw.Storage`
 - `SDL.Raw.System`
 - `SDL.Raw.Timer`
 - `SDL.Raw.Thread`
 - `SDL.Raw.Time`
+- `SDL.Raw.Tray`
+- `SDL.Raw.Video`
 - `SDL.Raw.Version`
 
 ## Naming
@@ -88,6 +101,18 @@ Current raw packages include:
 - Packages that create owned SDL resources should prefer Ada controlled types
   when that keeps destruction reliable without hiding SDL behavior.
 
+## Generated Raw Ownership
+
+- Generated `SDL.Raw.*` units own the auditable ABI surface: direct C imports,
+  SDL symbol names, C-layout enums and records, callback signatures, and
+  low-level pointer helpers required to mirror SDL arrays and buffers.
+- Handwritten public wrappers own Ada-facing policy: exceptions, ownership,
+  callbacks that need registries or trampolines, string and array conversion,
+  and compatibility naming carried forward for `sdlada` callers.
+- Review new low-level work against the generated-raw target first. If a
+  public or compatibility unit needs a new SDL symbol, add it to the relevant
+  raw family before touching the wrapper above it.
+
 ## Error Handling
 
 - Raw imports return SDL success/failure results directly.
@@ -95,11 +120,24 @@ Current raw packages include:
   with `SDL.Error.Get` so diagnostics remain consistent with the current code
   base.
 
+## Compatibility Freeze
+
+- `SDL.C_Pointers`, `SDL.Events.Controllers`, `SDL.Inputs`, `SDL.RWops`, and
+  `SDL.RWops.Streams` are compatibility or support namespaces, not raw homes.
+- These packages may wrap, rename, or bridge raw-backed behavior for caller
+  compatibility, but they should not accumulate new `Import`, `External_Name`,
+  or ABI-layout responsibilities during conversion.
+- When conversion work touches one of these packages, treat new low-level
+  requirements as a signal to extend the raw family below it instead.
+
 ## Coverage Inventory
 
 - Callable SDL API coverage is audited from the tracked SDL include tree with
   `docs/coverage/update.sh`, which regenerates `docs/coverage/report.md` and
   `docs/coverage/report.json`.
+- `python3 tools/check_non_raw_imports.py` enforces the checked-in baseline of
+  remaining non-raw direct imports so conversion work can reduce the footprint
+  without allowing it to silently expand again.
 - `docs/coverage/policy.json` carries the checked-in exclusion rules for
   callable SDL
   APIs that are intentionally out of scope for the Ada binding audit.

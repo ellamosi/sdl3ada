@@ -1,7 +1,8 @@
-with Interfaces;
 with Interfaces.C;
 
-package SDL.Pens is
+package SDL.Raw.Pen is
+   pragma Pure;
+
    package C renames Interfaces.C;
 
    type ID is mod 2 ** 32 with
@@ -59,13 +60,9 @@ package SDL.Pens is
       Direct   => 1,
       Indirect => 2);
 
-   function Has_Flag
-     (State : in Input_Flags;
-      Flag  : in Input_Flags) return Boolean is
-       ((State and Flag) = Flag)
+   function Get_Pen_Device_Type (Instance : in ID) return Device_Types
    with
-     Inline;
-
-   function Get_Device_Type (Instance : in ID) return Device_Types
-   with Inline;
-end SDL.Pens;
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetPenDeviceType";
+end SDL.Raw.Pen;

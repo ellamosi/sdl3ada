@@ -1,4 +1,5 @@
-with Ada.Streams;
+with Ada.Unchecked_Conversion;
+with Ada.Unchecked_Deallocation;
 
 with Interfaces.C;
 with Interfaces.C.Extensions;
@@ -7,14 +8,15 @@ with Interfaces.C.Strings;
 with SDL.Audio.Sample_Formats;
 with SDL.Error;
 with SDL.Hints;
+with SDL.Raw.Audio;
 
 package body SDL.Audio is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Audio;
 
    use type C.C_float;
-   use type C.int;
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
    use type Ada.Streams.Stream_Element_Offset;
@@ -24,199 +26,144 @@ package body SDL.Audio is
    Empty_Bytes : constant Ada.Streams.Stream_Element_Array (1 .. 0) :=
      [others => 0];
 
-   function SDL_Get_Num_Audio_Drivers return C.int with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumAudioDrivers";
-
-   function SDL_Get_Audio_Driver (Index : in C.int) return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDriver";
-
-   function SDL_Get_Current_Audio_Driver return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCurrentAudioDriver";
-
-   function SDL_Get_Audio_Playback_Devices
-     (Count : access C.int) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioPlaybackDevices";
-
-   function SDL_Get_Audio_Recording_Devices
-     (Count : access C.int) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioRecordingDevices";
-
-   function SDL_Get_Audio_Device_Name
-     (Device : in Device_ID) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceName";
-
-   function SDL_Open_Audio_Device
-     (Device : in Device_ID;
-      Spec   : access constant SDL.Audio.Spec) return Device_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenAudioDevice";
-
-   function SDL_Get_Audio_Device_Format
-     (Device        : in Device_ID;
-      Spec          : access SDL.Audio.Spec;
-      Sample_Frames : access C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceFormat";
-
-   function SDL_Get_Audio_Device_Channel_Map
-     (Device : in Device_ID;
-      Count  : access C.int) return System.Address
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceChannelMap";
-
-   function SDL_Is_Audio_Device_Physical
-     (Device : in Device_ID) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsAudioDevicePhysical";
-
-   function SDL_Is_Audio_Device_Playback
-     (Device : in Device_ID) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsAudioDevicePlayback";
-
-   function SDL_Pause_Audio_Device
-     (Device : in Device_ID) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_PauseAudioDevice";
-
-   function SDL_Resume_Audio_Device
-     (Device : in Device_ID) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResumeAudioDevice";
-
-   function SDL_Audio_Device_Paused
-     (Device : in Device_ID) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AudioDevicePaused";
-
-   function SDL_Get_Audio_Device_Gain
-     (Device : in Device_ID) return C.C_float
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioDeviceGain";
-
-   function SDL_Set_Audio_Device_Gain
-     (Device : in Device_ID;
-      Gain   : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioDeviceGain";
-
-   procedure SDL_Close_Audio_Device (Device : in Device_ID) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseAudioDevice";
-
-   function SDL_Get_Audio_Format_Name
-     (Format : in Sample_Format) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetAudioFormatName";
-
-   function SDL_Set_Audio_Postmix_Callback
-     (Device    : in Device_ID;
-      Callback  : in Postmix_Callback;
-      User_Data : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetAudioPostmixCallback";
-
-   function SDL_Load_WAV_IO
-     (Source      : in SDL.RWops.Handle;
-      Close_IO    : in CE.bool;
-      Spec        : access SDL.Audio.Spec;
-      Audio_Data  : access System.Address;
-      Audio_Size  : access Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadWAV_IO";
-
-   function SDL_Load_WAV
-     (Path       : in CS.chars_ptr;
-      Spec       : access SDL.Audio.Spec;
-      Audio_Data : access System.Address;
-      Audio_Size : access Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LoadWAV";
-
-   function SDL_Mix_Audio
-     (Destination : in System.Address;
-      Source      : in System.Address;
-      Format      : in Sample_Format;
-      Byte_Length : in Interfaces.Unsigned_32;
-      Volume      : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_MixAudio";
-
-   function SDL_Convert_Audio_Samples
-     (Source_Spec      : access constant SDL.Audio.Spec;
-      Source_Data      : in System.Address;
-      Source_Length    : in C.int;
-      Destination_Spec : access constant SDL.Audio.Spec;
-      Destination_Data : access System.Address;
-      Destination_Size : access C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ConvertAudioSamples";
-
-   function SDL_Get_Silence_Value_For_Format
-     (Format : in Sample_Format) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetSilenceValueForFormat";
-
-   procedure SDL_Free (Value : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
    type Raw_Device_ID_Array is array (C.ptrdiff_t range <>) of aliased Device_ID with
      Convention => C;
 
    type Raw_Channel_Map is array (C.ptrdiff_t range <>) of aliased C.int with
      Convention => C;
+
+   type Spec_Access is access constant SDL.Audio.Spec;
+
+   type Postmix_Context;
+   type Postmix_Context_Access is access Postmix_Context;
+
+   type Postmix_Context is record
+      Device    : Device_ID := 0;
+      Callback  : Postmix_Callback := null;
+      User_Data : System.Address := System.Null_Address;
+      Next      : Postmix_Context_Access := null;
+   end record;
+
+   procedure Free_Context is new Ada.Unchecked_Deallocation
+     (Object => Postmix_Context, Name => Postmix_Context_Access);
+
+   function To_Spec is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Spec_Access);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.RWops.Handle,
+      Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => Postmix_Context_Access,
+      Target => System.Address);
+
+   function To_Context is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Postmix_Context_Access);
+
+   protected Postmix_Registry is
+      procedure Replace
+        (Device    : in Device_ID;
+         Callback  : in Postmix_Callback;
+         User_Data : in System.Address;
+         Context   : out Postmix_Context_Access);
+
+      procedure Remove (Device : in Device_ID);
+   private
+      Head : Postmix_Context_Access := null;
+   end Postmix_Registry;
+
+   protected body Postmix_Registry is
+      procedure Replace
+        (Device    : in Device_ID;
+         Callback  : in Postmix_Callback;
+         User_Data : in System.Address;
+         Context   : out Postmix_Context_Access)
+      is
+         Previous : Postmix_Context_Access := null;
+         Current  : Postmix_Context_Access := Head;
+      begin
+         while Current /= null loop
+            exit when Current.Device = Device;
+            Previous := Current;
+            Current := Current.Next;
+         end loop;
+
+         if Current /= null then
+            if Previous = null then
+               Head := Current.Next;
+            else
+               Previous.Next := Current.Next;
+            end if;
+
+            Free_Context (Current);
+         end if;
+
+         if Callback = null then
+            Context := null;
+            return;
+         end if;
+
+         Context :=
+           new Postmix_Context'
+             (Device    => Device,
+              Callback  => Callback,
+              User_Data => User_Data,
+              Next      => Head);
+         Head := Context;
+      end Replace;
+
+      procedure Remove (Device : in Device_ID) is
+         Previous : Postmix_Context_Access := null;
+         Current  : Postmix_Context_Access := Head;
+      begin
+         while Current /= null loop
+            exit when Current.Device = Device;
+            Previous := Current;
+            Current := Current.Next;
+         end loop;
+
+         if Current = null then
+            return;
+         end if;
+
+         if Previous = null then
+            Head := Current.Next;
+         else
+            Previous.Next := Current.Next;
+         end if;
+
+         Free_Context (Current);
+      end Remove;
+   end Postmix_Registry;
+
+   procedure Postmix_Trampoline
+     (User_Data   : in System.Address;
+      Spec        : in System.Address;
+      Buffer      : in System.Address;
+      Byte_Length : in C.int)
+   with Convention => C;
+
+   procedure Postmix_Trampoline
+     (User_Data   : in System.Address;
+      Spec        : in System.Address;
+      Buffer      : in System.Address;
+      Byte_Length : in C.int)
+   is
+      Context : constant Postmix_Context_Access := To_Context (User_Data);
+   begin
+      if Context = null or else Context.Callback = null then
+         return;
+      end if;
+
+      Context.Callback
+        (User_Data   => Context.User_Data,
+         Spec        => To_Spec (Spec),
+         Buffer      => Buffer,
+         Byte_Length => Byte_Length);
+   end Postmix_Trampoline;
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL audio call failed");
@@ -252,7 +199,7 @@ package body SDL.Audio is
    begin
       if Byte_Length = 0 then
          if Buffer /= System.Null_Address then
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
          end if;
 
          return Empty_Bytes;
@@ -270,11 +217,11 @@ package body SDL.Audio is
 
          Result : constant Ada.Streams.Stream_Element_Array := Bytes;
       begin
-         SDL_Free (Buffer);
+         Raw.Free (Buffer);
          return Result;
       exception
          when others =>
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
             raise;
       end;
    end Copy_Buffer;
@@ -297,7 +244,7 @@ package body SDL.Audio is
       end if;
 
       if Count <= 0 then
-         SDL_Free (Items);
+         Raw.Free (Items);
          return [];
       end if;
 
@@ -312,11 +259,11 @@ package body SDL.Audio is
             Result (Index) := Raw_Devices (C.ptrdiff_t (Index - 1));
          end loop;
 
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            Raw.Free (Items);
             raise;
       end;
    end Copy_Device_List;
@@ -339,7 +286,7 @@ package body SDL.Audio is
       end if;
 
       if Count <= 0 then
-         SDL_Free (Items);
+         Raw.Free (Items);
          return [];
       end if;
 
@@ -354,11 +301,11 @@ package body SDL.Audio is
             Result (Index) := Raw_Map (C.ptrdiff_t (Index - 1));
          end loop;
 
-         SDL_Free (Items);
+         Raw.Free (Items);
          return Result;
       exception
          when others =>
-            SDL_Free (Items);
+            Raw.Free (Items);
             raise;
       end;
    end Copy_Channel_Map;
@@ -383,7 +330,7 @@ package body SDL.Audio is
    end Finalise;
 
    function Total_Drivers return Positive is
-      Count : constant C.int := SDL_Get_Num_Audio_Drivers;
+      Count : constant C.int := Raw.Get_Num_Audio_Drivers;
    begin
       if Count < 0 then
          raise Audio_Error with SDL.Error.Get;
@@ -397,7 +344,7 @@ package body SDL.Audio is
    end Total_Drivers;
 
    function Driver_Name (Index : in Positive) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Audio_Driver (C.int (Index) - 1);
+      Name : constant CS.chars_ptr := Raw.Get_Audio_Driver (C.int (Index) - 1);
    begin
       if Name = CS.Null_Ptr then
          declare
@@ -415,7 +362,7 @@ package body SDL.Audio is
    end Driver_Name;
 
    function Current_Driver_Name return String is
-      Name : constant CS.chars_ptr := SDL_Get_Current_Audio_Driver;
+      Name : constant CS.chars_ptr := Raw.Get_Current_Audio_Driver;
    begin
       if Name = CS.Null_Ptr then
          declare
@@ -435,7 +382,7 @@ package body SDL.Audio is
    function Playback_Devices return Device_IDs is
       Count : aliased C.int := 0;
       Items : constant System.Address :=
-        SDL_Get_Audio_Playback_Devices (Count'Access);
+        Raw.Get_Audio_Playback_Devices (Count'Access);
    begin
       return Copy_Device_List (Items => Items, Count => Count);
    end Playback_Devices;
@@ -443,13 +390,14 @@ package body SDL.Audio is
    function Recording_Devices return Device_IDs is
       Count : aliased C.int := 0;
       Items : constant System.Address :=
-        SDL_Get_Audio_Recording_Devices (Count'Access);
+        Raw.Get_Audio_Recording_Devices (Count'Access);
    begin
       return Copy_Device_List (Items => Items, Count => Count);
    end Recording_Devices;
 
    function Device_Name (Device : in Device_ID) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Audio_Device_Name (Device);
+      Name : constant CS.chars_ptr :=
+        Raw.Get_Audio_Device_Name (Raw.Device_ID (Device));
    begin
       if Name = CS.Null_Ptr then
          Raise_Last_Error ("Audio device lookup failed");
@@ -464,7 +412,9 @@ package body SDL.Audio is
    is
       Requested_Spec : aliased constant Spec := Requested;
       Opened_Device  : constant Device_ID :=
-        SDL_Open_Audio_Device (Device, Requested_Spec'Access);
+        Device_ID
+          (Raw.Open_Audio_Device
+             (Raw.Device_ID (Device), Requested_Spec'Address));
    begin
       if Opened_Device = 0 then
          Raise_Last_Error ("Audio device open failed");
@@ -476,7 +426,10 @@ package body SDL.Audio is
    function Open_Device
      (Device : in Device_ID := Default_Playback_Device) return Device_ID
    is
-      Opened_Device : constant Device_ID := SDL_Open_Audio_Device (Device, null);
+      Opened_Device : constant Device_ID :=
+        Device_ID
+          (Raw.Open_Audio_Device
+             (Raw.Device_ID (Device), System.Null_Address));
    begin
       if Opened_Device = 0 then
          Raise_Last_Error ("Audio device open failed");
@@ -487,26 +440,35 @@ package body SDL.Audio is
 
    procedure Close_Device (Device : in Device_ID) is
    begin
-      SDL_Close_Audio_Device (Device);
+      if not Boolean
+          (Raw.Set_Audio_Postmix_Callback
+             (Device    => Raw.Device_ID (Device),
+              Callback  => null,
+              User_Data => System.Null_Address))
+      then
+         null;
+      end if;
+      Postmix_Registry.Remove (Device);
+      Raw.Close_Audio_Device (Raw.Device_ID (Device));
    end Close_Device;
 
    procedure Pause_Device (Device : in Device_ID) is
    begin
-      if not Boolean (SDL_Pause_Audio_Device (Device)) then
+      if not Boolean (Raw.Pause_Audio_Device (Raw.Device_ID (Device))) then
          Raise_Last_Error ("Audio device pause failed");
       end if;
    end Pause_Device;
 
    procedure Resume_Device (Device : in Device_ID) is
    begin
-      if not Boolean (SDL_Resume_Audio_Device (Device)) then
+      if not Boolean (Raw.Resume_Audio_Device (Raw.Device_ID (Device))) then
          Raise_Last_Error ("Audio device resume failed");
       end if;
    end Resume_Device;
 
    function Device_Paused (Device : in Device_ID) return Boolean is
    begin
-      return Boolean (SDL_Audio_Device_Paused (Device));
+      return Boolean (Raw.Audio_Device_Paused (Raw.Device_ID (Device)));
    end Device_Paused;
 
    function Get_Device_Format
@@ -517,9 +479,9 @@ package body SDL.Audio is
       Frames         : aliased C.int := 0;
    begin
       if not Boolean
-          (SDL_Get_Audio_Device_Format
-             (Device        => Device,
-              Spec          => Format_Details'Access,
+          (Raw.Get_Audio_Device_Format
+             (Device        => Raw.Device_ID (Device),
+              Spec          => Format_Details'Address,
               Sample_Frames => Frames'Access))
       then
          Raise_Last_Error ("Audio device format query failed");
@@ -532,23 +494,25 @@ package body SDL.Audio is
    function Get_Device_Channel_Map (Device : in Device_ID) return Channel_Map is
       Count : aliased C.int := 0;
       Items : constant System.Address :=
-        SDL_Get_Audio_Device_Channel_Map (Device, Count'Access);
+        Raw.Get_Audio_Device_Channel_Map
+          (Raw.Device_ID (Device), Count'Access);
    begin
       return Copy_Channel_Map (Items => Items, Count => Count);
    end Get_Device_Channel_Map;
 
    function Is_Device_Physical (Device : in Device_ID) return Boolean is
    begin
-      return Boolean (SDL_Is_Audio_Device_Physical (Device));
+      return Boolean (Raw.Is_Audio_Device_Physical (Raw.Device_ID (Device)));
    end Is_Device_Physical;
 
    function Is_Device_Playback (Device : in Device_ID) return Boolean is
    begin
-      return Boolean (SDL_Is_Audio_Device_Playback (Device));
+      return Boolean (Raw.Is_Audio_Device_Playback (Raw.Device_ID (Device)));
    end Is_Device_Playback;
 
    function Get_Device_Gain (Device : in Device_ID) return Float is
-      Gain : constant C.C_float := SDL_Get_Audio_Device_Gain (Device);
+      Gain : constant C.C_float :=
+        Raw.Get_Audio_Device_Gain (Raw.Device_ID (Device));
    begin
       if Gain < 0.0 and then SDL.Error.Get /= "" then
          Raise_Last_Error ("Audio device gain query failed");
@@ -563,8 +527,8 @@ package body SDL.Audio is
    is
    begin
       if not Boolean
-          (SDL_Set_Audio_Device_Gain
-             (Device => Device,
+          (Raw.Set_Audio_Device_Gain
+             (Device => Raw.Device_ID (Device),
               Gain   => C.C_float (Gain)))
       then
          Raise_Last_Error ("Audio device gain update failed");
@@ -576,19 +540,33 @@ package body SDL.Audio is
       Callback  : in Postmix_Callback;
       User_Data : in System.Address := System.Null_Address)
    is
+      Context : Postmix_Context_Access;
    begin
+      Postmix_Registry.Replace
+        (Device    => Device,
+         Callback  => Callback,
+         User_Data => User_Data,
+         Context   => Context);
+
       if not Boolean
-          (SDL_Set_Audio_Postmix_Callback
-             (Device    => Device,
-              Callback  => Callback,
-              User_Data => User_Data))
+          (Raw.Set_Audio_Postmix_Callback
+             (Device    => Raw.Device_ID (Device),
+              Callback  =>
+                (if Callback = null
+                 then null
+                 else Postmix_Trampoline'Access),
+              User_Data =>
+                (if Context = null
+                 then System.Null_Address
+                 else To_Address (Context))))
       then
          Raise_Last_Error ("Audio postmix callback update failed");
       end if;
    end Set_Postmix_Callback;
 
    function Format_Name (Format : in Sample_Format) return String is
-      Name : constant CS.chars_ptr := SDL_Get_Audio_Format_Name (Format);
+      Name : constant CS.chars_ptr :=
+        Raw.Get_Audio_Format_Name (Raw.Sample_Format (Format));
    begin
       if Name = CS.Null_Ptr then
          return "";
@@ -600,7 +578,8 @@ package body SDL.Audio is
    function Silence_Value
      (Format : in Sample_Format) return Interfaces.Unsigned_8
    is
-      Value : constant C.int := SDL_Get_Silence_Value_For_Format (Format);
+      Value : constant C.int :=
+        Raw.Get_Silence_Value_For_Format (Raw.Sample_Format (Format));
    begin
       if Value < 0 and then SDL.Error.Get /= "" then
          Raise_Last_Error ("Audio silence value query failed");
@@ -634,12 +613,12 @@ package body SDL.Audio is
       Byte_Length : aliased Interfaces.Unsigned_32 := 0;
    begin
       if not Boolean
-          (SDL_Load_WAV_IO
-             (Source      => SDL.RWops.Get_Handle (Source),
+          (Raw.Load_WAV_IO
+             (Source      => To_Address (SDL.RWops.Get_Handle (Source)),
               Close_IO    => CE.bool'Val (Boolean'Pos (Close_After)),
-              Spec        => Loaded_Spec'Access,
-              Audio_Data  => Data'Access,
-              Audio_Size  => Byte_Length'Access))
+              Spec        => Loaded_Spec'Address,
+             Audio_Data  => Data'Access,
+             Audio_Size  => Byte_Length'Access))
       then
          Raise_Last_Error ("WAV load from stream failed");
       end if;
@@ -660,9 +639,9 @@ package body SDL.Audio is
    begin
       begin
          if not Boolean
-             (SDL_Load_WAV
+             (Raw.Load_WAV
                 (Path       => C_Path,
-                 Spec       => Loaded_Spec'Access,
+                 Spec       => Loaded_Spec'Address,
                  Audio_Data => Data'Access,
                  Audio_Size => Byte_Length'Access))
          then
@@ -697,10 +676,10 @@ package body SDL.Audio is
       end if;
 
       if not Boolean
-          (SDL_Mix_Audio
+          (Raw.Mix_Audio
              (Destination => Destination,
               Source      => Source,
-              Format      => Format,
+              Format      => Raw.Sample_Format (Format),
               Byte_Length => Byte_Length,
               Volume      => C.C_float (Volume)))
       then
@@ -749,11 +728,11 @@ package body SDL.Audio is
       end if;
 
       if not Boolean
-          (SDL_Convert_Audio_Samples
-             (Source_Spec      => Input_Spec'Access,
+          (Raw.Convert_Audio_Samples
+             (Source_Spec      => Input_Spec'Address,
               Source_Data      => Source_Data,
               Source_Length    => C.int (Source_Length),
-              Destination_Spec => Output_Spec'Access,
+              Destination_Spec => Output_Spec'Address,
               Destination_Data => Converted'Access,
               Destination_Size => Converted_Len'Access))
       then

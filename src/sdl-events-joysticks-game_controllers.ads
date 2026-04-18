@@ -90,10 +90,7 @@ package SDL.Events.Joysticks.Game_Controllers is
       Misc_5           => 24,
       Misc_6           => 25);
 
-   procedure Update with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UpdateGamepads";
+   procedure Update;
 
    function Is_Polling_Enabled return Boolean;
 

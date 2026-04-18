@@ -1,31 +1,22 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C.Extensions;
 with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
-with SDL.Video.Surfaces.Makers;
+with SDL.Raw.Camera;
 
 package body SDL.Cameras is
-   package CE renames Interfaces.C.Extensions;
+   package Raw renames SDL.Raw.Camera;
    package CS renames Interfaces.C.Strings;
 
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
+   use type Raw.ID_Pointers.Pointer;
    use type SDL.C_Pointers.Camera_Pointer;
    use type SDL.Properties.Property_ID;
    use type SDL.Video.Surfaces.Internal_Surface_Pointer;
    use type System.Address;
-
-   type ID_Arrays is array (C.ptrdiff_t range <>) of aliased ID with
-     Convention => C;
-
-   package ID_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => ID,
-      Element_Array      => ID_Arrays,
-      Default_Terminator => 0);
 
    type Spec_Access is access all Spec with
      Convention => C;
@@ -39,16 +30,42 @@ package body SDL.Cameras is
       Element_Array      => Spec_Access_Arrays,
       Default_Terminator => null);
 
-   use type ID_Pointers.Pointer;
    use type Spec_Pointers.Pointer;
 
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => ID_Pointers.Pointer,
+     (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => Spec_Pointers.Pointer,
       Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.C_Pointers.Camera_Pointer,
+      Target => System.Address);
+
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
+      Target => System.Address);
+
+   function To_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.C_Pointers.Camera_Pointer);
+
+   function To_Surface_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
+
+   function To_Spec_Pointers is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Spec_Pointers.Pointer);
+
+   function To_Public (Value : in Raw.Positions) return Positions is
+     (Positions'Val (Raw.Positions'Pos (Value)));
+
+   function To_Public
+     (Value : in Raw.Permission_States) return Permission_States is
+     (Permission_States'Val (Raw.Permission_States'Pos (Value)));
 
    function Make_Surface_From_Pointer
      (S    : in SDL.Video.Surfaces.Internal_Surface_Pointer;
@@ -63,120 +80,6 @@ package body SDL.Cameras is
    with
      Import     => True,
      Convention => Ada;
-
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   function SDL_Get_Num_Camera_Drivers return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumCameraDrivers";
-
-   function SDL_Get_Camera_Driver
-     (Index : in C.int) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraDriver";
-
-   function SDL_Get_Current_Camera_Driver return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCurrentCameraDriver";
-
-   function SDL_Get_Cameras
-     (Count : access C.int) return ID_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameras";
-
-   function SDL_Get_Camera_Supported_Formats
-     (Instance : in ID;
-      Count    : access C.int) return Spec_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraSupportedFormats";
-
-   function SDL_Get_Camera_Name
-     (Instance : in ID) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraName";
-
-   function SDL_Get_Camera_Position
-     (Instance : in ID) return Positions
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraPosition";
-
-   function SDL_Open_Camera
-     (Instance : in ID;
-      Desired  : access constant Spec) return SDL.C_Pointers.Camera_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenCamera";
-
-   function SDL_Get_Camera_Permission_State
-     (Self : in SDL.C_Pointers.Camera_Pointer) return Permission_States
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraPermissionState";
-
-   function SDL_Get_Camera_ID
-     (Self : in SDL.C_Pointers.Camera_Pointer) return ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraID";
-
-   function SDL_Get_Camera_Properties
-     (Self : in SDL.C_Pointers.Camera_Pointer) return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraProperties";
-
-   function SDL_Get_Camera_Format
-     (Self  : in SDL.C_Pointers.Camera_Pointer;
-      Value : access Spec) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetCameraFormat";
-
-   function SDL_Acquire_Camera_Frame
-     (Self         : in SDL.C_Pointers.Camera_Pointer;
-      Timestamp_NS : access Timestamp_Nanoseconds)
-      return SDL.Video.Surfaces.Internal_Surface_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AcquireCameraFrame";
-
-   procedure SDL_Release_Camera_Frame
-     (Self  : in SDL.C_Pointers.Camera_Pointer;
-      Frame : in SDL.Video.Surfaces.Internal_Surface_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ReleaseCameraFrame";
-
-   procedure SDL_Close_Camera
-     (Self : in SDL.C_Pointers.Camera_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseCamera";
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL camera call failed");
@@ -202,12 +105,12 @@ package body SDL.Cameras is
       end if;
    end Require_Valid;
 
-   procedure Free (Items : in out ID_Pointers.Pointer);
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer);
 
-   procedure Free (Items : in out ID_Pointers.Pointer) is
+   procedure Free (Items : in out Raw.ID_Pointers.Pointer) is
    begin
       if Items /= null then
-         SDL_Free (To_Address (Items));
+         Raw.Free (To_Address (Items));
          Items := null;
       end if;
    end Free;
@@ -217,45 +120,45 @@ package body SDL.Cameras is
    procedure Free (Items : in out Spec_Pointers.Pointer) is
    begin
       if Items /= null then
-         SDL_Free (To_Address (Items));
+         Raw.Free (To_Address (Items));
          Items := null;
       end if;
    end Free;
 
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists;
 
    function Copy_IDs
-     (Items : in ID_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists
    is
-      Raw : ID_Pointers.Pointer := Items;
+      Source_Items : Raw.ID_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Source_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Source_Items = null then
          Raise_Last_Error ("Camera enumeration failed");
       end if;
 
       declare
-         Source : constant ID_Arrays :=
-           ID_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.ID_Array :=
+           Raw.ID_Pointers.Value (Source_Items, C.ptrdiff_t (Count));
          Result : ID_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
             Result (Index) :=
-              Source (Source'First + C.ptrdiff_t (Index - Result'First));
+              ID (Source (Source'First + C.ptrdiff_t (Index - Result'First)));
          end loop;
 
-         Free (Raw);
+         Free (Source_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Source_Items);
             raise;
       end;
    end Copy_IDs;
@@ -321,7 +224,11 @@ package body SDL.Cameras is
    begin
       Close (Self);
 
-      Internal := SDL_Open_Camera (Instance, Desired);
+      Internal :=
+        To_Pointer
+          (Raw.Open_Camera
+             (Raw.ID (Instance),
+              (if Desired = null then System.Null_Address else Desired.all'Address)));
       if Internal = null then
          Raise_Last_Error ("SDL_OpenCamera failed");
       end if;
@@ -331,7 +238,7 @@ package body SDL.Cameras is
    end Open_Internal;
 
    function Total_Drivers return Natural is
-      Count : constant C.int := SDL_Get_Num_Camera_Drivers;
+      Count : constant C.int := Raw.Get_Num_Camera_Drivers;
    begin
       if Count < 0 then
          return 0;
@@ -341,7 +248,7 @@ package body SDL.Cameras is
    end Total_Drivers;
 
    function Driver_Name (Index : in Positive) return String is
-      Value : constant CS.chars_ptr := SDL_Get_Camera_Driver (C.int (Index - 1));
+      Value : constant CS.chars_ptr := Raw.Get_Camera_Driver (C.int (Index - 1));
    begin
       if Value = CS.Null_Ptr then
          return "";
@@ -351,7 +258,7 @@ package body SDL.Cameras is
    end Driver_Name;
 
    function Current_Driver_Name return String is
-      Value : constant CS.chars_ptr := SDL_Get_Current_Camera_Driver;
+      Value : constant CS.chars_ptr := Raw.Get_Current_Camera_Driver;
    begin
       if Value = CS.Null_Ptr then
          return "";
@@ -362,7 +269,7 @@ package body SDL.Cameras is
 
    function Get_Cameras return ID_Lists is
       Count : aliased C.int := 0;
-      Items : constant ID_Pointers.Pointer := SDL_Get_Cameras (Count'Access);
+      Items : constant Raw.ID_Pointers.Pointer := Raw.Get_Cameras (Count'Access);
    begin
       return Copy_IDs (Items, Count);
    end Get_Cameras;
@@ -370,13 +277,14 @@ package body SDL.Cameras is
    function Supported_Formats (Instance : in ID) return Spec_Lists is
       Count : aliased C.int := 0;
       Items : constant Spec_Pointers.Pointer :=
-        SDL_Get_Camera_Supported_Formats (Instance, Count'Access);
+        To_Spec_Pointers
+          (Raw.Get_Camera_Supported_Formats (Raw.ID (Instance), Count'Access));
    begin
       return Copy_Specs (Items, Count);
    end Supported_Formats;
 
    function Name (Instance : in ID) return String is
-      Value : constant CS.chars_ptr := SDL_Get_Camera_Name (Instance);
+      Value : constant CS.chars_ptr := Raw.Get_Camera_Name (Raw.ID (Instance));
    begin
       if Value = CS.Null_Ptr then
          return "";
@@ -387,7 +295,7 @@ package body SDL.Cameras is
 
    function Position (Instance : in ID) return Positions is
    begin
-      return SDL_Get_Camera_Position (Instance);
+      return To_Public (Raw.Get_Camera_Position (Raw.ID (Instance)));
    end Position;
 
    function Open (Instance : in ID) return Camera is
@@ -431,7 +339,7 @@ package body SDL.Cameras is
    procedure Close (Self : in out Camera) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         SDL_Close_Camera (Self.Internal);
+         Raw.Close_Camera (To_Address (Self.Internal));
       end if;
 
       Self.Internal := null;
@@ -444,7 +352,7 @@ package body SDL.Cameras is
    function Permission_State (Self : in Camera) return Permission_States is
    begin
       Require_Valid (Self);
-      return SDL_Get_Camera_Permission_State (Self.Internal);
+      return To_Public (Raw.Get_Camera_Permission_State (To_Address (Self.Internal)));
    end Permission_State;
 
    function Get_ID (Self : in Camera) return ID is
@@ -454,7 +362,7 @@ package body SDL.Cameras is
          return 0;
       end if;
 
-      Result := SDL_Get_Camera_ID (Self.Internal);
+      Result := ID (Raw.Get_Camera_ID (To_Address (Self.Internal)));
       if Result = 0 then
          Raise_Last_Error ("SDL_GetCameraID failed");
       end if;
@@ -469,7 +377,7 @@ package body SDL.Cameras is
    begin
       Require_Valid (Self);
 
-      Props := SDL_Get_Camera_Properties (Self.Internal);
+      Props := Raw.Get_Camera_Properties (To_Address (Self.Internal));
       if Props = SDL.Properties.Null_Property_ID then
          Raise_Last_Error ("SDL_GetCameraProperties failed");
       end if;
@@ -481,15 +389,18 @@ package body SDL.Cameras is
      (Self  : in Camera;
       Value : out Spec) return Boolean
    is
-      Raw : aliased Spec;
+      Raw_Value : aliased Spec;
    begin
       Require_Valid (Self);
 
-      if not Boolean (SDL_Get_Camera_Format (Self.Internal, Raw'Access)) then
+      if not Boolean
+          (Raw.Get_Camera_Format
+             (To_Address (Self.Internal), Raw_Value'Address))
+      then
          return False;
       end if;
 
-      Value := Raw;
+      Value := Raw_Value;
       return True;
    end Get_Format;
 
@@ -503,7 +414,9 @@ package body SDL.Cameras is
    begin
       Require_Valid (Self);
 
-      Frame := SDL_Acquire_Camera_Frame (Self.Internal, Stamp'Access);
+      Frame :=
+        To_Surface_Pointer
+          (Raw.Acquire_Camera_Frame (To_Address (Self.Internal), Stamp'Access));
       Timestamp_NS := Stamp;
 
       if Frame = null then
@@ -526,7 +439,8 @@ package body SDL.Cameras is
          return;
       end if;
 
-      SDL_Release_Camera_Frame (Self.Internal, Internal);
+      Raw.Release_Camera_Frame
+        (To_Address (Self.Internal), To_Address (Internal));
       Frame := SDL.Video.Surfaces.Null_Surface;
    end Release_Frame;
 

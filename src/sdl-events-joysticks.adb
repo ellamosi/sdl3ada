@@ -1,29 +1,28 @@
+with SDL.Raw.Joystick;
+
 package body SDL.Events.Joysticks is
+   package Raw renames SDL.Raw.Joystick;
+
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (if Value then CE.bool'Val (1) else CE.bool'Val (0));
 
-   function SDL_Joystick_Events_Enabled return CE.bool with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_JoystickEventsEnabled";
-
-   procedure SDL_Set_Joystick_Events_Enabled (Enabled : in CE.bool) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickEventsEnabled";
+   procedure Update is
+   begin
+      Raw.Update;
+   end Update;
 
    function Is_Polling_Enabled return Boolean is
    begin
-      return Boolean (SDL_Joystick_Events_Enabled);
+      return Boolean (Raw.Events_Enabled);
    end Is_Polling_Enabled;
 
    procedure Enable_Polling is
    begin
-      SDL_Set_Joystick_Events_Enabled (To_C_Bool (True));
+      Raw.Set_Events_Enabled (To_C_Bool (True));
    end Enable_Polling;
 
    procedure Disable_Polling is
    begin
-      SDL_Set_Joystick_Events_Enabled (To_C_Bool (False));
+      Raw.Set_Events_Enabled (To_C_Bool (False));
    end Disable_Polling;
 end SDL.Events.Joysticks;

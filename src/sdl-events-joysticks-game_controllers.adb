@@ -1,12 +1,12 @@
 with Interfaces.C.Extensions;
-with SDL.Raw.Gamepad;
+with SDL.Raw.Gamepad_Events;
 
 package body SDL.Events.Joysticks.Game_Controllers is
    package CE renames Interfaces.C.Extensions;
-   package Raw renames SDL.Raw.Gamepad;
+   package Raw renames SDL.Raw.Gamepad_Events;
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
-     (if Value then CE.bool'Val (1) else CE.bool'Val (0));
+     (CE.bool'Val (Boolean'Pos (Value)));
 
    procedure Update is
    begin

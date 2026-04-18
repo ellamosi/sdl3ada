@@ -2,30 +2,22 @@ with Interfaces;
 with Interfaces.C.Extensions;
 with System;
 
+with SDL.Raw.Gamepad_Events;
+
 package SDL.Raw.Gamepad is
-   pragma Pure;
+   pragma Preelaborate;
 
    package CE renames Interfaces.C.Extensions;
 
    subtype ID is Interfaces.Unsigned_32;
 
-   procedure Update
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UpdateGamepads";
+   procedure Update renames SDL.Raw.Gamepad_Events.Update;
 
-   function Events_Enabled return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadEventsEnabled";
+   function Events_Enabled return CE.bool renames
+     SDL.Raw.Gamepad_Events.Events_Enabled;
 
-   procedure Set_Events_Enabled (Enabled : in CE.bool)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetGamepadEventsEnabled";
+   procedure Set_Events_Enabled (Enabled : in CE.bool) renames
+     SDL.Raw.Gamepad_Events.Set_Events_Enabled;
 
    function Open_Gamepad
      (Device : in ID) return System.Address

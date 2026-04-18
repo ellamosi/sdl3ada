@@ -50,7 +50,7 @@ state.
 | `SDL.Raw.Dialog` | present | `complete` | Added and now owns the dialog ABI enum, filter struct, callback signature, and entry points used by `SDL.Dialogs`. |
 | `SDL.Raw.Error` | present | `complete` | Added as the first phase-1 raw support family and now owns all `SDL_Error` imports. |
 | `SDL.Raw.Filesystem` | present | `complete` | Existing raw family now also owns filesystem-result cleanup helpers, and `SDL.Filesystems` no longer imports SDL symbols directly. |
-| `SDL.Raw.Gamepad` | present | `partial` | Added as a starter family for gamepad wrappers and maker open calls; pure event polling now lives in `SDL.Raw.Gamepad_Events`, which removes the pure-layer blocker for broader raw backfills. |
+| `SDL.Raw.Gamepad` | present | `partial` | Now owns the broader gamepad mapping, metadata, binding ABI, touchpad, sensor, rumble, and symbol entry points expected by `SDL.Inputs.Joysticks.Game_Controllers`; pure event polling remains split into `SDL.Raw.Gamepad_Events`, and the public wrapper migration is still pending. |
 | `SDL.Raw.Gamepad_Events` | present | `complete` | Pure support split that owns the gamepad event-polling entry points used by `SDL.Events.Joysticks.Game_Controllers`. |
 | `SDL.Raw.GPU` | present | `partial` | Must stop depending on public value packages and become a strict raw mirror. |
 | `SDL.Raw.Haptic` | present | `partial` | Added as a starter family for haptic device entry points and ID-list helpers; the public effect ABI record layout still lives above raw and should be normalized later. |

@@ -29,6 +29,7 @@ Current raw packages include:
 - `SDL.Raw.LoadSO`
 - `SDL.Raw.Log`
 - `SDL.Raw.Main`
+- `SDL.Raw.MessageBox`
 - `SDL.Raw.Misc`
 - `SDL.Raw.Mutex`
 - `SDL.Raw.Pen`

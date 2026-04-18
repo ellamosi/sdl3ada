@@ -1,13 +1,13 @@
 with Ada.Unchecked_Deallocation;
-with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.MessageBox;
 
 package body SDL.Message_Boxes is
-   package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.MessageBox;
 
    use type CS.chars_ptr;
 
@@ -42,24 +42,6 @@ package body SDL.Message_Boxes is
 
    procedure Free is new Ada.Unchecked_Deallocation
      (Object => String_Pointer_Lists, Name => String_Pointer_List_Access);
-
-   function SDL_Show_Message_Box
-     (Data      : access constant Internal_Message_Box_Data;
-      Button_ID : access Button_IDs) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowMessageBox";
-
-   function SDL_Show_Simple_Message_Box
-     (Flags   : in SDL.Message_Boxes.Flags;
-      Title   : in CS.chars_ptr;
-      Message : in CS.chars_ptr;
-      Window  : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ShowSimpleMessageBox";
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL message box call failed");
@@ -134,8 +116,8 @@ package body SDL.Message_Boxes is
    begin
       begin
          if not Boolean
-           (SDL_Show_Simple_Message_Box
-              (Flags   => Flags,
+           (Raw.Show_Simple_Message_Box
+              (Kind    => Raw.Flags (Flags),
                Title   => C_Title,
                Message => C_Message,
                Window  => SDL.Video.Windows.Get_Internal (Window)))
@@ -201,7 +183,7 @@ package body SDL.Message_Boxes is
             then System.Null_Address
             else Color_Scheme.all'Address));
 
-      if not Boolean (SDL_Show_Message_Box (Data'Access, ID'Access)) then
+      if not Boolean (Raw.Show_Message_Box (Data'Address, ID'Address)) then
          Raise_Last_Error;
       end if;
 

@@ -6,6 +6,7 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Raw.Properties;
+with SDL.Raw.Rect;
 
 package SDL.Raw.Video is
    pragma Preelaborate;
@@ -344,14 +345,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetClosestFullscreenDisplayMode";
 
    function Get_Display_For_Point
-     (Point : in System.Address) return Display_ID
+     (Point : access constant SDL.Raw.Rect.Point) return Display_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetDisplayForPoint";
 
    function Get_Display_For_Rect
-     (Area : in System.Address) return Display_ID
+     (Area : access constant SDL.Raw.Rect.Rectangle) return Display_ID
    with
      Import        => True,
      Convention    => C,
@@ -381,7 +382,7 @@ package SDL.Raw.Video is
 
    function Get_Display_Bounds
      (ID     : in Display_ID;
-      Bounds : in System.Address) return CE.bool
+      Bounds : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -389,7 +390,7 @@ package SDL.Raw.Video is
 
    function Get_Display_Usable_Bounds
      (ID     : in Display_ID;
-      Bounds : in System.Address) return CE.bool
+      Bounds : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,

@@ -1,54 +1,15 @@
 with Interfaces.C;
 
 with SDL.Error;
+with SDL.Raw.IOStream;
 
 package body SDL.RWops.Streams is
    package C renames Interfaces.C;
-
-   type IO_Status is
-     (Ready,
-      Error,
-      End_Of_File,
-      Not_Ready,
-      Read_Only,
-      Write_Only)
-   with
-     Convention => C,
-     Size       => C.int'Size;
-
-   for IO_Status use
-     (Ready       => 0,
-      Error       => 1,
-      End_Of_File => 2,
-      Not_Ready   => 3,
-      Read_Only   => 4,
-      Write_Only  => 5);
+   package Raw renames SDL.Raw.IOStream;
 
    use type Ada.Streams.Stream_Element_Offset;
    use type C.size_t;
-
-   function SDL_Read_IO
-     (Context : in RWops;
-      Ptr     : in System.Address;
-      Size    : in C.size_t) return C.size_t
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ReadIO";
-
-   function SDL_Write_IO
-     (Context : in RWops;
-      Ptr     : in System.Address;
-      Size    : in C.size_t) return C.size_t
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_WriteIO";
-
-   function SDL_Get_IO_Status (Context : in RWops) return IO_Status with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetIOStatus";
+   use type Raw.IO_Status;
 
    function Open (Op : in RWops) return RWops_Stream is
    begin
@@ -83,13 +44,13 @@ package body SDL.RWops.Streams is
       end if;
 
       Bytes_Read :=
-        SDL_Read_IO
-          (Context => Stream.Context,
+        Raw.Read_IO
+          (Context => Get_Handle (Stream.Context),
            Ptr     => Item'Address,
            Size    => C.size_t (Item'Length));
 
       if Bytes_Read = 0 then
-         if SDL_Get_IO_Status (Stream.Context) = End_Of_File then
+         if Raw.Get_IO_Status (Get_Handle (Stream.Context)) = Raw.IO_Status_Eof then
             Last := Item'First - 1;
             return;
          end if;
@@ -116,8 +77,8 @@ package body SDL.RWops.Streams is
       end if;
 
       Bytes_Written :=
-        SDL_Write_IO
-          (Context => Stream.Context,
+        Raw.Write_IO
+          (Context => Get_Handle (Stream.Context),
            Ptr     => Item'Address,
            Size    => C.size_t (Item'Length));
 

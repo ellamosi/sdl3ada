@@ -1,10 +1,10 @@
-with SDL.Raw.Joystick;
+with SDL.Raw.Joystick_Events;
 
 package body SDL.Events.Joysticks is
-   package Raw renames SDL.Raw.Joystick;
+   package Raw renames SDL.Raw.Joystick_Events;
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
-     (if Value then CE.bool'Val (1) else CE.bool'Val (0));
+     (CE.bool'Val (Boolean'Pos (Value)));
 
    procedure Update is
    begin

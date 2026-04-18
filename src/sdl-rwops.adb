@@ -4,10 +4,12 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Filesystem;
 
 package body SDL.RWops is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw_Filesystem renames SDL.Raw.Filesystem;
    package Raw renames SDL.Raw.IOStream;
 
    use type SDL.C_Pointers.IO_Stream_Pointer;
@@ -18,38 +20,6 @@ package body SDL.RWops is
 
    Empty_Bytes : constant Ada.Streams.Stream_Element_Array (1 .. 0) :=
      (1 .. 0 => 0);
-
-   procedure SDL_Free (Memory : in CS.chars_ptr) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   procedure SDL_Free (Memory : in System.Address) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   function SDL_IO_PrintF
-     (Context : in Handle;
-      Format  : in C.char_array;
-      Value   : in C.char_array) return C.size_t
-   with
-     Import        => True,
-     Convention    => C_Variadic_1,
-     External_Name => "SDL_IOprintf";
-
-   function SDL_Get_Base_Path return CS.chars_ptr with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetBasePath";
-
-   function SDL_Get_Pref_Path
-     (Organisation : in C.char_array;
-      Application  : in C.char_array) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetPrefPath";
 
    procedure Ensure_Valid (Context : in RWops) is
    begin
@@ -115,7 +85,7 @@ package body SDL.RWops is
    end To_Stream_Elements;
 
    function Base_Path return UTF_Strings.UTF_String is
-      C_Path : constant CS.chars_ptr := SDL_Get_Base_Path;
+      C_Path : constant CS.chars_ptr := Raw_Filesystem.Get_Base_Path;
 
       use type CS.chars_ptr;
    begin
@@ -126,7 +96,6 @@ package body SDL.RWops is
       declare
          Ada_Path : constant UTF_Strings.UTF_String := CS.Value (C_Path);
       begin
-         SDL_Free (C_Path);
          return Ada_Path;
       end;
    end Base_Path;
@@ -136,7 +105,7 @@ package body SDL.RWops is
       Application  : in UTF_Strings.UTF_String) return UTF_Strings.UTF_String
    is
       C_Path : constant CS.chars_ptr :=
-        SDL_Get_Pref_Path
+        Raw_Filesystem.Get_Pref_Path
           (Organisation => C.To_C (Organisation),
            Application  => C.To_C (Application));
 
@@ -149,7 +118,7 @@ package body SDL.RWops is
       declare
          Ada_Path : constant UTF_Strings.UTF_String := CS.Value (C_Path);
       begin
-         SDL_Free (C_Path);
+         Raw_Filesystem.Free (C_Path);
          return Ada_Path;
       end;
    end Preferences_Path;
@@ -262,7 +231,7 @@ package body SDL.RWops is
      (Destination : in RWops;
       Value       : in String)
    is
-      Bytes_Written : C.size_t;
+      Bytes_Written : Natural;
    begin
       Ensure_Valid (Destination);
 
@@ -271,12 +240,12 @@ package body SDL.RWops is
       end if;
 
       Bytes_Written :=
-        SDL_IO_PrintF
-          (Context => Get_Handle (Destination),
-           Format  => C.To_C ("%s"),
-           Value   => C.To_C (Value));
+        Write
+          (Destination,
+           Value'Address,
+           Value'Length);
 
-      if Bytes_Written /= C.size_t (Value'Length) and then Status (Destination) = Error then
+      if Bytes_Written /= Value'Length and then Status (Destination) = Error then
          Raise_Last_Error;
       end if;
    end Put;
@@ -413,11 +382,11 @@ package body SDL.RWops is
          Result : constant Ada.Streams.Stream_Element_Array :=
            To_Stream_Elements (Buffer, Data_Size);
       begin
-         SDL_Free (Buffer);
+         Raw.Free (Buffer);
          return Result;
       exception
          when others =>
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
             raise;
       end;
    end Load_File;
@@ -438,11 +407,11 @@ package body SDL.RWops is
          Result : constant Ada.Streams.Stream_Element_Array :=
            To_Stream_Elements (Buffer, Data_Size);
       begin
-         SDL_Free (Buffer);
+         Raw.Free (Buffer);
          return Result;
       exception
          when others =>
-            SDL_Free (Buffer);
+            Raw.Free (Buffer);
             raise;
       end;
    end Load_File;

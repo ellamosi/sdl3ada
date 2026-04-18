@@ -1,505 +1,112 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C;
-with Interfaces.C.Extensions;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
-with System;
 
 with SDL.Error;
+with SDL.Raw.Haptic;
+with SDL.Raw.Joystick;
+with SDL.Raw.Power;
+with SDL.Raw.Sensor;
 
 package body SDL.Inputs.Joysticks is
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Joystick;
 
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
+   use type Raw.ID_Pointers.Pointer;
    use type SDL.C_Pointers.Joystick_Pointer;
    use type SDL.Events.Joysticks.IDs;
-   use type SDL.Properties.Property_ID;
    use type System.Address;
 
-   type Instance_Arrays is array (C.ptrdiff_t range <>) of aliased Instances with
-     Convention => C;
-
-   package Instance_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => Instances,
-      Element_Array      => Instance_Arrays,
-      Default_Terminator => 0);
-
-   use type Instance_Pointers.Pointer;
-
-   type Raw_Virtual_Description is record
-      Version             : Interfaces.Unsigned_32;
-      Kind                : Interfaces.Unsigned_16;
-      Padding             : Interfaces.Unsigned_16;
-      Vendor_ID           : Vendor_IDs;
-      Product_ID          : Product_IDs;
-      Axis_Count          : Interfaces.Unsigned_16;
-      Button_Count        : Interfaces.Unsigned_16;
-      Ball_Count          : Interfaces.Unsigned_16;
-      Hat_Count           : Interfaces.Unsigned_16;
-      Touchpad_Count      : Interfaces.Unsigned_16;
-      Sensor_Count        : Interfaces.Unsigned_16;
-      Padding_2           : Interfaces.Unsigned_16 := 0;
-      Padding_3           : Interfaces.Unsigned_16 := 0;
-      Button_Mask         : Interfaces.Unsigned_32;
-      Axis_Mask           : Interfaces.Unsigned_32;
-      Name                : CS.chars_ptr;
-      Touchpads           : Virtual_Touchpad_Description_Access;
-      Sensors             : Virtual_Sensor_Description_Access;
-      User_Data           : System.Address;
-      Update              : Update_Callback;
-      Set_Player_Index    : Set_Player_Index_Callback;
-      Rumble              : Rumble_Callback;
-      Rumble_Triggers     : Rumble_Triggers_Callback;
-      Set_LED             : Set_LED_Callback;
-      Send_Effect         : Send_Effect_Callback;
-      Set_Sensors_Enabled : Set_Sensors_Enabled_Callback;
-      Cleanup             : Cleanup_Callback;
-   end record with
-     Convention => C;
-
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => Instance_Pointers.Pointer,
+     (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
-   procedure SDL_Free (Memory : in System.Address)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
+   function To_Address is new Ada.Unchecked_Conversion
+     (Source => SDL.C_Pointers.Joystick_Pointer,
+      Target => System.Address);
 
-   function SDL_Has_Joystick return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_HasJoystick";
+   function To_Raw_ID (Value : in Instances) return Raw.ID is
+     (Raw.ID (Value));
 
-   function SDL_Get_Joysticks
-     (Count : access C.int) return Instance_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoysticks";
+   function To_Public_ID (Value : in Raw.ID) return Instances is
+     (Instances (Value));
 
-   function SDL_Get_Joystick_Name_For_ID
-     (Instance : in Instances) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickNameForID";
+   function To_Raw_Player_Index
+     (Value : in Player_Indices) return Raw.Player_Index is
+     (Raw.Player_Index (Value));
 
-   function SDL_Get_Joystick_Path_For_ID
-     (Instance : in Instances) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickPathForID";
+   function To_Public_Player_Index
+     (Value : in Raw.Player_Index) return Player_Indices is
+     (Player_Indices (Value));
 
-   function SDL_Get_Joystick_Player_Index_For_ID
-     (Instance : in Instances) return Player_Indices
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickPlayerIndexForID";
+   function To_Raw_GUID is new Ada.Unchecked_Conversion
+     (Source => GUIDs,
+      Target => Raw.GUID);
 
-   function SDL_Get_Joystick_GUID_For_ID
-     (Instance : in Instances) return GUIDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickGUIDForID";
+   function To_Public_GUID is new Ada.Unchecked_Conversion
+     (Source => Raw.GUID,
+      Target => GUIDs);
 
-   function SDL_Get_Joystick_Vendor_For_ID
-     (Instance : in Instances) return Vendor_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickVendorForID";
+   function To_Raw_Type is new Ada.Unchecked_Conversion
+     (Source => Types,
+      Target => Raw.Types);
 
-   function SDL_Get_Joystick_Product_For_ID
-     (Instance : in Instances) return Product_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickProductForID";
+   function To_Public_Type is new Ada.Unchecked_Conversion
+     (Source => Raw.Types,
+      Target => Types);
 
-   function SDL_Get_Joystick_Product_Version_For_ID
-     (Instance : in Instances) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickProductVersionForID";
+   function To_Public_Connection_State is new Ada.Unchecked_Conversion
+     (Source => Raw.Connection_States,
+      Target => Connection_States);
 
-   function SDL_Get_Joystick_Type_For_ID
-     (Instance : in Instances) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickTypeForID";
+   function To_Public_Power_State is new Ada.Unchecked_Conversion
+     (Source => SDL.Raw.Power.State,
+      Target => SDL.Power.State);
 
-   function SDL_Open_Joystick
-     (Instance : in Instances) return SDL.C_Pointers.Joystick_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenJoystick";
+   function To_Raw_Sensor_Type is new Ada.Unchecked_Conversion
+     (Source => SDL.Sensors.Types,
+      Target => SDL.Raw.Sensor.Types);
 
-   function SDL_Get_Joystick_From_ID
-     (Instance : in Instances) return SDL.C_Pointers.Joystick_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickFromID";
+   function To_Raw_Touchpad_Description_Access is new Ada.Unchecked_Conversion
+     (Source => Virtual_Touchpad_Description_Access,
+      Target => Raw.Virtual_Touchpad_Description_Access);
 
-   function SDL_Get_Joystick_From_Player_Index
-     (Player_Index : in Player_Indices) return SDL.C_Pointers.Joystick_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickFromPlayerIndex";
+   function To_Raw_Sensor_Description_Access is new Ada.Unchecked_Conversion
+     (Source => Virtual_Sensor_Description_Access,
+      Target => Raw.Virtual_Sensor_Description_Access);
 
-   function SDL_Attach_Virtual_Joystick
-     (Description : access constant Raw_Virtual_Description) return Instances
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AttachVirtualJoystick";
+   function To_Raw_Update_Callback is new Ada.Unchecked_Conversion
+     (Source => Update_Callback,
+      Target => Raw.Update_Callback);
 
-   function SDL_Detach_Virtual_Joystick
-     (Instance : in Instances) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_DetachVirtualJoystick";
+   function To_Raw_Set_Player_Index_Callback is new Ada.Unchecked_Conversion
+     (Source => Set_Player_Index_Callback,
+      Target => Raw.Set_Player_Index_Callback);
 
-   function SDL_Is_Joystick_Virtual
-     (Instance : in Instances) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsJoystickVirtual";
+   function To_Raw_Rumble_Callback is new Ada.Unchecked_Conversion
+     (Source => Rumble_Callback,
+      Target => Raw.Rumble_Callback);
 
-   procedure SDL_Lock_Joysticks
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_LockJoysticks";
+   function To_Raw_Rumble_Triggers_Callback is new Ada.Unchecked_Conversion
+     (Source => Rumble_Triggers_Callback,
+      Target => Raw.Rumble_Triggers_Callback);
 
-   procedure SDL_Unlock_Joysticks
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_UnlockJoysticks";
+   function To_Raw_Set_LED_Callback is new Ada.Unchecked_Conversion
+     (Source => Set_LED_Callback,
+      Target => Raw.Set_LED_Callback);
 
-   procedure SDL_Close_Joystick
-     (Value : in SDL.C_Pointers.Joystick_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseJoystick";
+   function To_Raw_Send_Effect_Callback is new Ada.Unchecked_Conversion
+     (Source => Send_Effect_Callback,
+      Target => Raw.Send_Effect_Callback);
 
-   function SDL_Get_Joystick_Properties
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickProperties";
+   function To_Raw_Set_Sensors_Enabled_Callback is new Ada.Unchecked_Conversion
+     (Source => Set_Sensors_Enabled_Callback,
+      Target => Raw.Set_Sensors_Enabled_Callback);
 
-   function SDL_Get_Joystick_Name
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickName";
-
-   function SDL_Get_Joystick_Path
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickPath";
-
-   function SDL_Get_Joystick_Player_Index
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Player_Indices
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickPlayerIndex";
-
-   function SDL_Set_Joystick_Player_Index
-     (Self         : in SDL.C_Pointers.Joystick_Pointer;
-      Player_Index : in Player_Indices) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickPlayerIndex";
-
-   function SDL_Is_Joystick_Haptic
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsJoystickHaptic";
-
-   function SDL_Joystick_Connected
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_JoystickConnected";
-
-   function SDL_Get_Joystick_GUID
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return GUIDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickGUID";
-
-   function SDL_Get_Joystick_Vendor
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Vendor_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickVendor";
-
-   function SDL_Get_Joystick_Product
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Product_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickProduct";
-
-   function SDL_Get_Joystick_Product_Version
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickProductVersion";
-
-   function SDL_Get_Joystick_Firmware_Version
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickFirmwareVersion";
-
-   function SDL_Get_Joystick_Serial
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickSerial";
-
-   function SDL_Get_Joystick_Type
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickType";
-
-   procedure SDL_Get_Joystick_GUID_Info
-     (GUID    : in GUIDs;
-      Vendor  : access Vendor_IDs;
-      Product : access Product_IDs;
-      Version : access Version_Numbers;
-      CRC16   : access CRC16_Values)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickGUIDInfo";
-
-   function SDL_Get_Joystick_ID
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return Instances
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickID";
-
-   function SDL_Get_Num_Joystick_Axes
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumJoystickAxes";
-
-   function SDL_Get_Num_Joystick_Balls
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumJoystickBalls";
-
-   function SDL_Get_Num_Joystick_Hats
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumJoystickHats";
-
-   function SDL_Get_Num_Joystick_Buttons
-     (Value : in SDL.C_Pointers.Joystick_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumJoystickButtons";
-
-   function SDL_Get_Joystick_Connection_State
-     (Self : in SDL.C_Pointers.Joystick_Pointer) return Connection_States
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickConnectionState";
-
-   function SDL_Get_Joystick_Power_Info
-     (Self       : in SDL.C_Pointers.Joystick_Pointer;
-      Percentage : access C.int) return SDL.Power.State
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickPowerInfo";
-
-   function SDL_Get_Joystick_Axis
-     (Value : in SDL.C_Pointers.Joystick_Pointer;
-      Axis  : in C.int) return SDL.Events.Joysticks.Axes_Values
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickAxis";
-
-   function SDL_Get_Joystick_Axis_Initial_State
-     (Value : in SDL.C_Pointers.Joystick_Pointer;
-      Axis  : in C.int;
-      State : access SDL.Events.Joysticks.Axes_Values) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickAxisInitialState";
-
-   function SDL_Get_Joystick_Ball
-     (Value : in SDL.C_Pointers.Joystick_Pointer;
-      Ball  : in C.int;
-      X, Y  : access C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickBall";
-
-   function SDL_Get_Joystick_Hat
-     (Value : in SDL.C_Pointers.Joystick_Pointer;
-      Hat   : in C.int) return SDL.Events.Joysticks.Hat_Positions
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickHat";
-
-   function SDL_Get_Joystick_Button
-     (Value  : in SDL.C_Pointers.Joystick_Pointer;
-      Button : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetJoystickButton";
-
-   function SDL_Rumble_Joystick
-     (Self                  : in SDL.C_Pointers.Joystick_Pointer;
-      Low_Frequency_Rumble  : in Interfaces.Unsigned_16;
-      High_Frequency_Rumble : in Interfaces.Unsigned_16;
-      Duration_MS           : in Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RumbleJoystick";
-
-   function SDL_Rumble_Joystick_Triggers
-     (Self         : in SDL.C_Pointers.Joystick_Pointer;
-      Left_Rumble  : in Interfaces.Unsigned_16;
-      Right_Rumble : in Interfaces.Unsigned_16;
-      Duration_MS  : in Interfaces.Unsigned_32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RumbleJoystickTriggers";
-
-   function SDL_Set_Joystick_LED
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
-      Red   : in LED_Components;
-      Green : in LED_Components;
-      Blue  : in LED_Components) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickLED";
-
-   function SDL_Send_Joystick_Effect
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
-      Data : in System.Address;
-      Size : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SendJoystickEffect";
-
-   function SDL_Set_Joystick_Virtual_Axis
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
-      Axis  : in C.int;
-      Value : in SDL.Events.Joysticks.Axes_Values) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickVirtualAxis";
-
-   function SDL_Set_Joystick_Virtual_Ball
-     (Self : in SDL.C_Pointers.Joystick_Pointer;
-      Ball : in C.int;
-      Xrel : in SDL.Events.Joysticks.Ball_Values;
-      Yrel : in SDL.Events.Joysticks.Ball_Values) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickVirtualBall";
-
-   function SDL_Set_Joystick_Virtual_Button
-     (Self   : in SDL.C_Pointers.Joystick_Pointer;
-      Button : in C.int;
-      Down   : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickVirtualButton";
-
-   function SDL_Set_Joystick_Virtual_Hat
-     (Self  : in SDL.C_Pointers.Joystick_Pointer;
-      Hat   : in C.int;
-      Value : in SDL.Events.Joysticks.Hat_Positions) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickVirtualHat";
-
-   function SDL_Set_Joystick_Virtual_Touchpad
-     (Self     : in SDL.C_Pointers.Joystick_Pointer;
-      Touchpad : in C.int;
-      Finger   : in C.int;
-      Down     : in CE.bool;
-      X        : in C.C_float;
-      Y        : in C.C_float;
-      Pressure : in C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetJoystickVirtualTouchpad";
-
-   function SDL_Send_Joystick_Virtual_Sensor_Data
-     (Self             : in SDL.C_Pointers.Joystick_Pointer;
-      Sensor_Type      : in SDL.Sensors.Types;
-      Sensor_Timestamp : in Nanoseconds;
-      Data             : in System.Address;
-      Value_Count      : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SendJoystickVirtualSensorData";
+   function To_Raw_Cleanup_Callback is new Ada.Unchecked_Conversion
+     (Source => Cleanup_Callback,
+      Target => Raw.Cleanup_Callback);
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL joystick call failed");
@@ -517,7 +124,7 @@ package body SDL.Inputs.Joysticks is
    end Raise_Last_Error;
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
-     (if Value then CE.bool'Val (1) else CE.bool'Val (0));
+     (CE.bool'Val (Boolean'Pos (Value)));
 
    procedure Require_Valid (Self : in Joystick);
 
@@ -528,50 +135,51 @@ package body SDL.Inputs.Joysticks is
       end if;
    end Require_Valid;
 
-   procedure Free (Value : in out Instance_Pointers.Pointer);
+   procedure Free (Value : in out Raw.ID_Pointers.Pointer);
 
-   procedure Free (Value : in out Instance_Pointers.Pointer) is
+   procedure Free (Value : in out Raw.ID_Pointers.Pointer) is
    begin
       if Value /= null then
-         SDL_Free (To_Address (Value));
+         Raw.Free (To_Address (Value));
          Value := null;
       end if;
    end Free;
 
    function Copy_IDs
-     (Items : in Instance_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists;
 
    function Copy_IDs
-     (Items : in Instance_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists
    is
-      Raw : Instance_Pointers.Pointer := Items;
+      Raw_Items : Raw.ID_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Last_Error ("Joystick enumeration failed");
       end if;
 
       declare
-         Source : constant Instance_Arrays :=
-           Instance_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.ID_Array :=
+           Raw.ID_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : ID_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
             Result (Index) :=
-              Source (Source'First + C.ptrdiff_t (Index - Result'First));
+              To_Public_ID
+                (Source (Source'First + C.ptrdiff_t (Index - Result'First)));
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_IDs;
@@ -587,12 +195,12 @@ package body SDL.Inputs.Joysticks is
 
    function Has_Joystick return Boolean is
    begin
-      return Boolean (SDL_Has_Joystick);
+      return Boolean (Raw.Has_Joystick);
    end Has_Joystick;
 
    function Get_Joysticks return ID_Lists is
       Count : aliased C.int := 0;
-      Items : constant Instance_Pointers.Pointer := SDL_Get_Joysticks (Count'Access);
+      Items : constant Raw.ID_Pointers.Pointer := Raw.Get_Joysticks (Count'Access);
    begin
       return Copy_IDs (Items, Count);
    end Get_Joysticks;
@@ -623,7 +231,8 @@ package body SDL.Inputs.Joysticks is
      (Name (Resolve_Device (Device)));
 
    function Name (Instance : in Instances) return String is
-      Result : constant CS.chars_ptr := SDL_Get_Joystick_Name_For_ID (Instance);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Joystick_Name_For_ID (To_Raw_ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -633,7 +242,8 @@ package body SDL.Inputs.Joysticks is
    end Name;
 
    function Path (Instance : in Instances) return String is
-      Result : constant CS.chars_ptr := SDL_Get_Joystick_Path_For_ID (Instance);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Joystick_Path_For_ID (To_Raw_ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -644,7 +254,8 @@ package body SDL.Inputs.Joysticks is
 
    function Player_Index (Instance : in Instances) return Player_Indices is
    begin
-      return SDL_Get_Joystick_Player_Index_For_ID (Instance);
+      return To_Public_Player_Index
+        (Raw.Get_Joystick_Player_Index_For_ID (To_Raw_ID (Instance)));
    end Player_Index;
 
    function GUID (Device : in Devices) return GUIDs is
@@ -652,67 +263,53 @@ package body SDL.Inputs.Joysticks is
 
    function GUID (Instance : in Instances) return GUIDs is
    begin
-      return SDL_Get_Joystick_GUID_For_ID (Instance);
+      return To_Public_GUID
+        (Raw.Get_Joystick_GUID_For_ID (To_Raw_ID (Instance)));
    end GUID;
 
    function Vendor (Instance : in Instances) return Vendor_IDs is
    begin
-      return SDL_Get_Joystick_Vendor_For_ID (Instance);
+      return Vendor_IDs (Raw.Get_Joystick_Vendor_For_ID (To_Raw_ID (Instance)));
    end Vendor;
 
    function Product (Instance : in Instances) return Product_IDs is
    begin
-      return SDL_Get_Joystick_Product_For_ID (Instance);
+      return Product_IDs (Raw.Get_Joystick_Product_For_ID (To_Raw_ID (Instance)));
    end Product;
 
    function Product_Version (Instance : in Instances) return Version_Numbers is
    begin
-      return SDL_Get_Joystick_Product_Version_For_ID (Instance);
+      return Version_Numbers
+        (Raw.Get_Joystick_Product_Version_For_ID (To_Raw_ID (Instance)));
    end Product_Version;
 
    function Get_Type (Instance : in Instances) return Types is
    begin
-      return SDL_Get_Joystick_Type_For_ID (Instance);
+      return To_Public_Type (Raw.Get_Joystick_Type_For_ID (To_Raw_ID (Instance)));
    end Get_Type;
 
    function Image (GUID : in GUIDs) return String is
-      procedure SDL_GUID_To_String
-        (Value  : in GUIDs;
-         Buffer : out C.char_array;
-         Size   : in C.int)
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_GUIDToString";
-
       Buffer : C.char_array (0 .. 32) := (others => C.nul);
    begin
-      SDL_GUID_To_String (GUID, Buffer, C.int (Buffer'Length));
+      Raw.GUID_To_String (To_Raw_GUID (GUID), Buffer, C.int (Buffer'Length));
       return C.To_Ada (Buffer);
    end Image;
 
    function Value (GUID : in String) return GUIDs is
-      function SDL_GUID_From_String
-        (Buffer : in C.char_array) return GUIDs
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_StringToGUID";
-   begin
-      return SDL_GUID_From_String (C.To_C (GUID));
-   end Value;
+     (To_Public_GUID (Raw.String_To_GUID (C.To_C (GUID))));
 
    function Attach_Virtual
      (Description : in Virtual_Description) return Instances
    is
       Name_Ptr : CS.chars_ptr := CS.Null_Ptr;
-      Raw      : aliased Raw_Virtual_Description :=
+      Raw_Description : aliased Raw.Virtual_Description :=
         (Version             => Interfaces.Unsigned_32
-           (Raw_Virtual_Description'Size / System.Storage_Unit),
-         Kind                => Interfaces.Unsigned_16 (Types'Pos (Description.Kind)),
+           (Raw.Virtual_Description'Size / System.Storage_Unit),
+         Kind                => Interfaces.Unsigned_16
+           (Raw.Types'Pos (To_Raw_Type (Description.Kind))),
          Padding             => 0,
-         Vendor_ID           => Description.Vendor_ID,
-         Product_ID          => Description.Product_ID,
+         Vendor              => Raw.Vendor_ID (Description.Vendor_ID),
+         Product             => Raw.Product_ID (Description.Product_ID),
          Axis_Count          => Description.Axis_Count,
          Button_Count        => Description.Button_Count,
          Ball_Count          => Description.Ball_Count,
@@ -724,26 +321,33 @@ package body SDL.Inputs.Joysticks is
          Button_Mask         => Description.Button_Mask,
          Axis_Mask           => Description.Axis_Mask,
          Name                => CS.Null_Ptr,
-         Touchpads           => Description.Touchpads,
-         Sensors             => Description.Sensors,
+         Touchpads           => To_Raw_Touchpad_Description_Access
+           (Description.Touchpads),
+         Sensors             => To_Raw_Sensor_Description_Access
+           (Description.Sensors),
          User_Data           => Description.User_Data,
-         Update              => Description.Update,
-         Set_Player_Index    => Description.Set_Player_Index,
-         Rumble              => Description.Rumble,
-         Rumble_Triggers     => Description.Rumble_Triggers,
-         Set_LED             => Description.Set_LED,
-         Send_Effect         => Description.Send_Effect,
-         Set_Sensors_Enabled => Description.Set_Sensors_Enabled,
-         Cleanup             => Description.Cleanup);
+         Update              => To_Raw_Update_Callback (Description.Update),
+         Set_Player_Index    => To_Raw_Set_Player_Index_Callback
+           (Description.Set_Player_Index),
+         Rumble              => To_Raw_Rumble_Callback (Description.Rumble),
+         Rumble_Triggers     => To_Raw_Rumble_Triggers_Callback
+           (Description.Rumble_Triggers),
+         Set_LED             => To_Raw_Set_LED_Callback (Description.Set_LED),
+         Send_Effect         => To_Raw_Send_Effect_Callback
+           (Description.Send_Effect),
+         Set_Sensors_Enabled => To_Raw_Set_Sensors_Enabled_Callback
+           (Description.Set_Sensors_Enabled),
+         Cleanup             => To_Raw_Cleanup_Callback (Description.Cleanup));
 
       Result : Instances := 0;
    begin
       if US.Length (Description.Name) > 0 then
          Name_Ptr := CS.New_String (US.To_String (Description.Name));
-         Raw.Name := Name_Ptr;
+         Raw_Description.Name := Name_Ptr;
       end if;
 
-      Result := SDL_Attach_Virtual_Joystick (Raw'Access);
+      Result := To_Public_ID
+        (Raw.Attach_Virtual_Joystick (Raw_Description'Access));
       if Result = 0 then
          Raise_Last_Error ("SDL_AttachVirtualJoystick failed");
       end if;
@@ -764,24 +368,24 @@ package body SDL.Inputs.Joysticks is
 
    procedure Detach_Virtual (Instance : in Instances) is
    begin
-      if not Boolean (SDL_Detach_Virtual_Joystick (Instance)) then
+      if not Boolean (Raw.Detach_Virtual_Joystick (To_Raw_ID (Instance))) then
          Raise_Last_Error ("SDL_DetachVirtualJoystick failed");
       end if;
    end Detach_Virtual;
 
    function Is_Virtual (Instance : in Instances) return Boolean is
    begin
-      return Boolean (SDL_Is_Joystick_Virtual (Instance));
+      return Boolean (Raw.Is_Joystick_Virtual (To_Raw_ID (Instance)));
    end Is_Virtual;
 
    procedure Lock is
    begin
-      SDL_Lock_Joysticks;
+      Raw.Lock_Joysticks;
    end Lock;
 
    procedure Unlock is
    begin
-      SDL_Unlock_Joysticks;
+      Raw.Unlock_Joysticks;
    end Unlock;
 
    function Open (Instance : in Instances) return Joystick is
@@ -799,7 +403,7 @@ package body SDL.Inputs.Joysticks is
    begin
       Close (Self);
 
-      Internal := SDL_Open_Joystick (Instance);
+      Internal := Raw.Open_Joystick (To_Raw_ID (Instance));
       if Internal = null then
          Raise_Last_Error ("SDL_OpenJoystick failed");
       end if;
@@ -811,7 +415,7 @@ package body SDL.Inputs.Joysticks is
    function Get (Instance : in Instances) return Joystick is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => SDL_Get_Joystick_From_ID (Instance),
+              Internal => Raw.Get_Joystick_From_ID (To_Raw_ID (Instance)),
               Owns     => False);
    end Get;
 
@@ -820,7 +424,8 @@ package body SDL.Inputs.Joysticks is
    is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => SDL_Get_Joystick_From_Player_Index (Player_Index),
+              Internal => Raw.Get_Joystick_From_Player_Index
+                (To_Raw_Player_Index (Player_Index)),
               Owns     => False);
    end Get_From_Player_Index;
 
@@ -828,7 +433,7 @@ package body SDL.Inputs.Joysticks is
    procedure Finalize (Self : in out Joystick) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         SDL_Close_Joystick (Self.Internal);
+         Raw.Close_Joystick (Self.Internal);
       end if;
 
       Self.Internal := null;
@@ -850,7 +455,7 @@ package body SDL.Inputs.Joysticks is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Joystick_Axes (Self.Internal);
+      Result := Raw.Get_Num_Joystick_Axes (Self.Internal);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumJoystickAxes failed");
@@ -863,7 +468,7 @@ package body SDL.Inputs.Joysticks is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Joystick_Balls (Self.Internal);
+      Result := Raw.Get_Num_Joystick_Balls (Self.Internal);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumJoystickBalls failed");
@@ -876,7 +481,7 @@ package body SDL.Inputs.Joysticks is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Joystick_Buttons (Self.Internal);
+      Result := Raw.Get_Num_Joystick_Buttons (Self.Internal);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumJoystickButtons failed");
@@ -889,7 +494,7 @@ package body SDL.Inputs.Joysticks is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Joystick_Hats (Self.Internal);
+      Result := Raw.Get_Num_Joystick_Hats (Self.Internal);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumJoystickHats failed");
@@ -902,7 +507,7 @@ package body SDL.Inputs.Joysticks is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Joystick_Name (Self.Internal);
+      Result := Raw.Get_Joystick_Name (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -915,7 +520,7 @@ package body SDL.Inputs.Joysticks is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Joystick_Path (Self.Internal);
+      Result := Raw.Get_Joystick_Path (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -927,7 +532,7 @@ package body SDL.Inputs.Joysticks is
    function Player_Index (Self : in Joystick) return Player_Indices is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Player_Index (Self.Internal);
+      return To_Public_Player_Index (Raw.Get_Joystick_Player_Index (Self.Internal));
    end Player_Index;
 
    procedure Set_Player_Index
@@ -937,7 +542,10 @@ package body SDL.Inputs.Joysticks is
    begin
       Require_Valid (Self);
 
-      if not Boolean (SDL_Set_Joystick_Player_Index (Self.Internal, Player_Index)) then
+      if not Boolean
+          (Raw.Set_Joystick_Player_Index
+             (Self.Internal, To_Raw_Player_Index (Player_Index)))
+      then
          Raise_Last_Error ("SDL_SetJoystickPlayerIndex failed");
       end if;
    end Set_Player_Index;
@@ -945,26 +553,26 @@ package body SDL.Inputs.Joysticks is
    function Is_Haptic (Self : in Joystick) return Boolean is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Is_Joystick_Haptic (Self.Internal));
+      return Boolean (SDL.Raw.Haptic.Is_Joystick_Haptic (To_Address (Self.Internal)));
    end Is_Haptic;
 
    function Is_Attached (Self : in Joystick) return Boolean is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Joystick_Connected (Self.Internal));
+      return Boolean (Raw.Joystick_Connected (Self.Internal));
    end Is_Attached;
 
    function GUID (Self : in Joystick) return GUIDs is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_GUID (Self.Internal);
+      return To_Public_GUID (Raw.Get_Joystick_GUID (Self.Internal));
    end GUID;
 
    function Instance (Self : in Joystick) return Instances is
       Result : Instances;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Joystick_ID (Self.Internal);
+      Result := To_Public_ID (Raw.Get_Joystick_ID (Self.Internal));
 
       if Result = 0 then
          Raise_Last_Error ("SDL_GetJoystickID failed");
@@ -978,38 +586,39 @@ package body SDL.Inputs.Joysticks is
    is
    begin
       Require_Valid (Self);
-      return SDL.Properties.Reference (SDL_Get_Joystick_Properties (Self.Internal));
+      return SDL.Properties.Reference
+        (SDL.Properties.Property_ID (Raw.Get_Joystick_Properties (Self.Internal)));
    end Get_Properties;
 
    function Vendor (Self : in Joystick) return Vendor_IDs is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Vendor (Self.Internal);
+      return Vendor_IDs (Raw.Get_Joystick_Vendor (Self.Internal));
    end Vendor;
 
    function Product (Self : in Joystick) return Product_IDs is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Product (Self.Internal);
+      return Product_IDs (Raw.Get_Joystick_Product (Self.Internal));
    end Product;
 
    function Product_Version (Self : in Joystick) return Version_Numbers is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Product_Version (Self.Internal);
+      return Version_Numbers (Raw.Get_Joystick_Product_Version (Self.Internal));
    end Product_Version;
 
    function Firmware_Version (Self : in Joystick) return Version_Numbers is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Firmware_Version (Self.Internal);
+      return Version_Numbers (Raw.Get_Joystick_Firmware_Version (Self.Internal));
    end Firmware_Version;
 
    function Serial (Self : in Joystick) return String is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Joystick_Serial (Self.Internal);
+      Result := Raw.Get_Joystick_Serial (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1021,7 +630,7 @@ package body SDL.Inputs.Joysticks is
    function Get_Type (Self : in Joystick) return Types is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Type (Self.Internal);
+      return To_Public_Type (Raw.Get_Joystick_Type (Self.Internal));
    end Get_Type;
 
    procedure GUID_Info
@@ -1031,27 +640,28 @@ package body SDL.Inputs.Joysticks is
       Version   : out Version_Numbers;
       CRC16     : out CRC16_Values)
    is
-      Vendor_Value  : aliased Vendor_IDs := 0;
-      Product_Value : aliased Product_IDs := 0;
-      Version_Value : aliased Version_Numbers := 0;
-      CRC16_Value   : aliased CRC16_Values := 0;
+      Vendor_Value  : aliased Raw.Vendor_ID := 0;
+      Product_Value : aliased Raw.Product_ID := 0;
+      Version_Value : aliased Raw.Version_Number := 0;
+      CRC16_Value   : aliased Raw.CRC16_Value := 0;
    begin
-      SDL_Get_Joystick_GUID_Info
-        (GUID,
+      Raw.Get_Joystick_GUID_Info
+        (To_Raw_GUID (GUID),
          Vendor_Value'Access,
          Product_Value'Access,
          Version_Value'Access,
          CRC16_Value'Access);
-      Vendor := Vendor_Value;
-      Product := Product_Value;
-      Version := Version_Value;
-      CRC16 := CRC16_Value;
+      Vendor := Vendor_IDs (Vendor_Value);
+      Product := Product_IDs (Product_Value);
+      Version := Version_Numbers (Version_Value);
+      CRC16 := CRC16_Values (CRC16_Value);
    end GUID_Info;
 
    function Connection_State (Self : in Joystick) return Connection_States is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Connection_State (Self.Internal);
+      return To_Public_Connection_State
+        (Raw.Get_Joystick_Connection_State (Self.Internal));
    end Connection_State;
 
    function Get_Power_Info
@@ -1061,14 +671,13 @@ package body SDL.Inputs.Joysticks is
       Raw_Percentage : aliased C.int := -1;
    begin
       Require_Valid (Self);
-      Percentage := -1;
 
       declare
-         Result : constant SDL.Power.State :=
-           SDL_Get_Joystick_Power_Info (Self.Internal, Raw_Percentage'Access);
+         Result : constant SDL.Raw.Power.State :=
+           Raw.Get_Joystick_Power_Info (Self.Internal, Raw_Percentage'Access);
       begin
          Percentage := Battery_Percentages (Raw_Percentage);
-         return Result;
+         return To_Public_Power_State (Result);
       end;
    end Get_Power_Info;
 
@@ -1085,20 +694,21 @@ package body SDL.Inputs.Joysticks is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Axis (Self.Internal, C.int (Axis));
+      return SDL.Events.Joysticks.Axes_Values
+        (Raw.Get_Joystick_Axis (Self.Internal, C.int (Axis)));
    end Axis_Value;
 
    function Get_Axis_Initial_State
      (Self  : in Joystick;
-      Axis  : in SDL.Events.Joysticks.Axes;
+     Axis  : in SDL.Events.Joysticks.Axes;
       Value : out SDL.Events.Joysticks.Axes_Values) return Boolean
    is
-      Raw_Value : aliased SDL.Events.Joysticks.Axes_Values := 0;
+      Raw_Value : aliased Raw.Axis_Value := 0;
    begin
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Get_Joystick_Axis_Initial_State
+          (Raw.Get_Joystick_Axis_Initial_State
              (Self.Internal,
               C.int (Axis),
               Raw_Value'Access))
@@ -1107,7 +717,7 @@ package body SDL.Inputs.Joysticks is
          return False;
       end if;
 
-      Value := Raw_Value;
+      Value := SDL.Events.Joysticks.Axes_Values (Raw_Value);
       return True;
    end Get_Axis_Initial_State;
 
@@ -1122,7 +732,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Get_Joystick_Ball (Self.Internal, C.int (Ball), X'Access, Y'Access))
+          (Raw.Get_Joystick_Ball (Self.Internal, C.int (Ball), X'Access, Y'Access))
       then
          Raise_Last_Error ("SDL_GetJoystickBall failed");
       end if;
@@ -1138,7 +748,8 @@ package body SDL.Inputs.Joysticks is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Joystick_Hat (Self.Internal, C.int (Hat));
+      return SDL.Events.Joysticks.Hat_Positions
+        (Raw.Get_Joystick_Hat (Self.Internal, C.int (Hat)));
    end Hat_Value;
 
    function Is_Button_Pressed
@@ -1149,7 +760,7 @@ package body SDL.Inputs.Joysticks is
    begin
       Require_Valid (Self);
 
-      if Boolean (SDL_Get_Joystick_Button (Self.Internal, C.int (Button))) then
+      if Boolean (Raw.Get_Joystick_Button (Self.Internal, C.int (Button))) then
          return SDL.Events.Pressed;
       end if;
 
@@ -1166,7 +777,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Rumble_Joystick
+          (Raw.Rumble_Joystick
              (Self.Internal,
               Low_Frequency_Rumble,
               High_Frequency_Rumble,
@@ -1186,7 +797,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Rumble_Joystick_Triggers
+          (Raw.Rumble_Joystick_Triggers
              (Self.Internal,
               Left_Rumble,
               Right_Rumble,
@@ -1205,7 +816,13 @@ package body SDL.Inputs.Joysticks is
    begin
       Require_Valid (Self);
 
-      if not Boolean (SDL_Set_Joystick_LED (Self.Internal, Red, Green, Blue)) then
+      if not Boolean
+          (Raw.Set_Joystick_LED
+             (Self.Internal,
+              Raw.LED_Component (Red),
+              Raw.LED_Component (Green),
+              Raw.LED_Component (Blue)))
+      then
          Raise_Last_Error ("SDL_SetJoystickLED failed");
       end if;
    end Set_LED;
@@ -1218,7 +835,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Send_Joystick_Effect
+          (Raw.Send_Joystick_Effect
              (Self.Internal,
               Buffer_Address (Data),
               C.int (Data'Length)))
@@ -1236,10 +853,10 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Joystick_Virtual_Axis
+          (Raw.Set_Joystick_Virtual_Axis
              (Self.Internal,
               C.int (Axis),
-              Value))
+              Raw.Axis_Value (Value)))
       then
          Raise_Last_Error ("SDL_SetJoystickVirtualAxis failed");
       end if;
@@ -1254,11 +871,11 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Joystick_Virtual_Ball
+          (Raw.Set_Joystick_Virtual_Ball
              (Self.Internal,
               C.int (Ball),
-              Delta_X,
-              Delta_Y))
+              Raw.Ball_Delta (Delta_X),
+              Raw.Ball_Delta (Delta_Y)))
       then
          Raise_Last_Error ("SDL_SetJoystickVirtualBall failed");
       end if;
@@ -1273,7 +890,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Joystick_Virtual_Button
+          (Raw.Set_Joystick_Virtual_Button
              (Self.Internal,
               C.int (Button),
               To_C_Bool (Down)))
@@ -1291,10 +908,10 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Joystick_Virtual_Hat
+          (Raw.Set_Joystick_Virtual_Hat
              (Self.Internal,
               C.int (Hat),
-              Position))
+              Raw.Hat_Position (Position)))
       then
          Raise_Last_Error ("SDL_SetJoystickVirtualHat failed");
       end if;
@@ -1313,7 +930,7 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Joystick_Virtual_Touchpad
+          (Raw.Set_Joystick_Virtual_Touchpad
              (Self.Internal,
               Touchpad,
               Finger,
@@ -1336,9 +953,9 @@ package body SDL.Inputs.Joysticks is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Send_Joystick_Virtual_Sensor_Data
+          (Raw.Send_Joystick_Virtual_Sensor_Data
              (Self.Internal,
-              Sensor_Type,
+              To_Raw_Sensor_Type (Sensor_Type),
               Sensor_Timestamp,
               Float_Data_Address (Data),
               C.int (Data'Length)))

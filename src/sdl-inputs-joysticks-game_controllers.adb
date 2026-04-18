@@ -1,685 +1,106 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C;
-with Interfaces.C.Extensions;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Raw.Gamepad;
+with SDL.Raw.Joystick;
+with SDL.Raw.Power;
+with SDL.Raw.Sensor;
 
 package body SDL.Inputs.Joysticks.Game_Controllers is
    package CS renames Interfaces.C.Strings;
+   package Raw renames SDL.Raw.Gamepad;
 
    use type C.ptrdiff_t;
+   use type Raw.Axes;
+   use type Raw.Binding_Access;
    use type CS.chars_ptr;
+   use type Raw.Binding_Types;
+   use type Raw.Buttons;
+   use type Raw.Binding_Pointers.Pointer;
+   use type Raw.ID_Pointers.Pointer;
+   use type Raw.String_Pointers.Pointer;
    use type SDL.C_Pointers.Game_Controller_Pointer;
-   use type SDL.C_Pointers.Joystick_Pointer;
-   use type SDL.Events.Joysticks.Game_Controllers.Axes;
-   use type SDL.Events.Joysticks.Game_Controllers.Buttons;
    use type Instances;
-   use type SDL.Properties.Property_ID;
-   use type System.Address;
 
-   type Instance_Arrays is array (C.ptrdiff_t range <>) of aliased Instances with
-     Convention => C;
+   function To_Raw_ID (Value : in Instances) return Raw.ID is
+     (Raw.ID (Value));
 
-   package Instance_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => Instances,
-      Element_Array      => Instance_Arrays,
-      Default_Terminator => 0);
+   function To_Public_ID (Value : in Raw.ID) return Instances is
+     (Instances (Value));
 
-   use type Instance_Pointers.Pointer;
+   function To_Raw_GUID is new Ada.Unchecked_Conversion
+     (Source => GUIDs,
+      Target => Raw.GUID);
 
-   type String_Pointer_Arrays is array (C.ptrdiff_t range <>) of aliased CS.chars_ptr with
-     Convention => C;
+   function To_Public_GUID is new Ada.Unchecked_Conversion
+     (Source => Raw.GUID,
+      Target => GUIDs);
 
-   package String_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => CS.chars_ptr,
-      Element_Array      => String_Pointer_Arrays,
-      Default_Terminator => CS.Null_Ptr);
+   function To_Raw_Player_Index
+     (Value : in Player_Indices) return Raw.Player_Index is
+     (Raw.Player_Index (Value));
 
-   use type String_Pointers.Pointer;
+   function To_Public_Player_Index
+     (Value : in Raw.Player_Index) return Player_Indices is
+     (Player_Indices (Value));
 
-   type SDL_Axis_Input is record
-      Axis     : C.int;
-      Axis_Min : C.int;
-      Axis_Max : C.int;
-   end record with
-     Convention => C;
+   function To_Raw_Type is new Ada.Unchecked_Conversion
+     (Source => Types,
+      Target => Raw.Types);
 
-   type SDL_Hat_Input is record
-      Hat      : C.int;
-      Hat_Mask : C.int;
-   end record with
-     Convention => C;
+   function To_Public_Type is new Ada.Unchecked_Conversion
+     (Source => Raw.Types,
+      Target => Types);
 
-   type SDL_Output_Axis is record
-      Axis     : SDL.Events.Joysticks.Game_Controllers.Axes;
-      Axis_Min : C.int;
-      Axis_Max : C.int;
-   end record with
-     Convention => C;
+   function To_Raw_Axis is new Ada.Unchecked_Conversion
+     (Source => SDL.Events.Joysticks.Game_Controllers.Axes,
+      Target => Raw.Axes);
 
-   type SDL_Input_Values (Which : Bind_Types := None) is record
-      case Which is
-         when None =>
-            null;
+   function To_Public_Axis is new Ada.Unchecked_Conversion
+     (Source => Raw.Axes,
+      Target => SDL.Events.Joysticks.Game_Controllers.Axes);
 
-         when Button =>
-            Button : C.int;
+   function To_Raw_Button is new Ada.Unchecked_Conversion
+     (Source => SDL.Events.Joysticks.Game_Controllers.Buttons,
+      Target => Raw.Buttons);
 
-         when Axis =>
-            Axis   : SDL_Axis_Input;
+   function To_Public_Button is new Ada.Unchecked_Conversion
+     (Source => Raw.Buttons,
+      Target => SDL.Events.Joysticks.Game_Controllers.Buttons);
 
-         when Hat =>
-            Hat    : SDL_Hat_Input;
-      end case;
-   end record with
-     Convention => C,
-     Unchecked_Union;
+   function To_Public_Button_Label is new Ada.Unchecked_Conversion
+     (Source => Raw.Button_Labels,
+      Target => Button_Labels);
 
-   type SDL_Output_Values (Which : Bind_Types := None) is record
-      case Which is
-         when None | Hat =>
-            null;
+   function To_Public_Connection_State is new Ada.Unchecked_Conversion
+     (Source => Raw.Connection_States,
+      Target => SDL.Inputs.Joysticks.Connection_States);
 
-         when Button =>
-            Button : SDL.Events.Joysticks.Game_Controllers.Buttons;
+   function To_Public_Power_State is new Ada.Unchecked_Conversion
+     (Source => SDL.Raw.Power.State,
+      Target => SDL.Power.State);
 
-         when Axis =>
-            Axis   : SDL_Output_Axis;
-      end case;
-   end record with
-     Convention => C,
-     Unchecked_Union;
-
-   type SDL_Binding is record
-      Input_Type  : Bind_Types;
-      Input       : SDL_Input_Values;
-      Output_Type : Bind_Types;
-      Output      : SDL_Output_Values;
-   end record with
-     Convention => C;
-
-   type SDL_Binding_Access is access all SDL_Binding with
-     Convention => C;
-
-   type SDL_Binding_Array is array (C.ptrdiff_t range <>) of aliased SDL_Binding_Access with
-     Convention => C;
-
-   package Binding_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => SDL_Binding_Access,
-      Element_Array      => SDL_Binding_Array,
-      Default_Terminator => null);
-
-   use type Binding_Pointers.Pointer;
+   function To_Raw_Sensor_Type is new Ada.Unchecked_Conversion
+     (Source => SDL.Sensors.Types,
+      Target => SDL.Raw.Sensor.Types);
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => CS.chars_ptr,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => Binding_Pointers.Pointer,
+     (Source => Raw.Binding_Pointers.Pointer,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => String_Pointers.Pointer,
+     (Source => Raw.String_Pointers.Pointer,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => Instance_Pointers.Pointer,
+     (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
-
-   procedure SDL_Free (Value : in System.Address)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_free";
-
-   function SDL_Add_Gamepad_Mapping
-     (Buffer : in C.char_array) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AddGamepadMapping";
-
-   function SDL_Add_Gamepad_Mappings_From_IO
-     (Stream    : in SDL.RWops.Handle;
-      Close_IO  : in CE.bool) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AddGamepadMappingsFromIO";
-
-   function SDL_Add_Gamepad_Mappings_From_File
-     (Path : in C.char_array) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_AddGamepadMappingsFromFile";
-
-   function SDL_Reload_Gamepad_Mappings return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ReloadGamepadMappings";
-
-   function SDL_Get_Gamepad_Mappings
-     (Count : access C.int) return String_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadMappings";
-
-   function SDL_Get_Gamepad_Mapping_For_GUID
-     (Value : in GUIDs) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadMappingForGUID";
-
-   function SDL_Get_Gamepad_Mapping
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadMapping";
-
-   function SDL_Set_Gamepad_Mapping
-     (Instance : in Instances;
-      Mapping  : in C.char_array) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetGamepadMapping";
-
-   function SDL_Has_Gamepad return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_HasGamepad";
-
-   function SDL_Get_Gamepads
-     (Count : access C.int) return Instance_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepads";
-
-   function SDL_Is_Gamepad
-     (Value : in Instances) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_IsGamepad";
-
-   function SDL_Get_Gamepad_Name_For_ID
-     (Value : in Instances) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadNameForID";
-
-   function SDL_Get_Gamepad_Path_For_ID
-     (Value : in Instances) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadPathForID";
-
-   function SDL_Get_Gamepad_Player_Index_For_ID
-     (Value : in Instances) return Player_Indices
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadPlayerIndexForID";
-
-   function SDL_Get_Gamepad_GUID_For_ID
-     (Value : in Instances) return GUIDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadGUIDForID";
-
-   function SDL_Get_Gamepad_Vendor_For_ID
-     (Value : in Instances) return Vendor_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadVendorForID";
-
-   function SDL_Get_Gamepad_Product_For_ID
-     (Value : in Instances) return Product_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadProductForID";
-
-   function SDL_Get_Gamepad_Product_Version_For_ID
-     (Value : in Instances) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadProductVersionForID";
-
-   function SDL_Get_Gamepad_Type_For_ID
-     (Value : in Instances) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadTypeForID";
-
-   function SDL_Get_Real_Gamepad_Type_For_ID
-     (Value : in Instances) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRealGamepadTypeForID";
-
-   function SDL_Get_Gamepad_Mapping_For_ID
-     (Value : in Instances) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadMappingForID";
-
-   function SDL_Open_Gamepad
-     (Value : in Instances) return SDL.C_Pointers.Game_Controller_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_OpenGamepad";
-
-   function SDL_Get_Gamepad_From_ID
-     (Value : in Instances) return SDL.C_Pointers.Game_Controller_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadFromID";
-
-   function SDL_Get_Gamepad_From_Player_Index
-     (Player_Index : in Player_Indices) return SDL.C_Pointers.Game_Controller_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadFromPlayerIndex";
-
-   procedure SDL_Close_Gamepad
-     (Value : in SDL.C_Pointers.Game_Controller_Pointer)
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_CloseGamepad";
-
-   function SDL_Get_Gamepad_Properties
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer)
-      return SDL.Properties.Property_ID
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadProperties";
-
-   function SDL_Get_Gamepad_ID
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Instances
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadID";
-
-   function SDL_Get_Gamepad_Name
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadName";
-
-   function SDL_Get_Gamepad_Path
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadPath";
-
-   function SDL_Get_Gamepad_Type
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadType";
-
-   function SDL_Get_Real_Gamepad_Type
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetRealGamepadType";
-
-   function SDL_Get_Gamepad_Player_Index
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Player_Indices
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadPlayerIndex";
-
-   function SDL_Set_Gamepad_Player_Index
-     (Controller   : in SDL.C_Pointers.Game_Controller_Pointer;
-      Player_Index : in Player_Indices) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetGamepadPlayerIndex";
-
-   function SDL_Get_Gamepad_Vendor
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Vendor_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadVendor";
-
-   function SDL_Get_Gamepad_Product
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Product_IDs
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadProduct";
-
-   function SDL_Get_Gamepad_Product_Version
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadProductVersion";
-
-   function SDL_Get_Gamepad_Firmware_Version
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Version_Numbers
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadFirmwareVersion";
-
-   function SDL_Get_Gamepad_Serial
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadSerial";
-
-   function SDL_Get_Gamepad_Steam_Handle
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return Steam_Handles
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadSteamHandle";
-
-   function SDL_Get_Gamepad_Connection_State
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer)
-      return SDL.Inputs.Joysticks.Connection_States
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadConnectionState";
-
-   function SDL_Get_Gamepad_Power_Info
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Percentage : access C.int) return SDL.Power.State
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadPowerInfo";
-
-   function SDL_Gamepad_Connected
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadConnected";
-
-   function SDL_Get_Gamepad_Joystick
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer)
-      return SDL.C_Pointers.Joystick_Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadJoystick";
-
-   function SDL_Get_Gamepad_Bindings
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Count      : access C.int) return Binding_Pointers.Pointer
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadBindings";
-
-   function SDL_Get_Gamepad_Type_From_String
-     (Name : in C.char_array) return Types
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadTypeFromString";
-
-   function SDL_Get_Gamepad_String_For_Type
-     (Kind : in Types) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadStringForType";
-
-   function SDL_Get_Gamepad_Axis_From_String
-     (Name : in C.char_array)
-      return SDL.Events.Joysticks.Game_Controllers.Axes
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadAxisFromString";
-
-   function SDL_Get_Gamepad_String_For_Axis
-     (Value : in SDL.Events.Joysticks.Game_Controllers.Axes) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadStringForAxis";
-
-   function SDL_Gamepad_Has_Axis
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Axis       : in SDL.Events.Joysticks.Game_Controllers.Axes) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadHasAxis";
-
-   function SDL_Get_Gamepad_Axis
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Axis       : in SDL.Events.Joysticks.Game_Controllers.Axes)
-      return SDL.Events.Joysticks.Game_Controllers.LR_Axes_Values
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadAxis";
-
-   function SDL_Get_Gamepad_Trigger_Axis
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Axis       : in SDL.Events.Joysticks.Game_Controllers.Axes)
-      return SDL.Events.Joysticks.Game_Controllers.Trigger_Axes_Values
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadAxis";
-
-   function SDL_Get_Gamepad_Button_From_String
-     (Name : in C.char_array)
-      return SDL.Events.Joysticks.Game_Controllers.Buttons
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadButtonFromString";
-
-   function SDL_Get_Gamepad_String_For_Button
-     (Value : in SDL.Events.Joysticks.Game_Controllers.Buttons) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadStringForButton";
-
-   function SDL_Gamepad_Has_Button
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Button     : in SDL.Events.Joysticks.Game_Controllers.Buttons) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadHasButton";
-
-   function SDL_Get_Gamepad_Button
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Button     : in SDL.Events.Joysticks.Game_Controllers.Buttons) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadButton";
-
-   function SDL_Get_Gamepad_Button_Label_For_Type
-     (Kind   : in Types;
-      Button : in SDL.Events.Joysticks.Game_Controllers.Buttons) return Button_Labels
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadButtonLabelForType";
-
-   function SDL_Get_Gamepad_Button_Label
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Button     : in SDL.Events.Joysticks.Game_Controllers.Buttons) return Button_Labels
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadButtonLabel";
-
-   function SDL_Get_Num_Gamepad_Touchpads
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumGamepadTouchpads";
-
-   function SDL_Get_Num_Gamepad_Touchpad_Fingers
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Touchpad   : in C.int) return C.int
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetNumGamepadTouchpadFingers";
-
-   function SDL_Get_Gamepad_Touchpad_Finger
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Touchpad   : in C.int;
-      Finger     : in C.int;
-      Down       : access CE.bool;
-      X          : access C.C_float;
-      Y          : access C.C_float;
-      Pressure   : access C.C_float) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadTouchpadFinger";
-
-   function SDL_Gamepad_Has_Sensor
-     (Controller  : in SDL.C_Pointers.Game_Controller_Pointer;
-      Sensor_Type : in SDL.Sensors.Types) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadHasSensor";
-
-   function SDL_Set_Gamepad_Sensor_Enabled
-     (Controller  : in SDL.C_Pointers.Game_Controller_Pointer;
-      Sensor_Type : in SDL.Sensors.Types;
-      Enabled     : in CE.bool) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetGamepadSensorEnabled";
-
-   function SDL_Gamepad_Sensor_Enabled
-     (Controller  : in SDL.C_Pointers.Game_Controller_Pointer;
-      Sensor_Type : in SDL.Sensors.Types) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GamepadSensorEnabled";
-
-   function SDL_Get_Gamepad_Sensor_Data_Rate
-     (Controller  : in SDL.C_Pointers.Game_Controller_Pointer;
-      Sensor_Type : in SDL.Sensors.Types) return C.C_float
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadSensorDataRate";
-
-   function SDL_Get_Gamepad_Sensor_Data
-     (Controller  : in SDL.C_Pointers.Game_Controller_Pointer;
-      Sensor_Type : in SDL.Sensors.Types;
-      Data        : in System.Address;
-      Value_Count : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadSensorData";
-
-   function SDL_Rumble_Gamepad
-     (Controller      : in SDL.C_Pointers.Game_Controller_Pointer;
-      Low_Frequency   : in Uint16;
-      High_Frequency  : in Uint16;
-      Duration_MS     : in Uint32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RumbleGamepad";
-
-   function SDL_Rumble_Gamepad_Triggers
-     (Controller   : in SDL.C_Pointers.Game_Controller_Pointer;
-      Left_Rumble  : in Uint16;
-      Right_Rumble : in Uint16;
-      Duration_MS  : in Uint32) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_RumbleGamepadTriggers";
-
-   function SDL_Set_Gamepad_LED
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Red        : in LED_Components;
-      Green      : in LED_Components;
-      Blue       : in LED_Components) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetGamepadLED";
-
-   function SDL_Send_Gamepad_Effect
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Data       : in System.Address;
-      Size       : in C.int) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SendGamepadEffect";
-
-   function SDL_Get_Gamepad_Apple_SF_Symbols_Name_For_Button
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Button     : in SDL.Events.Joysticks.Game_Controllers.Buttons) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadAppleSFSymbolsNameForButton";
-
-   function SDL_Get_Gamepad_Apple_SF_Symbols_Name_For_Axis
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer;
-      Axis       : in SDL.Events.Joysticks.Game_Controllers.Axes) return CS.chars_ptr
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetGamepadAppleSFSymbolsNameForAxis";
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL gamepad call failed");
@@ -712,7 +133,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end Raise_Mapping_Error;
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
-     (if Value then CE.bool'Val (1) else CE.bool'Val (0));
+     (CE.bool'Val (Boolean'Pos (Value)));
 
    procedure Require_Valid (Self : in Game_Controller);
 
@@ -728,37 +149,37 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    procedure Free (Value : in out CS.chars_ptr) is
    begin
       if Value /= CS.Null_Ptr then
-         SDL_Free (To_Address (Value));
+         Raw.Free (To_Address (Value));
          Value := CS.Null_Ptr;
       end if;
    end Free;
 
-   procedure Free (Value : in out Binding_Pointers.Pointer);
+   procedure Free (Value : in out Raw.Binding_Pointers.Pointer);
 
-   procedure Free (Value : in out Binding_Pointers.Pointer) is
+   procedure Free (Value : in out Raw.Binding_Pointers.Pointer) is
    begin
       if Value /= null then
-         SDL_Free (To_Address (Value));
+         Raw.Free (To_Address (Value));
          Value := null;
       end if;
    end Free;
 
-   procedure Free (Value : in out String_Pointers.Pointer);
+   procedure Free (Value : in out Raw.String_Pointers.Pointer);
 
-   procedure Free (Value : in out String_Pointers.Pointer) is
+   procedure Free (Value : in out Raw.String_Pointers.Pointer) is
    begin
       if Value /= null then
-         SDL_Free (To_Address (Value));
+         Raw.Free (To_Address (Value));
          Value := null;
       end if;
    end Free;
 
-   procedure Free (Value : in out Instance_Pointers.Pointer);
+   procedure Free (Value : in out Raw.ID_Pointers.Pointer);
 
-   procedure Free (Value : in out Instance_Pointers.Pointer) is
+   procedure Free (Value : in out Raw.ID_Pointers.Pointer) is
    begin
       if Value /= null then
-         SDL_Free (To_Address (Value));
+         Raw.Free (To_Address (Value));
          Value := null;
       end if;
    end Free;
@@ -818,25 +239,25 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Null_Binding return Bindings is
      ((Which => None, Value => (Which => None)));
 
-   function To_Compatibility (Binding : in SDL_Binding) return Bindings is
+   function To_Compatibility (Binding : in Raw.Binding) return Bindings is
    begin
       case Binding.Input_Type is
-         when None =>
+         when Raw.None =>
             return Null_Binding;
 
-         when Button =>
+         when Raw.Button =>
             return
               (Which => Button,
                Value => (Which => Button,
                          Button => To_Button (Binding.Input.Button)));
 
-         when Axis =>
+         when Raw.Axis =>
             return
               (Which => Axis,
                Value => (Which => Axis,
                          Axis => To_Axis (Binding.Input.Axis.Axis)));
 
-         when Hat =>
+         when Raw.Hat =>
             return
               (Which => Hat,
                Value =>
@@ -850,65 +271,66 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end To_Compatibility;
 
    function Copy_IDs
-     (Items : in Instance_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists;
 
    function Copy_IDs
-     (Items : in Instance_Pointers.Pointer;
+     (Items : in Raw.ID_Pointers.Pointer;
       Count : in C.int) return ID_Lists
    is
-      Raw : Instance_Pointers.Pointer := Items;
+      Raw_Items : Raw.ID_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Last_Error ("Gamepad enumeration failed");
       end if;
 
       declare
-         Source : constant Instance_Arrays :=
-           Instance_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant SDL.Raw.Joystick.ID_Array :=
+           Raw.ID_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : ID_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
             Result (Index) :=
-              Source (Source'First + C.ptrdiff_t (Index - Result'First));
+              To_Public_ID
+                (Source (Source'First + C.ptrdiff_t (Index - Result'First)));
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_IDs;
 
    function Copy_Mappings
-     (Items : in String_Pointers.Pointer;
+     (Items : in Raw.String_Pointers.Pointer;
       Count : in C.int) return Mapping_Lists;
 
    function Copy_Mappings
-     (Items : in String_Pointers.Pointer;
+     (Items : in Raw.String_Pointers.Pointer;
       Count : in C.int) return Mapping_Lists
    is
-      Raw : String_Pointers.Pointer := Items;
+      Raw_Items : Raw.String_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Mapping_Error ("SDL_GetGamepadMappings failed");
       end if;
 
       declare
-         Source : constant String_Pointer_Arrays :=
-           String_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.String_Pointer_Array :=
+           Raw.String_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : Mapping_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
@@ -925,37 +347,37 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
             end;
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_Mappings;
 
    function Copy_Bindings
-     (Items : in Binding_Pointers.Pointer;
+     (Items : in Raw.Binding_Pointers.Pointer;
       Count : in C.int) return Binding_Lists;
 
    function Copy_Bindings
-     (Items : in Binding_Pointers.Pointer;
+     (Items : in Raw.Binding_Pointers.Pointer;
       Count : in C.int) return Binding_Lists
    is
-      Raw : Binding_Pointers.Pointer := Items;
+      Raw_Items : Raw.Binding_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Raw_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Raw_Items = null then
          Raise_Mapping_Error ("SDL_GetGamepadBindings failed");
       end if;
 
       declare
-         Source : constant SDL_Binding_Array :=
-           Binding_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.Binding_Array :=
+           Raw.Binding_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
          Result : Binding_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
@@ -971,11 +393,11 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
             end;
          end loop;
 
-         Free (Raw);
+         Free (Raw_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Raw_Items);
             raise;
       end;
    end Copy_Bindings;
@@ -984,7 +406,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
      (Data             : in String;
       Updated_Existing : out Boolean)
    is
-      Result : constant C.int := SDL_Add_Gamepad_Mapping (C.To_C (Data));
+      Result : constant C.int := Raw.Add_Gamepad_Mapping (C.To_C (Data));
    begin
       if Result < 0 then
          Raise_Mapping_Error ("SDL_AddGamepadMapping failed");
@@ -1000,7 +422,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
       Result : C.int;
    begin
-      Result := SDL_Add_Gamepad_Mappings_From_IO (Stream, To_C_Bool (Close_After));
+      Result := Raw.Add_Gamepad_Mappings_From_IO (Stream, To_C_Bool (Close_After));
 
       if Result < 0 then
          Raise_Mapping_Error ("SDL_AddGamepadMappingsFromIO failed");
@@ -1026,7 +448,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Number_Added      : out Natural)
    is
       Result : constant C.int :=
-        SDL_Add_Gamepad_Mappings_From_File (C.To_C (Database_Filename));
+        Raw.Add_Gamepad_Mappings_From_File (C.To_C (Database_Filename));
    begin
       if Result < 0 then
          Raise_Mapping_Error ("SDL_AddGamepadMappingsFromFile failed");
@@ -1037,15 +459,15 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
 
    procedure Reload_Mappings is
    begin
-      if not Boolean (SDL_Reload_Gamepad_Mappings) then
+      if not Boolean (Raw.Reload_Gamepad_Mappings) then
          Raise_Mapping_Error ("SDL_ReloadGamepadMappings failed");
       end if;
    end Reload_Mappings;
 
    function Get_Mappings return Mapping_Lists is
       Count : aliased C.int := 0;
-      Items : constant String_Pointers.Pointer :=
-        SDL_Get_Gamepad_Mappings (Count'Access);
+      Items : constant Raw.String_Pointers.Pointer :=
+        Raw.Get_Gamepad_Mappings (Count'Access);
    begin
       return Copy_Mappings (Items, Count);
    end Get_Mappings;
@@ -1055,19 +477,21 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Mapping  : in String)
    is
    begin
-      if not Boolean (SDL_Set_Gamepad_Mapping (Instance, C.To_C (Mapping))) then
+      if not Boolean
+          (Raw.Set_Gamepad_Mapping (To_Raw_ID (Instance), C.To_C (Mapping)))
+      then
          Raise_Mapping_Error ("SDL_SetGamepadMapping failed");
       end if;
    end Set_Mapping;
 
    function Has_Gamepad return Boolean is
    begin
-      return Boolean (SDL_Has_Gamepad);
+      return Boolean (Raw.Has_Gamepad);
    end Has_Gamepad;
 
    function Get_Gamepads return ID_Lists is
       Count : aliased C.int := 0;
-      Items : constant Instance_Pointers.Pointer := SDL_Get_Gamepads (Count'Access);
+      Items : constant Raw.ID_Pointers.Pointer := Raw.Get_Gamepads (Count'Access);
    begin
       return Copy_IDs (Items, Count);
    end Get_Gamepads;
@@ -1076,7 +500,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    procedure Finalize (Self : in out Game_Controller) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         SDL_Close_Gamepad (Self.Internal);
+         Raw.Close_Gamepad (Self.Internal);
       end if;
 
       Self.Internal := null;
@@ -1090,7 +514,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Axis (Self.Internal, Axis);
+      return SDL.Events.Joysticks.Game_Controllers.LR_Axes_Values
+        (Raw.Get_Gamepad_Axis (Self.Internal, To_Raw_Axis (Axis)));
    end Axis_Value;
 
    function Axis_Value
@@ -1100,7 +525,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Trigger_Axis (Self.Internal, Axis);
+      return SDL.Events.Joysticks.Game_Controllers.Trigger_Axes_Values
+        (Raw.Get_Gamepad_Axis (Self.Internal, To_Raw_Axis (Axis)));
    end Axis_Value;
 
    procedure Close (Self : in out Game_Controller) is
@@ -1123,7 +549,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    begin
       Close (Self);
 
-      Internal := SDL_Open_Gamepad (Instance);
+      Internal := Raw.Open_Gamepad (To_Raw_ID (Instance));
       if Internal = null then
          Raise_Last_Error ("SDL_OpenGamepad failed");
       end if;
@@ -1135,7 +561,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Get (Instance : in Instances) return Game_Controller is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => SDL_Get_Gamepad_From_ID (Instance),
+              Internal => Raw.Get_Gamepad_From_ID (To_Raw_ID (Instance)),
               Owns     => False);
    end Get;
 
@@ -1144,7 +570,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => SDL_Get_Gamepad_From_Player_Index (Player_Index),
+              Internal => Raw.Get_Gamepad_From_Player_Index
+                (To_Raw_Player_Index (Player_Index)),
               Owns     => False);
    end Get_From_Player_Index;
 
@@ -1152,29 +579,29 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
      (Axis : in String) return SDL.Events.Joysticks.Game_Controllers.Axes
    is
    begin
-      return SDL_Get_Gamepad_Axis_From_String (C.To_C (Axis));
+      return To_Public_Axis (Raw.Get_Gamepad_Axis_From_String (C.To_C (Axis)));
    end Get_Axis;
 
    function Get_Bindings (Self : in Game_Controller) return Binding_Lists is
-      Count : aliased C.int := 0;
-      Raw   : Binding_Pointers.Pointer;
+      Count     : aliased C.int := 0;
+      Raw_Items : Raw.Binding_Pointers.Pointer;
    begin
       Require_Valid (Self);
-      Raw := SDL_Get_Gamepad_Bindings (Self.Internal, Count'Access);
-      return Copy_Bindings (Raw, Count);
+      Raw_Items := Raw.Get_Gamepad_Bindings (Self.Internal, Count'Access);
+      return Copy_Bindings (Raw_Items, Count);
    end Get_Bindings;
 
    function Get_Binding
      (Self : in Game_Controller;
       Axis : in SDL.Events.Joysticks.Game_Controllers.Axes) return Bindings
    is
-      Count : aliased C.int := 0;
-      Raw   : Binding_Pointers.Pointer;
+      Count     : aliased C.int := 0;
+      Raw_Items : Raw.Binding_Pointers.Pointer;
    begin
       Require_Valid (Self);
-      Raw := SDL_Get_Gamepad_Bindings (Self.Internal, Count'Access);
+      Raw_Items := Raw.Get_Gamepad_Bindings (Self.Internal, Count'Access);
 
-      if Raw = null then
+      if Raw_Items = null then
          if SDL.Error.Get /= "" then
             Raise_Mapping_Error ("SDL_GetGamepadBindings failed");
          end if;
@@ -1183,21 +610,21 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       end if;
 
       declare
-         Copy : constant SDL_Binding_Array :=
-           Binding_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Copy : constant Raw.Binding_Array :=
+           Raw.Binding_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
       begin
          for Binding_Item of Copy loop
             if Binding_Item /= null
-              and then Binding_Item.Output_Type = SDL.Inputs.Joysticks.Game_Controllers.Axis
-              and then Binding_Item.Output.Axis.Axis = Axis
+              and then Binding_Item.Output_Type = Raw.Axis
+              and then Binding_Item.Output.Axis.Axis = To_Raw_Axis (Axis)
             then
-               Free (Raw);
+               Free (Raw_Items);
                return To_Compatibility (Binding_Item.all);
             end if;
          end loop;
       end;
 
-      Free (Raw);
+      Free (Raw_Items);
       return Null_Binding;
    end Get_Binding;
 
@@ -1205,13 +632,13 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
      (Self   : in Game_Controller;
       Button : in SDL.Events.Joysticks.Game_Controllers.Buttons) return Bindings
    is
-      Count : aliased C.int := 0;
-      Raw   : Binding_Pointers.Pointer;
+      Count     : aliased C.int := 0;
+      Raw_Items : Raw.Binding_Pointers.Pointer;
    begin
       Require_Valid (Self);
-      Raw := SDL_Get_Gamepad_Bindings (Self.Internal, Count'Access);
+      Raw_Items := Raw.Get_Gamepad_Bindings (Self.Internal, Count'Access);
 
-      if Raw = null then
+      if Raw_Items = null then
          if SDL.Error.Get /= "" then
             Raise_Mapping_Error ("SDL_GetGamepadBindings failed");
          end if;
@@ -1220,21 +647,21 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       end if;
 
       declare
-         Copy : constant SDL_Binding_Array :=
-           Binding_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Copy : constant Raw.Binding_Array :=
+           Raw.Binding_Pointers.Value (Raw_Items, C.ptrdiff_t (Count));
       begin
          for Binding_Item of Copy loop
             if Binding_Item /= null
-              and then Binding_Item.Output_Type = SDL.Inputs.Joysticks.Game_Controllers.Button
-              and then Binding_Item.Output.Button = Button
+              and then Binding_Item.Output_Type = Raw.Button
+              and then Binding_Item.Output.Button = To_Raw_Button (Button)
             then
-               Free (Raw);
+               Free (Raw_Items);
                return To_Compatibility (Binding_Item.all);
             end if;
          end loop;
       end;
 
-      Free (Raw);
+      Free (Raw_Items);
       return Null_Binding;
    end Get_Binding;
 
@@ -1242,7 +669,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
      (Button_Name : in String) return SDL.Events.Joysticks.Game_Controllers.Buttons
    is
    begin
-      return SDL_Get_Gamepad_Button_From_String (C.To_C (Button_Name));
+      return To_Public_Button
+        (Raw.Get_Gamepad_Button_From_String (C.To_C (Button_Name)));
    end Get_Button;
 
    function Get_Joystick (Self : in Game_Controller) return Joystick is
@@ -1251,7 +679,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
 
       return Result : constant Joystick :=
         (Ada.Finalization.Limited_Controlled with
-           Internal => SDL_Get_Gamepad_Joystick (Self.Internal),
+           Internal => Raw.Get_Gamepad_Joystick (Self.Internal),
            Owns     => False)
       do
          null;
@@ -1262,7 +690,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Mapping (Self.Internal);
+      Result := Raw.Get_Gamepad_Mapping (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1277,7 +705,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end Get_Mapping;
 
    function Get_Mapping (Controller : in GUIDs) return String is
-      Result : CS.chars_ptr := SDL_Get_Gamepad_Mapping_For_GUID (Controller);
+      Result : CS.chars_ptr := Raw.Get_Gamepad_Mapping_For_GUID (To_Raw_GUID (Controller));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1292,7 +720,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end Get_Mapping;
 
    function Get_Mapping (Instance : in Instances) return String is
-      Result : CS.chars_ptr := SDL_Get_Gamepad_Mapping_For_ID (Instance);
+      Result : CS.chars_ptr := Raw.Get_Gamepad_Mapping_For_ID (To_Raw_ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1310,7 +738,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Name (Self.Internal);
+      Result := Raw.Get_Gamepad_Name (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1323,7 +751,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
      (Get_Name (Resolve_Device (Device)));
 
    function Get_Name (Instance : in Instances) return String is
-      Result : constant CS.chars_ptr := SDL_Get_Gamepad_Name_For_ID (Instance);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Gamepad_Name_For_ID (To_Raw_ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1336,7 +765,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Path (Self.Internal);
+      Result := Raw.Get_Gamepad_Path (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1346,7 +775,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end Get_Path;
 
    function Get_Path (Instance : in Instances) return String is
-      Result : constant CS.chars_ptr := SDL_Get_Gamepad_Path_For_ID (Instance);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Gamepad_Path_For_ID (To_Raw_ID (Instance));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1358,12 +788,13 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Player_Index (Self : in Game_Controller) return Player_Indices is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Player_Index (Self.Internal);
+      return To_Public_Player_Index (Raw.Get_Gamepad_Player_Index (Self.Internal));
    end Player_Index;
 
    function Player_Index (Instance : in Instances) return Player_Indices is
    begin
-      return SDL_Get_Gamepad_Player_Index_For_ID (Instance);
+      return To_Public_Player_Index
+        (Raw.Get_Gamepad_Player_Index_For_ID (To_Raw_ID (Instance)));
    end Player_Index;
 
    procedure Set_Player_Index
@@ -1373,82 +804,87 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    begin
       Require_Valid (Self);
 
-      if not Boolean (SDL_Set_Gamepad_Player_Index (Self.Internal, Player_Index)) then
+      if not Boolean
+          (Raw.Set_Gamepad_Player_Index
+             (Self.Internal, To_Raw_Player_Index (Player_Index)))
+      then
          Raise_Last_Error ("SDL_SetGamepadPlayerIndex failed");
       end if;
    end Set_Player_Index;
 
    function GUID (Instance : in Instances) return GUIDs is
    begin
-      return SDL_Get_Gamepad_GUID_For_ID (Instance);
+      return To_Public_GUID (Raw.Get_Gamepad_GUID_For_ID (To_Raw_ID (Instance)));
    end GUID;
 
    function Get_Type (Self : in Game_Controller) return Types is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Type (Self.Internal);
+      return To_Public_Type (Raw.Get_Gamepad_Type (Self.Internal));
    end Get_Type;
 
    function Get_Type (Instance : in Instances) return Types is
    begin
-      return SDL_Get_Gamepad_Type_For_ID (Instance);
+      return To_Public_Type (Raw.Get_Gamepad_Type_For_ID (To_Raw_ID (Instance)));
    end Get_Type;
 
    function Get_Real_Type (Self : in Game_Controller) return Types is
    begin
       Require_Valid (Self);
-      return SDL_Get_Real_Gamepad_Type (Self.Internal);
+      return To_Public_Type (Raw.Get_Real_Gamepad_Type (Self.Internal));
    end Get_Real_Type;
 
    function Get_Real_Type (Instance : in Instances) return Types is
    begin
-      return SDL_Get_Real_Gamepad_Type_For_ID (Instance);
+      return To_Public_Type
+        (Raw.Get_Real_Gamepad_Type_For_ID (To_Raw_ID (Instance)));
    end Get_Real_Type;
 
    function Vendor (Self : in Game_Controller) return Vendor_IDs is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Vendor (Self.Internal);
+      return Vendor_IDs (Raw.Get_Gamepad_Vendor (Self.Internal));
    end Vendor;
 
    function Vendor (Instance : in Instances) return Vendor_IDs is
    begin
-      return SDL_Get_Gamepad_Vendor_For_ID (Instance);
+      return Vendor_IDs (Raw.Get_Gamepad_Vendor_For_ID (To_Raw_ID (Instance)));
    end Vendor;
 
    function Product (Self : in Game_Controller) return Product_IDs is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Product (Self.Internal);
+      return Product_IDs (Raw.Get_Gamepad_Product (Self.Internal));
    end Product;
 
    function Product (Instance : in Instances) return Product_IDs is
    begin
-      return SDL_Get_Gamepad_Product_For_ID (Instance);
+      return Product_IDs (Raw.Get_Gamepad_Product_For_ID (To_Raw_ID (Instance)));
    end Product;
 
    function Product_Version (Self : in Game_Controller) return Version_Numbers is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Product_Version (Self.Internal);
+      return Version_Numbers (Raw.Get_Gamepad_Product_Version (Self.Internal));
    end Product_Version;
 
    function Product_Version (Instance : in Instances) return Version_Numbers is
    begin
-      return SDL_Get_Gamepad_Product_Version_For_ID (Instance);
+      return Version_Numbers
+        (Raw.Get_Gamepad_Product_Version_For_ID (To_Raw_ID (Instance)));
    end Product_Version;
 
    function Firmware_Version (Self : in Game_Controller) return Version_Numbers is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Firmware_Version (Self.Internal);
+      return Version_Numbers (Raw.Get_Gamepad_Firmware_Version (Self.Internal));
    end Firmware_Version;
 
    function Serial (Self : in Game_Controller) return String is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Serial (Self.Internal);
+      Result := Raw.Get_Gamepad_Serial (Self.Internal);
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1460,7 +896,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Steam_Handle (Self : in Game_Controller) return Steam_Handles is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Steam_Handle (Self.Internal);
+      return Steam_Handles (Raw.Get_Gamepad_Steam_Handle (Self.Internal));
    end Steam_Handle;
 
    function Connection_State
@@ -1468,7 +904,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Connection_State (Self.Internal);
+      return To_Public_Connection_State
+        (Raw.Get_Gamepad_Connection_State (Self.Internal));
    end Connection_State;
 
    function Get_Power_Info
@@ -1478,14 +915,13 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Raw_Percentage : aliased C.int := -1;
    begin
       Require_Valid (Self);
-      Percentage := -1;
 
       declare
-         Result : constant SDL.Power.State :=
-           SDL_Get_Gamepad_Power_Info (Self.Internal, Raw_Percentage'Access);
+         Result : constant SDL.Raw.Power.State :=
+           Raw.Get_Gamepad_Power_Info (Self.Internal, Raw_Percentage'Access);
       begin
          Percentage := Battery_Percentages (Raw_Percentage);
-         return Result;
+         return To_Public_Power_State (Result);
       end;
    end Get_Power_Info;
 
@@ -1494,14 +930,15 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL.Properties.Reference (SDL_Get_Gamepad_Properties (Self.Internal));
+      return SDL.Properties.Reference
+        (SDL.Properties.Property_ID (Raw.Get_Gamepad_Properties (Self.Internal)));
    end Get_Properties;
 
    function Get_ID (Self : in Game_Controller) return Instances is
       Result : Instances;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_ID (Self.Internal);
+      Result := To_Public_ID (Raw.Get_Gamepad_ID (Self.Internal));
 
       if Result = 0 then
          Raise_Last_Error ("SDL_GetGamepadID failed");
@@ -1513,7 +950,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Image
      (Axis : in SDL.Events.Joysticks.Game_Controllers.Axes) return String
    is
-      Result : constant CS.chars_ptr := SDL_Get_Gamepad_String_For_Axis (Axis);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Gamepad_String_For_Axis (To_Raw_Axis (Axis));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1525,7 +963,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    function Image
      (Button : in SDL.Events.Joysticks.Game_Controllers.Buttons) return String
    is
-      Result : constant CS.chars_ptr := SDL_Get_Gamepad_String_For_Button (Button);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Gamepad_String_For_Button (To_Raw_Button (Button));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1535,7 +974,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    end Image;
 
    function Image (Kind : in Types) return String is
-      Result : constant CS.chars_ptr := SDL_Get_Gamepad_String_For_Type (Kind);
+      Result : constant CS.chars_ptr :=
+        Raw.Get_Gamepad_String_For_Type (To_Raw_Type (Kind));
    begin
       if Result = CS.Null_Ptr then
          return "";
@@ -1546,13 +986,13 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
 
    function Type_From_String (Value : in String) return Types is
    begin
-      return SDL_Get_Gamepad_Type_From_String (C.To_C (Value));
+      return To_Public_Type (Raw.Get_Gamepad_Type_From_String (C.To_C (Value)));
    end Type_From_String;
 
    function Is_Attached (Self : in Game_Controller) return Boolean is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Gamepad_Connected (Self.Internal));
+      return Boolean (Raw.Gamepad_Connected (Self.Internal));
    end Is_Attached;
 
    function Has_Axis
@@ -1561,7 +1001,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Gamepad_Has_Axis (Self.Internal, Axis));
+      return Boolean (Raw.Gamepad_Has_Axis (Self.Internal, To_Raw_Axis (Axis)));
    end Has_Axis;
 
    function Is_Button_Pressed
@@ -1572,7 +1012,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    begin
       Require_Valid (Self);
 
-      if Boolean (SDL_Get_Gamepad_Button (Self.Internal, Button)) then
+      if Boolean (Raw.Get_Gamepad_Button (Self.Internal, To_Raw_Button (Button))) then
          return SDL.Events.Pressed;
       end if;
 
@@ -1585,12 +1025,12 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Gamepad_Has_Button (Self.Internal, Button));
+      return Boolean (Raw.Gamepad_Has_Button (Self.Internal, To_Raw_Button (Button)));
    end Has_Button;
 
    function Is_Game_Controller (Device : in Devices) return Boolean is
    begin
-      return Boolean (SDL_Is_Gamepad (Resolve_Device (Device)));
+      return Boolean (Raw.Is_Gamepad (To_Raw_ID (Resolve_Device (Device))));
    end Is_Game_Controller;
 
    function Button_Label_For_Type
@@ -1599,7 +1039,9 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       return Button_Labels
    is
    begin
-      return SDL_Get_Gamepad_Button_Label_For_Type (Kind, Button);
+      return To_Public_Button_Label
+        (Raw.Get_Gamepad_Button_Label_For_Type
+           (To_Raw_Type (Kind), To_Raw_Button (Button)));
    end Button_Label_For_Type;
 
    function Button_Label
@@ -1609,14 +1051,15 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Button_Label (Self.Internal, Button);
+      return To_Public_Button_Label
+        (Raw.Get_Gamepad_Button_Label (Self.Internal, To_Raw_Button (Button)));
    end Button_Label;
 
    function Touchpads (Self : in Game_Controller) return Natural is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Gamepad_Touchpads (Self.Internal);
+      Result := Raw.Get_Num_Gamepad_Touchpads (Self.Internal);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumGamepadTouchpads failed");
@@ -1632,7 +1075,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : C.int;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Num_Gamepad_Touchpad_Fingers (Self.Internal, Touchpad);
+      Result := Raw.Get_Num_Gamepad_Touchpad_Fingers (Self.Internal, Touchpad);
 
       if Result < 0 then
          Raise_Last_Error ("SDL_GetNumGamepadTouchpadFingers failed");
@@ -1654,7 +1097,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Get_Gamepad_Touchpad_Finger
+          (Raw.Get_Gamepad_Touchpad_Finger
              (Self.Internal,
               Touchpad,
               Finger,
@@ -1679,7 +1122,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Gamepad_Has_Sensor (Self.Internal, Sensor_Type));
+      return Boolean
+        (Raw.Gamepad_Has_Sensor (Self.Internal, To_Raw_Sensor_Type (Sensor_Type)));
    end Has_Sensor;
 
    procedure Set_Sensor_Enabled
@@ -1691,9 +1135,9 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Set_Gamepad_Sensor_Enabled
+          (Raw.Set_Gamepad_Sensor_Enabled
              (Self.Internal,
-              Sensor_Type,
+              To_Raw_Sensor_Type (Sensor_Type),
               To_C_Bool (Enabled)))
       then
          Raise_Last_Error ("SDL_SetGamepadSensorEnabled failed");
@@ -1706,7 +1150,9 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return Boolean (SDL_Gamepad_Sensor_Enabled (Self.Internal, Sensor_Type));
+      return Boolean
+        (Raw.Gamepad_Sensor_Enabled
+           (Self.Internal, To_Raw_Sensor_Type (Sensor_Type)));
    end Sensor_Enabled;
 
    function Sensor_Data_Rate
@@ -1715,7 +1161,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    is
    begin
       Require_Valid (Self);
-      return SDL_Get_Gamepad_Sensor_Data_Rate (Self.Internal, Sensor_Type);
+      return Raw.Get_Gamepad_Sensor_Data_Rate
+        (Self.Internal, To_Raw_Sensor_Type (Sensor_Type));
    end Sensor_Data_Rate;
 
    procedure Get_Sensor_Data
@@ -1727,9 +1174,9 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Get_Gamepad_Sensor_Data
+          (Raw.Get_Gamepad_Sensor_Data
              (Self.Internal,
-              Sensor_Type,
+              To_Raw_Sensor_Type (Sensor_Type),
               Float_Data_Address (Data),
               C.int (Data'Length)))
       then
@@ -1750,7 +1197,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
 
    function Has_Rumble (Self : in Game_Controller) return Boolean is
       Properties : constant SDL.Properties.Property_Set :=
-        SDL.Properties.Reference (SDL_Get_Gamepad_Properties (Self.Internal));
+        SDL.Properties.Reference
+          (SDL.Properties.Property_ID (Raw.Get_Gamepad_Properties (Self.Internal)));
    begin
       Require_Valid (Self);
 
@@ -1772,7 +1220,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if Boolean
-          (SDL_Rumble_Gamepad
+          (Raw.Rumble_Gamepad
              (Self.Internal,
               Low_Frequency,
               High_Frequency,
@@ -1794,7 +1242,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Rumble_Gamepad_Triggers
+          (Raw.Rumble_Gamepad_Triggers
              (Self.Internal,
               Left_Rumble,
               Right_Rumble,
@@ -1813,7 +1261,13 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
    begin
       Require_Valid (Self);
 
-      if not Boolean (SDL_Set_Gamepad_LED (Self.Internal, Red, Green, Blue)) then
+      if not Boolean
+          (Raw.Set_Gamepad_LED
+             (Self.Internal,
+              Raw.LED_Component (Red),
+              Raw.LED_Component (Green),
+              Raw.LED_Component (Blue)))
+      then
          Raise_Last_Error ("SDL_SetGamepadLED failed");
       end if;
    end Set_LED;
@@ -1826,7 +1280,7 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Require_Valid (Self);
 
       if not Boolean
-          (SDL_Send_Gamepad_Effect
+          (Raw.Send_Gamepad_Effect
              (Self.Internal,
               Buffer_Address (Data),
               C.int (Data'Length)))
@@ -1842,7 +1296,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Apple_SF_Symbols_Name_For_Button (Self.Internal, Button);
+      Result := Raw.Get_Gamepad_Apple_SF_Symbols_Name_For_Button
+        (Self.Internal, To_Raw_Button (Button));
 
       if Result = CS.Null_Ptr then
          return "";
@@ -1858,7 +1313,8 @@ package body SDL.Inputs.Joysticks.Game_Controllers is
       Result : CS.chars_ptr;
    begin
       Require_Valid (Self);
-      Result := SDL_Get_Gamepad_Apple_SF_Symbols_Name_For_Axis (Self.Internal, Axis);
+      Result := Raw.Get_Gamepad_Apple_SF_Symbols_Name_For_Axis
+        (Self.Internal, To_Raw_Axis (Axis));
 
       if Result = CS.Null_Ptr then
          return "";

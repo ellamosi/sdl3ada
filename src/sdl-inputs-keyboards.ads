@@ -63,16 +63,10 @@ package SDL.Inputs.Keyboards is
 
    function Get_State return Key_State_Access;
 
-   function Get_Modifiers return SDL.Events.Keyboards.Key_Modifiers with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetModState";
+   function Get_Modifiers return SDL.Events.Keyboards.Key_Modifiers;
 
    procedure Set_Modifiers
-     (Modifiers : in SDL.Events.Keyboards.Key_Modifiers) with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_SetModState";
+     (Modifiers : in SDL.Events.Keyboards.Key_Modifiers);
 
    function Supports_Screen_Keyboard return Boolean;
 
@@ -85,10 +79,7 @@ package SDL.Inputs.Keyboards is
 
    function Is_Text_Input_Shown return Boolean;
 
-   procedure Reset_Keyboard with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_ResetKeyboard";
+   procedure Reset_Keyboard;
 
    procedure Set_Text_Input_Rectangle
      (Rectangle : in SDL.Video.Rectangles.Rectangle);

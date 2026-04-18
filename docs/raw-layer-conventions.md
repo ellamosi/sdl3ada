@@ -24,12 +24,14 @@ Current raw packages include:
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
 - `SDL.Raw.Gamepad`
+- `SDL.Raw.Gamepad_Events`
 - `SDL.Raw.Haptic`
 - `SDL.Raw.HIDAPI`
 - `SDL.Raw.Hints`
 - `SDL.Raw.Init`
 - `SDL.Raw.IOStream`
 - `SDL.Raw.Joystick`
+- `SDL.Raw.Joystick_Events`
 - `SDL.Raw.Locale`
 - `SDL.Raw.LoadSO`
 - `SDL.Raw.Log`

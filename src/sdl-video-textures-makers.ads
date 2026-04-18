@@ -1,5 +1,3 @@
-with System;
-
 with SDL.Properties;
 with SDL.Video.Renderers;
 with SDL.Video.Surfaces;
@@ -21,12 +19,4 @@ package SDL.Video.Textures.Makers is
      (Tex        : in out SDL.Video.Textures.Texture;
       Renderer   : in SDL.Video.Renderers.Renderer;
       Properties : in SDL.Properties.Property_Set);
-private
-   function Make_Texture_From_Pointer
-     (Internal : in System.Address;
-      Owns     : in Boolean := False) return SDL.Video.Textures.Texture
-   with
-     Export     => True,
-     Convention => Ada,
-     External_Name => "sdl_video_textures_makers__make_texture_from_pointer";
 end SDL.Video.Textures.Makers;

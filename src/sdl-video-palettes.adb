@@ -1,14 +1,14 @@
 with Ada.Finalization;
-with Ada.Unchecked_Conversion;
 with Interfaces.C.Extensions;
 
 with SDL.Error;
+with SDL.Video.Palettes.Internal;
 
 package body SDL.Video.Palettes is
    package CE renames Interfaces.C.Extensions;
+   package Palette_Internal renames SDL.Video.Palettes.Internal;
 
    use type Colour_Array_Pointer.Pointer;
-   use type System.Address;
 
    type Iterator (Container : access constant Palette'Class) is
      new Ada.Finalization.Limited_Controlled and
@@ -43,57 +43,6 @@ package body SDL.Video.Palettes is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_DestroyPalette";
-
-   function To_Internal_Palette_Access is new Ada.Unchecked_Conversion
-     (Source => System.Address,
-      Target => Internal_Palette_Access);
-
-   procedure Copy_Palette_From_Pointer
-     (Internal : in System.Address;
-      Result   : out SDL.Video.Palettes.Palette)
-   with
-     Export        => True,
-     Convention    => Ada,
-     External_Name => "sdl_video_palettes__copy_palette_from_pointer";
-
-   procedure Copy_Palette_From_Pointer
-     (Internal : in System.Address;
-      Result   : out SDL.Video.Palettes.Palette)
-   is
-      Source : constant Internal_Palette_Access :=
-        To_Internal_Palette_Access (Internal);
-   begin
-      Result.Data := null;
-
-      if Internal = System.Null_Address
-        or else Source = null
-        or else Source.Total <= 0
-        or else Source.Colours = null
-      then
-         Result.Data := null;
-         return;
-      end if;
-
-      declare
-         Source_Colours : constant Colour_Arrays :=
-           Colour_Array_Pointer.Value
-             (Source.Colours, C.ptrdiff_t (Source.Total));
-      begin
-         Result.Data := SDL_Create_Palette (Source.Total);
-
-         if Result.Data = null then
-            raise SDL.Video.Video_Error with SDL.Error.Get;
-         end if;
-
-         begin
-            Set_Colours (Result, Source_Colours);
-         exception
-            when others =>
-               Free (Result);
-               raise;
-         end;
-      end;
-   end Copy_Palette_From_Pointer;
 
    function Element (Position : in Cursor) return Colour is
    begin
@@ -146,7 +95,7 @@ package body SDL.Video.Palettes is
          if Container.Data = null then
             Result.Data := null;
          else
-            Copy_Palette_From_Pointer (Container.Data.all'Address, Result);
+            Palette_Internal.Copy_From_Pointer (Container.Data.all'Address, Result);
          end if;
       end return;
    end Duplicate;

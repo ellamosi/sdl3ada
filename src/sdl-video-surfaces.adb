@@ -4,10 +4,14 @@ with System.Storage_Elements;
 with Interfaces.C.Extensions;
 
 with SDL.Error;
+with SDL.Video.Palettes.Internal;
+with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Surfaces is
    package CE renames Interfaces.C.Extensions;
+   package Palette_Internal renames SDL.Video.Palettes.Internal;
    package Raw_Properties renames SDL.Raw.Properties;
+   package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
    Default_Scale_Mode : constant Scale_Modes := Linear;
 
@@ -586,27 +590,8 @@ package body SDL.Video.Surfaces is
      (Source => Surface_Pointers.Pointer,
       Target => System.Address);
 
-   procedure Copy_Palette_From_Pointer
-     (Internal : in System.Address;
-      Result   : out SDL.Video.Palettes.Palette)
-   with
-     Import        => True,
-     Convention    => Ada,
-     External_Name => "sdl_video_palettes__copy_palette_from_pointer";
-
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
-
-   function Make_Surface_From_Pointer
-     (S    : in Internal_Surface_Pointer;
-      Owns : in Boolean := False) return Surface
-   is
-   begin
-      return Result : Surface do
-         Result.Internal := S;
-         Result.Owns := Owns;
-      end return;
-   end Make_Surface_From_Pointer;
 
    procedure Ensure_Valid (Self : in Surface) is
    begin
@@ -742,7 +727,7 @@ package body SDL.Video.Surfaces is
       Internal : constant System.Address := Surface_Palette (Self);
    begin
       return Result : SDL.Video.Palettes.Palette do
-         Copy_Palette_From_Pointer (Internal, Result);
+         Palette_Internal.Copy_From_Pointer (Internal, Result);
       end return;
    end Get_Palette;
 
@@ -823,7 +808,7 @@ package body SDL.Video.Surfaces is
          return Result : Surface_Lists (0 .. Natural (Count) - 1) do
             for Index in Result'Range loop
                Result (Index) :=
-                 Make_Surface_From_Pointer
+                 Surface_Internal.Make_From_Pointer
                    (Source (Source'First + C.ptrdiff_t (Index - Result'First)),
                     Owns => False);
             end loop;
@@ -854,7 +839,8 @@ package body SDL.Video.Surfaces is
          raise Surface_Error with SDL.Error.Get;
       end if;
 
-      return Make_Surface_From_Pointer (Duplicate_Surface, Owns => True);
+      return Surface_Internal.Make_From_Pointer
+        (Duplicate_Surface, Owns => True);
    end Duplicate;
 
    function Rotate
@@ -871,7 +857,7 @@ package body SDL.Video.Surfaces is
          raise Surface_Error with SDL.Error.Get;
       end if;
 
-      return Make_Surface_From_Pointer (Rotated, Owns => True);
+      return Surface_Internal.Make_From_Pointer (Rotated, Owns => True);
    end Rotate;
 
    function Scale
@@ -894,7 +880,7 @@ package body SDL.Video.Surfaces is
          raise Surface_Error with SDL.Error.Get;
       end if;
 
-      return Make_Surface_From_Pointer (Scaled, Owns => True);
+      return Surface_Internal.Make_From_Pointer (Scaled, Owns => True);
    end Scale;
 
    function Convert
@@ -926,7 +912,7 @@ package body SDL.Video.Surfaces is
          raise Surface_Error with SDL.Error.Get;
       end if;
 
-      return Make_Surface_From_Pointer (Converted, Owns => True);
+      return Surface_Internal.Make_From_Pointer (Converted, Owns => True);
    end Convert;
 
    procedure Convert_Pixels

@@ -7,10 +7,12 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
+with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Windows is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
    subtype Display_ID is Interfaces.Unsigned_32;
 
@@ -865,12 +867,6 @@ package body SDL.Video.Windows is
    function Get_Surface
      (Self : in Window) return SDL.Video.Surfaces.Surface
    is
-      function Make_Surface_From_Pointer
-        (S    : in SDL.Video.Surfaces.Internal_Surface_Pointer;
-         Owns : in Boolean := False) return SDL.Video.Surfaces.Surface
-      with
-        Import     => True,
-        Convention => Ada;
    begin
       Require_Window (Self);
 
@@ -882,7 +878,7 @@ package body SDL.Video.Windows is
             Raise_Window_Error;
          end if;
 
-         return Make_Surface_From_Pointer (Surface, Owns => False);
+         return Surface_Internal.Make_From_Pointer (Surface, Owns => False);
       end;
    end Get_Surface;
 
@@ -1403,17 +1399,12 @@ package body SDL.Video.Windows is
      (Self : in out Window;
       Icon : in SDL.Video.Surfaces.Surface)
    is
-      function Get_Internal_Surface
-        (Value : in SDL.Video.Surfaces.Surface)
-         return SDL.Video.Surfaces.Internal_Surface_Pointer
-      with
-        Import     => True,
-        Convention => Ada;
    begin
       Require_Window (Self);
 
       if not Boolean
-          (SDL_Set_Window_Icon (Self.Internal, Get_Internal_Surface (Icon)))
+          (SDL_Set_Window_Icon
+             (Self.Internal, Surface_Internal.Get_Internal (Icon)))
       then
          Raise_Window_Error;
       end if;
@@ -1792,18 +1783,12 @@ package body SDL.Video.Windows is
      (Self  : in out Window;
       Shape : in SDL.Video.Surfaces.Surface)
    is
-      function Get_Internal_Surface
-        (Value : in SDL.Video.Surfaces.Surface)
-         return SDL.Video.Surfaces.Internal_Surface_Pointer
-      with
-        Import     => True,
-        Convention => Ada;
    begin
       Require_Window (Self);
 
       if not Boolean
           (SDL_Set_Window_Shape
-             (Self.Internal, Get_Internal_Surface (Shape)))
+             (Self.Internal, Surface_Internal.Get_Internal (Shape)))
       then
          Raise_Window_Error;
       end if;

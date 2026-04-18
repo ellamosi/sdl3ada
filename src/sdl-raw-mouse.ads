@@ -5,6 +5,8 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.C_Pointers;
+
 package SDL.Raw.Mouse is
    pragma Preelaborate;
 
@@ -43,6 +45,64 @@ package SDL.Raw.Mouse is
       X          : in Motion_Value_Access;
       Y          : in Motion_Value_Access)
    with Convention => C;
+
+   subtype Duration_Milliseconds is Interfaces.Unsigned_32;
+
+   type Cursor_Frame is record
+      Surface  : System.Address;
+      Duration : Duration_Milliseconds;
+   end record with
+     Convention => C;
+
+   type Cursor_Frame_Array is array (Positive range <>) of aliased Cursor_Frame with
+     Convention => C;
+
+   type System_Cursor is
+     (Default,
+      Text,
+      Wait,
+      Crosshair,
+      Progress,
+      NWSE_Resize,
+      NESW_Resize,
+      EW_Resize,
+      NS_Resize,
+      Move,
+      Not_Allowed,
+      Pointer,
+      NW_Resize,
+      N_Resize,
+      NE_Resize,
+      E_Resize,
+      SE_Resize,
+      S_Resize,
+      SW_Resize,
+      W_Resize)
+   with
+     Convention => C,
+     Size       => C.int'Size;
+
+   for System_Cursor use
+     (Default     => 0,
+      Text        => 1,
+      Wait        => 2,
+      Crosshair   => 3,
+      Progress    => 4,
+      NWSE_Resize => 5,
+      NESW_Resize => 6,
+      EW_Resize   => 7,
+      NS_Resize   => 8,
+      Move        => 9,
+      Not_Allowed => 10,
+      Pointer     => 11,
+      NW_Resize   => 12,
+      N_Resize    => 13,
+      NE_Resize   => 14,
+      E_Resize    => 15,
+      SE_Resize   => 16,
+      S_Resize    => 17,
+      SW_Resize   => 18,
+      W_Resize    => 19);
 
    procedure Free (Memory : in System.Address)
    with
@@ -163,4 +223,68 @@ package SDL.Raw.Mouse is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_WarpMouseInWindow";
+
+   function Create_Cursor
+     (Bits   : access constant Interfaces.Unsigned_8;
+      Mask   : access constant Interfaces.Unsigned_8;
+      Width  : in C.int;
+      Height : in C.int;
+      Hot_X  : in C.int;
+      Hot_Y  : in C.int) return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_CreateCursor";
+
+   function Create_Color_Cursor
+     (Surface : in System.Address;
+      Hot_X   : in C.int;
+      Hot_Y   : in C.int) return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_CreateColorCursor";
+
+   function Create_Animated_Cursor
+     (Value       : access Cursor_Frame;
+      Frame_Count : in C.int;
+      Hot_X       : in C.int;
+      Hot_Y       : in C.int) return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_CreateAnimatedCursor";
+
+   function Create_System_Cursor
+     (Cursor_Name : in System_Cursor) return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_CreateSystemCursor";
+
+   function Get_Cursor return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetCursor";
+
+   function Get_Default_Cursor return SDL.C_Pointers.Cursor_Pointer
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_GetDefaultCursor";
+
+   function Set_Cursor
+     (Value : in SDL.C_Pointers.Cursor_Pointer) return CE.bool
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_SetCursor";
+
+   procedure Destroy_Cursor
+     (Value : in SDL.C_Pointers.Cursor_Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_DestroyCursor";
 end SDL.Raw.Mouse;

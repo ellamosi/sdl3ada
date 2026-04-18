@@ -1,6 +1,9 @@
 with SDL.Error;
+with SDL.Raw.Metal;
 
 package body SDL.Video.Metal is
+   package Raw renames SDL.Raw.Metal;
+
    use type System.Address;
 
    procedure Raise_Metal_Error
@@ -40,18 +43,11 @@ package body SDL.Video.Metal is
      (Self   : in out View;
       Window : in SDL.Video.Windows.Window)
    is
-      function SDL_Metal_Create_View
-        (Value : in System.Address) return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Metal_CreateView";
-
       Internal : System.Address := System.Null_Address;
    begin
       Destroy (Self);
 
-      Internal := SDL_Metal_Create_View (SDL.Video.Windows.Get_Internal (Window));
+      Internal := Raw.Create_View (SDL.Video.Windows.Get_Internal (Window));
       if Internal = System.Null_Address then
          Raise_Metal_Error ("SDL_Metal_CreateView failed");
       end if;
@@ -67,15 +63,9 @@ package body SDL.Video.Metal is
    end Finalize;
 
    procedure Destroy (Self : in out View) is
-      procedure SDL_Metal_Destroy_View
-        (Value : in System.Address)
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Metal_DestroyView";
    begin
       if Self.Owns and then Self.Internal /= System.Null_Address then
-         SDL_Metal_Destroy_View (Self.Internal);
+         Raw.Destroy_View (Self.Internal);
       end if;
 
       Self.Internal := System.Null_Address;
@@ -86,18 +76,11 @@ package body SDL.Video.Metal is
      (Self.Internal = System.Null_Address);
 
    function Get_Layer (Self : in View) return System.Address is
-      function SDL_Metal_Get_Layer
-        (Value : in System.Address) return System.Address
-      with
-        Import        => True,
-        Convention    => C,
-        External_Name => "SDL_Metal_GetLayer";
-
       Result : System.Address;
    begin
       Require_View (Self);
 
-      Result := SDL_Metal_Get_Layer (Self.Internal);
+      Result := Raw.Get_Layer (Self.Internal);
       if Result = System.Null_Address then
          Raise_Metal_Error ("SDL_Metal_GetLayer failed");
       end if;

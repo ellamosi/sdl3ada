@@ -30,7 +30,7 @@ Status values:
 | W1 Core raw support | Core utility raw families and value-package support types | `in progress` | `SDL.Raw.CPUInfo`, `SDL.Raw.Error`, `SDL.Raw.Hints`, `SDL.Raw.Init`, `SDL.Raw.LoadSO`, `SDL.Raw.Log`, `SDL.Raw.Platform`, `SDL.Raw.Power`, `SDL.Raw.Timer`, and `SDL.Raw.Version` now exist. Public cleanup is complete for `SDL`, `SDL.AsyncIO`, `SDL.CPUS`, `SDL.Clipboard`, `SDL.Error`, `SDL.Filesystems`, `SDL.Hints`, `SDL.Libraries`, `SDL.Locale`, `SDL.Log`, `SDL.Platform`, `SDL.Power`, `SDL.Processes`, `SDL.Storage`, `SDL.Timers`, and `SDL.Versions`; remaining W1 work is now normalization and review rather than a `Pure`-layer blocker. |
 | W2 Value package migration | Public value-heavy packages stop importing directly | `in progress` | Started with `SDL.Pens`; event payload and other pure helper/value units still need raw-backed cleanup. |
 | W3 Wrapper raw backfills | Missing raw families for audio, input, desktop, and device wrappers | `complete` | `SDL.Raw.Audio`, `SDL.Raw.Camera`, `SDL.Raw.Dialog`, `SDL.Raw.Gamepad`, `SDL.Raw.Haptic`, `SDL.Raw.HIDAPI`, `SDL.Raw.Joystick`, `SDL.Raw.Keyboard`, `SDL.Raw.MessageBox`, `SDL.Raw.Mouse`, `SDL.Raw.Pen`, `SDL.Raw.Sensor`, and `SDL.Raw.Tray` now exist. Pure support splits `SDL.Raw.Gamepad_Events` and `SDL.Raw.Joystick_Events` avoid the old pure-layer blocker, and the planned audio, device, desktop, and input wrappers plus joystick/gamepad maker helpers now route through raw. Remaining conversion work has shifted to event/value cleanup and the broader video/render/GPU normalization streams. |
-| W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Render` and `SDL.Raw.Video` now exist as starter families for texture/renderer creation plus window creation and property queries. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
+| W4 Video/render/GPU | Video/render raw families, GPU normalization, public-type leak removal | `in progress` | `SDL.Raw.Metal`, `SDL.Raw.Render`, and `SDL.Raw.Video` now exist as starter families for Metal view lifecycle, texture/renderer creation, and window creation/property queries. Window, texture, and renderer maker cleanup has started, but the broader video/render/GPU wrappers still need major raw backfills. |
 | W5 Closure and enforcement | Lint/checking, compatibility freeze, final doc cleanup | `in progress` | The non-raw import baseline check now exists under `tools/`, the generated-raw ownership plus compatibility-freeze policy are documented, and the `SDL.RWops` compatibility wrappers now route through raw support without direct imports; final compatibility freeze follow-through and closure remain open. |
 
 ## Existing Raw Families
@@ -65,6 +65,7 @@ state.
 | `SDL.Raw.Locale` | present | `complete` | Existing raw family now also owns locale-list cleanup via `SDL_free`, and `SDL.Locale` no longer imports SDL symbols directly. |
 | `SDL.Raw.Log` | present | `complete` | Added and now owns all SDL log entry points, including callback and variadic logging APIs, used by `SDL.Log`. |
 | `SDL.Raw.Main` | present | `partial` | Now owns the app-entry callback ABI types split out of `SDL.Raw.Init`; public main-entry packages still own higher-level callback policy, and event-layout coupling remains until `SDL.Raw.Events` exists. |
+| `SDL.Raw.Metal` | present | `complete` | Added as a narrow support family and now owns the Metal view create/destroy/get-layer entry points used by `SDL.Video.Metal`. |
 | `SDL.Raw.MessageBox` | present | `complete` | Added and now owns the message-box entry points used by `SDL.Message_Boxes`, while the public wrapper keeps struct assembly and string policy. |
 | `SDL.Raw.Misc` | present | `partial` | Normalize once `SDL.Misc` imports move down. |
 | `SDL.Raw.Mutex` | present | `partial` | Existing raw family; public mutex wrappers still need final classification cleanup. |
@@ -94,7 +95,6 @@ checked-in raw packages.
 | Raw family | Primary public dependents | Status | Notes |
 | --- | --- | --- | --- |
 | `SDL.Raw.Events` | `SDL.Events.*` | `not started` | Needed for event union and shared payload layout. |
-| `SDL.Raw.Metal` | `SDL.Video.Metal` | `not started` | Can be narrow if Metal exposure remains small. |
 | `SDL.Raw.Pixels` | `SDL.Video.Pixels`, `SDL.Video.Pixel_Formats`, `SDL.GPU` | `not started` | Shared value support family. |
 | `SDL.Raw.Rect` | `SDL.Video.Rectangles`, `SDL.GPU`, render/video families | `not started` | Shared value support family. |
 | `SDL.Raw.Surface` | `SDL.Video.Surfaces`, palettes, cursor helpers | `not started` | Large video foundation family. |
@@ -166,7 +166,7 @@ This queue records public packages that currently contain `Import => True` or
 | `SDL.Video` | public wrapper | `not started` | Needs `SDL.Raw.Video`. |
 | `SDL.Video.Displays` | public wrapper | `not started` | Needs `SDL.Raw.Video`. |
 | `SDL.Video.GL` | public wrapper | `not started` | Should route through `SDL.Raw.Video` plus support raw families. |
-| `SDL.Video.Metal` | public thick wrapper | `not started` | Needs `SDL.Raw.Metal`. |
+| `SDL.Video.Metal` | public thick wrapper | `complete` | Public wrapper now routes Metal view create/destroy/get-layer calls through `SDL.Raw.Metal`, while view ownership and error policy stay handwritten. |
 | `SDL.Video.Palettes` | public wrapper | `not started` | Needs raw surface or pixels support. |
 | `SDL.Video.Pixel_Formats` | public value layer | `not started` | Needs `SDL.Raw.Pixels`. |
 | `SDL.Video.Rectangles` | public value layer | `not started` | Needs `SDL.Raw.Rect`. |

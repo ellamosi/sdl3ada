@@ -22,6 +22,7 @@ Current raw packages include:
 - `SDL.Raw.Error`
 - `SDL.Raw.Filesystem`
 - `SDL.Raw.Gamepad`
+- `SDL.Raw.Haptic`
 - `SDL.Raw.HIDAPI`
 - `SDL.Raw.Hints`
 - `SDL.Raw.Init`

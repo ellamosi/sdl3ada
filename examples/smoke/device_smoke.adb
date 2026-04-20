@@ -9,7 +9,7 @@ with SDL;
 with SDL.Cameras;
 with SDL.Error;
 with SDL.Events.Cameras;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Pens;
 with SDL.Events.Sensors;
 with SDL.HIDAPI;
@@ -54,24 +54,24 @@ procedure Device_Smoke is
    end Require;
 
    function SDL_Push_Event
-     (Event : access SDL.Events.Events.Events) return CE.bool
+     (Event : access SDL.Events.Queue.Event) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_PushEvent";
 
-   procedure Push (Event : aliased in out SDL.Events.Events.Events) is
+   procedure Push (Event : aliased in out SDL.Events.Queue.Event) is
    begin
       if not Boolean (SDL_Push_Event (Event'Access)) then
          raise Program_Error with "SDL_PushEvent failed: " & SDL.Error.Get;
       end if;
    end Push;
 
-   Event : SDL.Events.Events.Events;
+   Event : SDL.Events.Queue.Event;
 
    procedure Drain_Events is
    begin
-      while SDL.Events.Events.Poll (Event) loop
+      while SDL.Events.Queue.Poll (Event) loop
          null;
       end loop;
    end Drain_Events;
@@ -84,7 +84,7 @@ procedure Device_Smoke is
       Seen : Boolean := False;
    begin
       for Attempt in 1 .. Limit loop
-         exit when not SDL.Events.Events.Poll (Event);
+         exit when not SDL.Events.Queue.Poll (Event);
 
          if Event.Common.Event_Type = Expected then
             Seen := True;
@@ -95,8 +95,8 @@ procedure Device_Smoke is
       Require (Seen, "Expected " & Label & " event");
    end Require_Event;
 
-   Sensor_Event : aliased SDL.Events.Events.Events :=
-     (Kind   => SDL.Events.Events.Is_Sensor_Event,
+   Sensor_Event : aliased SDL.Events.Queue.Event :=
+     (Kind   => SDL.Events.Queue.Is_Sensor_Event,
       Sensor =>
         (Event_Type        => SDL.Events.Sensors.Update,
          Reserved          => 0,
@@ -110,16 +110,16 @@ procedure Device_Smoke is
                                5 => 6.0),
          Sensor_Time_Stamp => 123));
 
-   Camera_Event : aliased SDL.Events.Events.Events :=
-     (Kind          => SDL.Events.Events.Is_Camera_Device_Event,
+   Camera_Event : aliased SDL.Events.Queue.Event :=
+     (Kind          => SDL.Events.Queue.Is_Camera_Device_Event,
       Camera_Device =>
         (Event_Type => SDL.Events.Cameras.Device_Approved,
          Reserved   => 0,
          Time_Stamp => 0,
          Which      => 7));
 
-   Pen_Axis_Event : aliased SDL.Events.Events.Events :=
-     (Kind     => SDL.Events.Events.Is_Pen_Axis_Event,
+   Pen_Axis_Event : aliased SDL.Events.Queue.Event :=
+     (Kind     => SDL.Events.Queue.Is_Pen_Axis_Event,
       Pen_Axis =>
         (Event_Type => SDL.Events.Pens.Axis,
          Reserved   => 0,
@@ -344,17 +344,17 @@ procedure Device_Smoke is
          Button     => 2,
          Down       => CE.bool'Val (1));
    begin
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Proximity_In, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Proximity_Out, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Touch_Down, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Touch_Up, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Button_Down, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Button_Up, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Motion, True);
-      SDL.Events.Events.Set_Enabled (SDL.Events.Pens.Axis, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Proximity_In, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Proximity_Out, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Touch_Down, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Touch_Up, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Button_Down, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Button_Up, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Motion, True);
+      SDL.Events.Queue.Set_Enabled (SDL.Events.Pens.Axis, True);
 
       Require
-        (SDL.Events.Events.Is_Enabled (SDL.Events.Pens.Axis),
+        (SDL.Events.Queue.Is_Enabled (SDL.Events.Pens.Axis),
          "Pen axis events should be enabled");
       Require
         (Proximity.Which = 1,
@@ -522,13 +522,13 @@ begin
 
    Drain_Events;
 
-   SDL.Events.Events.Set_Enabled (SDL.Events.Sensors.Update, True);
-   SDL.Events.Events.Set_Enabled (SDL.Events.Cameras.Device_Added, True);
-   SDL.Events.Events.Set_Enabled (SDL.Events.Cameras.Device_Removed, True);
-   SDL.Events.Events.Set_Enabled (SDL.Events.Cameras.Device_Approved, True);
-   SDL.Events.Events.Set_Enabled (SDL.Events.Cameras.Device_Denied, True);
+   SDL.Events.Queue.Set_Enabled (SDL.Events.Sensors.Update, True);
+   SDL.Events.Queue.Set_Enabled (SDL.Events.Cameras.Device_Added, True);
+   SDL.Events.Queue.Set_Enabled (SDL.Events.Cameras.Device_Removed, True);
+   SDL.Events.Queue.Set_Enabled (SDL.Events.Cameras.Device_Approved, True);
+   SDL.Events.Queue.Set_Enabled (SDL.Events.Cameras.Device_Denied, True);
    Require
-     (SDL.Events.Events.Is_Enabled (SDL.Events.Cameras.Device_Approved),
+     (SDL.Events.Queue.Is_Enabled (SDL.Events.Cameras.Device_Approved),
       "Camera device approved events should be enabled");
    Require
      (Camera_Event.Camera_Device.Event_Type = SDL.Events.Cameras.Device_Approved

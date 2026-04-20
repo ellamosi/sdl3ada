@@ -13,7 +13,7 @@ with SDL;
 with SDL.Clipboard;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Mice;
 with SDL.Main;
 with SDL.Time;
@@ -117,7 +117,7 @@ package body Clipboard_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    with Convention => C;
 
    procedure App_Quit
@@ -427,7 +427,7 @@ package body Clipboard_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    is
       App : constant State_Access := To_State (App_State);
    begin
@@ -437,45 +437,52 @@ package body Clipboard_App is
 
       if Event.Common.Event_Type = SDL.Events.Quit then
          return SDL.Main.App_Success;
-      elsif Event.Common.Event_Type = SDL.Events.Mice.Button_Down then
-         if Event.Mouse_Button.Button = SDL.Events.Mice.Left then
-            declare
-               Point : constant SDL.Video.Rectangles.Float_Point :=
-                 Event_Point (App.all, Event.Mouse_Button);
-            begin
-               App.Copy_Pressed :=
-                 SDL.Video.Rectangles.Inside (Point, Copy_Button_Rectangle);
-               App.Paste_Pressed :=
-                 SDL.Video.Rectangles.Inside (Point, Paste_Button_Rectangle);
-            end;
-         end if;
-      elsif Event.Common.Event_Type = SDL.Events.Mice.Button_Up then
-         if Event.Mouse_Button.Button = SDL.Events.Mice.Left then
-            declare
-               Point : constant SDL.Video.Rectangles.Float_Point :=
-                 Event_Point (App.all, Event.Mouse_Button);
-            begin
-               if App.Copy_Pressed
-                 and then SDL.Video.Rectangles.Inside
-                   (Point, Copy_Button_Rectangle)
-               then
-                  SDL.Clipboard.Set (US.To_String (App.Current_Time));
-               elsif App.Paste_Pressed
-                 and then SDL.Video.Rectangles.Inside
-                   (Point, Paste_Button_Rectangle)
-               then
-                  if SDL.Clipboard.Has_Text then
-                     App.Pasted_Text :=
-                       US.To_Unbounded_String (SDL.Clipboard.Get);
-                  else
-                     App.Pasted_Text := US.Null_Unbounded_String;
+      elsif SDL.Events.Queue.Is_Mouse_Button (Event.all) then
+         declare
+            Button_Event : constant SDL.Events.Mice.Button_Events :=
+              SDL.Events.Queue.As_Mouse_Button (Event.all);
+         begin
+            if Button_Event.Event_Type = SDL.Events.Mice.Button_Down
+              and then Button_Event.Button = SDL.Events.Mice.Left
+            then
+               declare
+                  Point : constant SDL.Video.Rectangles.Float_Point :=
+                    Event_Point (App.all, Button_Event);
+               begin
+                  App.Copy_Pressed :=
+                    SDL.Video.Rectangles.Inside (Point, Copy_Button_Rectangle);
+                  App.Paste_Pressed :=
+                    SDL.Video.Rectangles.Inside (Point, Paste_Button_Rectangle);
+               end;
+            elsif Button_Event.Event_Type = SDL.Events.Mice.Button_Up
+              and then Button_Event.Button = SDL.Events.Mice.Left
+            then
+               declare
+                  Point : constant SDL.Video.Rectangles.Float_Point :=
+                    Event_Point (App.all, Button_Event);
+               begin
+                  if App.Copy_Pressed
+                    and then SDL.Video.Rectangles.Inside
+                      (Point, Copy_Button_Rectangle)
+                  then
+                     SDL.Clipboard.Set (US.To_String (App.Current_Time));
+                  elsif App.Paste_Pressed
+                    and then SDL.Video.Rectangles.Inside
+                      (Point, Paste_Button_Rectangle)
+                  then
+                     if SDL.Clipboard.Has_Text then
+                        App.Pasted_Text :=
+                          US.To_Unbounded_String (SDL.Clipboard.Get);
+                     else
+                        App.Pasted_Text := US.Null_Unbounded_String;
+                     end if;
                   end if;
-               end if;
 
-               App.Copy_Pressed := False;
-               App.Paste_Pressed := False;
-            end;
-         end if;
+                  App.Copy_Pressed := False;
+                  App.Paste_Pressed := False;
+               end;
+            end if;
+         end;
       end if;
 
       return SDL.Main.App_Continue;

@@ -8,7 +8,7 @@ with Interfaces;
 with SDL;
 with SDL.Clipboard;
 with SDL.Error;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Properties;
 with SDL.Timers;
 with SDL.Video.Displays;
@@ -465,11 +465,11 @@ begin
    end;
 
    declare
-      Event      : SDL.Events.Events.Events;
+      Event      : SDL.Events.Queue.Event;
       Start_Time : constant SDL.Timers.Milliseconds := SDL.Timers.Ticks;
    begin
       while SDL.Timers.Ticks - Start_Time < SDL.Timers.Milliseconds (250) loop
-         while SDL.Events.Events.Poll (Event) loop
+         while SDL.Events.Queue.Poll (Event) loop
             null;
          end loop;
 

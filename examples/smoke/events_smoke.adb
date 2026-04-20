@@ -11,7 +11,7 @@ with System;
 with SDL;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Files;
 with SDL.Events.Keyboards;
 with SDL.Events.Mice;
@@ -32,7 +32,7 @@ procedure Events_Smoke is
    use type SDL.Events.Button_State;
    use type SDL.Events.Event_Codes;
    use type SDL.Events.Event_Types;
-   use type SDL.Events.Events.Event_Filter;
+   use type SDL.Events.Queue.Event_Filter;
    use type SDL.Events.Keyboards.Scan_Codes;
    use type SDL.Events.Mice.Button_Clicks;
    use type SDL.Events.Mice.Button_Masks;
@@ -85,17 +85,17 @@ procedure Events_Smoke is
 
    function Reject_Filter
      (User_Data : in System.Address;
-      Event     : access SDL.Events.Events.Events) return CE.bool
+      Event     : access SDL.Events.Queue.Event) return CE.bool
    with Convention => C;
 
    function Watch_Filter
      (User_Data : in System.Address;
-      Event     : access SDL.Events.Events.Events) return CE.bool
+      Event     : access SDL.Events.Queue.Event) return CE.bool
    with Convention => C;
 
    function Reject_Filter
      (User_Data : in System.Address;
-      Event     : access SDL.Events.Events.Events) return CE.bool
+      Event     : access SDL.Events.Queue.Event) return CE.bool
    is
       State : constant Filter_State_Access := To_Filter_State (User_Data);
    begin
@@ -114,7 +114,7 @@ procedure Events_Smoke is
 
    function Watch_Filter
      (User_Data : in System.Address;
-      Event     : access SDL.Events.Events.Events) return CE.bool
+      Event     : access SDL.Events.Queue.Event) return CE.bool
    is
       State : constant Watch_State_Access := To_Watch_State (User_Data);
    begin
@@ -140,27 +140,27 @@ procedure Events_Smoke is
    function Make_User_Event
      (Event_Type : in SDL.Events.Event_Types;
       Code       : in SDL.Events.Event_Codes)
-      return SDL.Events.Events.Events;
+      return SDL.Events.Queue.Event;
 
-   function Make_Window_Event return SDL.Events.Events.Events;
-   function Make_Key_Down_Event return SDL.Events.Events.Events;
-   function Make_Text_Editing_Event return SDL.Events.Events.Events;
-   function Make_Text_Input_Event return SDL.Events.Events.Events;
-   function Make_Mouse_Motion_Event return SDL.Events.Events.Events;
-   function Make_Mouse_Button_Event return SDL.Events.Events.Events;
-   function Make_Mouse_Wheel_Event return SDL.Events.Events.Events;
-   function Make_Touch_Event return SDL.Events.Events.Events;
-   function Make_Drop_Event return SDL.Events.Events.Events;
-   function Make_Quit_Event return SDL.Events.Events.Events;
+   function Make_Window_Event return SDL.Events.Queue.Event;
+   function Make_Key_Down_Event return SDL.Events.Queue.Event;
+   function Make_Text_Editing_Event return SDL.Events.Queue.Event;
+   function Make_Text_Input_Event return SDL.Events.Queue.Event;
+   function Make_Mouse_Motion_Event return SDL.Events.Queue.Event;
+   function Make_Mouse_Button_Event return SDL.Events.Queue.Event;
+   function Make_Mouse_Wheel_Event return SDL.Events.Queue.Event;
+   function Make_Touch_Event return SDL.Events.Queue.Event;
+   function Make_Drop_Event return SDL.Events.Queue.Event;
+   function Make_Quit_Event return SDL.Events.Queue.Event;
 
    function Make_User_Event
      (Event_Type : in SDL.Events.Event_Types;
       Code       : in SDL.Events.Event_Codes)
-      return SDL.Events.Events.Events
+      return SDL.Events.Queue.Event
    is
    begin
       return
-        (Kind => SDL.Events.Events.Is_User_Event,
+        (Kind => SDL.Events.Queue.Is_User_Event,
          User =>
            (Event_Type => Event_Type,
             Reserved   => 0,
@@ -171,10 +171,10 @@ procedure Events_Smoke is
             Data_2     => System.Null_Address));
    end Make_User_Event;
 
-   function Make_Window_Event return SDL.Events.Events.Events is
+   function Make_Window_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind   => SDL.Events.Events.Is_Window_Event,
+        (Kind   => SDL.Events.Queue.Is_Window_Event,
          Window =>
            (Event_Type => SDL.Events.Windows.To_Event_Type (SDL.Events.Windows.Moved),
             Reserved   => 0,
@@ -184,10 +184,10 @@ procedure Events_Smoke is
             Data_2     => 480));
    end Make_Window_Event;
 
-   function Make_Key_Down_Event return SDL.Events.Events.Events is
+   function Make_Key_Down_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind     => SDL.Events.Events.Is_Keyboard_Event,
+        (Kind     => SDL.Events.Queue.Is_Keyboard_Event,
          Keyboard =>
            (Event_Type => SDL.Events.Keyboards.Key_Down,
             Reserved   => 0,
@@ -203,10 +203,10 @@ procedure Events_Smoke is
             Repeat     => To_C_Bool (False)));
    end Make_Key_Down_Event;
 
-   function Make_Text_Editing_Event return SDL.Events.Events.Events is
+   function Make_Text_Editing_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind         => SDL.Events.Events.Is_Text_Editing_Event,
+        (Kind         => SDL.Events.Queue.Is_Text_Editing_Event,
          Text_Editing =>
            (Event_Type => SDL.Events.Keyboards.Text_Editing,
             Reserved   => 0,
@@ -217,10 +217,10 @@ procedure Events_Smoke is
             Length     => 3));
    end Make_Text_Editing_Event;
 
-   function Make_Text_Input_Event return SDL.Events.Events.Events is
+   function Make_Text_Input_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind       => SDL.Events.Events.Is_Text_Input_Event,
+        (Kind       => SDL.Events.Queue.Is_Text_Input_Event,
          Text_Input =>
            (Event_Type => SDL.Events.Keyboards.Text_Input,
             Reserved   => 0,
@@ -229,10 +229,10 @@ procedure Events_Smoke is
             Text       => Input_Text));
    end Make_Text_Input_Event;
 
-   function Make_Mouse_Motion_Event return SDL.Events.Events.Events is
+   function Make_Mouse_Motion_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind         => SDL.Events.Events.Is_Mouse_Motion_Event,
+        (Kind         => SDL.Events.Queue.Is_Mouse_Motion_Event,
          Mouse_Motion =>
            (Event_Type => SDL.Events.Mice.Motion,
             Reserved   => 0,
@@ -246,10 +246,10 @@ procedure Events_Smoke is
             Y_Relative => -3.5));
    end Make_Mouse_Motion_Event;
 
-   function Make_Mouse_Button_Event return SDL.Events.Events.Events is
+   function Make_Mouse_Button_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind         => SDL.Events.Events.Is_Mouse_Button_Event,
+        (Kind         => SDL.Events.Queue.Is_Mouse_Button_Event,
          Mouse_Button =>
            (Event_Type => SDL.Events.Mice.Button_Down,
             Reserved   => 0,
@@ -264,10 +264,10 @@ procedure Events_Smoke is
             Y          => 240.25));
    end Make_Mouse_Button_Event;
 
-   function Make_Mouse_Wheel_Event return SDL.Events.Events.Events is
+   function Make_Mouse_Wheel_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind        => SDL.Events.Events.Is_Mouse_Wheel_Event,
+        (Kind        => SDL.Events.Queue.Is_Mouse_Wheel_Event,
          Mouse_Wheel =>
            (Event_Type => SDL.Events.Mice.Wheel,
             Reserved   => 0,
@@ -283,10 +283,10 @@ procedure Events_Smoke is
             Integer_Y  => -2));
    end Make_Mouse_Wheel_Event;
 
-   function Make_Touch_Event return SDL.Events.Events.Events is
+   function Make_Touch_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind         => SDL.Events.Events.Is_Touch_Finger_Event,
+        (Kind         => SDL.Events.Queue.Is_Touch_Finger_Event,
          Touch_Finger =>
            (Event_Type => SDL.Events.Touches.Finger_Motion,
             Reserved   => 0,
@@ -301,10 +301,10 @@ procedure Events_Smoke is
             Window_ID  => Window.Get_ID));
    end Make_Touch_Event;
 
-   function Make_Drop_Event return SDL.Events.Events.Events is
+   function Make_Drop_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind => SDL.Events.Events.Is_Drop_Event,
+        (Kind => SDL.Events.Queue.Is_Drop_Event,
          Drop =>
            (Event_Type => SDL.Events.Files.Drop_File,
             Reserved   => 0,
@@ -316,10 +316,10 @@ procedure Events_Smoke is
             File_Name  => Dropped_Name));
    end Make_Drop_Event;
 
-   function Make_Quit_Event return SDL.Events.Events.Events is
+   function Make_Quit_Event return SDL.Events.Queue.Event is
    begin
       return
-        (Kind   => SDL.Events.Events.Is_Event,
+        (Kind   => SDL.Events.Queue.Is_Event,
          Common =>
            (Event_Type => SDL.Events.Quit,
             Reserved   => 0,
@@ -327,10 +327,10 @@ procedure Events_Smoke is
    end Make_Quit_Event;
 
    procedure Push
-     (Event   : in SDL.Events.Events.Events;
+     (Event   : in SDL.Events.Queue.Event;
       Message : in String) is
    begin
-      if not SDL.Events.Events.Push (Event) then
+      if not SDL.Events.Queue.Push (Event) then
          declare
             Last_Error : constant String := SDL.Error.Get;
          begin
@@ -343,7 +343,7 @@ procedure Events_Smoke is
       end if;
    end Push;
 
-   Event : SDL.Events.Events.Events;
+   Event : SDL.Events.Queue.Event;
 begin
    if not SDL.Initialise (SDL.Enable_Video or SDL.Enable_Events) then
       Ada.Text_IO.Put_Line ("SDL initialization failed: " & SDL.Error.Get);
@@ -394,8 +394,8 @@ begin
       end if;
    end;
 
-   SDL.Events.Events.Pump;
-   SDL.Events.Events.Flush (SDL.Events.First_Event, SDL.Events.Last_Event);
+   SDL.Events.Queue.Pump;
+   SDL.Events.Queue.Flush (SDL.Events.First_Event, SDL.Events.Last_Event);
 
    Require
      (SDL.Events.Keyboards.Value ("Z") = SDL.Events.Keyboards.Scan_Code_Z,
@@ -413,11 +413,11 @@ begin
       "Keycode-to-scancode conversion for Space failed");
 
    declare
-      Saved_Filter    : SDL.Events.Events.Event_Filter := null;
+      Saved_Filter    : SDL.Events.Queue.Event_Filter := null;
       Saved_User_Data : System.Address := System.Null_Address;
    begin
       Require
-        (not SDL.Events.Events.Get_Filter (Saved_Filter, Saved_User_Data),
+        (not SDL.Events.Queue.Get_Filter (Saved_Filter, Saved_User_Data),
          "Unexpected event filter was already set");
       Require
         (Saved_Filter = null and then Saved_User_Data = System.Null_Address,
@@ -426,45 +426,45 @@ begin
 
    declare
       Custom_First  : constant SDL.Events.Event_Types :=
-        SDL.Events.Events.Register (2);
+        SDL.Events.Queue.Register (2);
       Custom_Second : constant SDL.Events.Event_Types := Custom_First + 1;
       Description   : constant String :=
-        SDL.Events.Events.Get_Description (Make_Window_Event);
+        SDL.Events.Queue.Get_Description (Make_Window_Event);
    begin
       Require (Custom_First /= 0, "Custom event registration failed");
       Require
         (Ada.Strings.Fixed.Index (Description, "SDL_EVENT_WINDOW_MOVED") > 0,
          "Event description did not include the window event name");
       Require
-        (SDL.Events.Events.Get_Window_ID (Make_Window_Event) = Window.Get_ID,
+        (SDL.Events.Queue.Get_Window_ID (Make_Window_Event) = Window.Get_ID,
          "Get_Window_ID did not resolve the synthetic window event");
 
       Require
-        (not SDL.Events.Events.Wait (Event, 1),
+        (not SDL.Events.Queue.Wait (Event, 1),
          "Timed wait unexpectedly observed an event");
 
       Require
-        (SDL.Events.Events.Is_Enabled (Custom_First),
+        (SDL.Events.Queue.Is_Enabled (Custom_First),
          "Custom event type was not enabled by default");
-      SDL.Events.Events.Set_Enabled (Custom_First, False);
+      SDL.Events.Queue.Set_Enabled (Custom_First, False);
       Require
-        (not SDL.Events.Events.Is_Enabled (Custom_First),
+        (not SDL.Events.Queue.Is_Enabled (Custom_First),
          "Custom event type was not disabled");
-      SDL.Events.Events.Set_Enabled (Custom_First, True);
+      SDL.Events.Queue.Set_Enabled (Custom_First, True);
       Require
-        (SDL.Events.Events.Is_Enabled (Custom_First),
+        (SDL.Events.Queue.Is_Enabled (Custom_First),
          "Custom event type was not re-enabled");
 
       Filter_Info.Reject_Type := Custom_First;
-      SDL.Events.Events.Set_Filter
+      SDL.Events.Queue.Set_Filter
         (Reject_Filter'Unrestricted_Access, Filter_Info'Address);
 
       declare
-         Saved_Filter    : SDL.Events.Events.Event_Filter := null;
+         Saved_Filter    : SDL.Events.Queue.Event_Filter := null;
          Saved_User_Data : System.Address := System.Null_Address;
       begin
          Require
-           (SDL.Events.Events.Get_Filter (Saved_Filter, Saved_User_Data),
+           (SDL.Events.Queue.Get_Filter (Saved_Filter, Saved_User_Data),
             "Configured event filter was not reported");
          Require
            (Saved_Filter /= null and then Saved_User_Data = Filter_Info'Address,
@@ -472,28 +472,28 @@ begin
       end;
 
       Require
-        (not SDL.Events.Events.Push (Make_User_Event (Custom_First, 11)),
+        (not SDL.Events.Queue.Push (Make_User_Event (Custom_First, 11)),
          "Filtered custom event should not have been queued");
       Require
         (Filter_Info.Calls > 0,
          "Event filter callback was not invoked");
       Require
-        (not SDL.Events.Events.Has (Custom_First),
+        (not SDL.Events.Queue.Has (Custom_First),
          "Filtered custom event unexpectedly reached the queue");
 
-      SDL.Events.Events.Set_Filter (null);
+      SDL.Events.Queue.Set_Filter (null);
 
       declare
-         Saved_Filter    : SDL.Events.Events.Event_Filter := null;
+         Saved_Filter    : SDL.Events.Queue.Event_Filter := null;
          Saved_User_Data : System.Address := System.Null_Address;
       begin
          Require
-           (not SDL.Events.Events.Get_Filter (Saved_Filter, Saved_User_Data),
+           (not SDL.Events.Queue.Get_Filter (Saved_Filter, Saved_User_Data),
             "Event filter still reported after clear");
       end;
 
       Require
-        (SDL.Events.Events.Add_Watch
+        (SDL.Events.Queue.Add_Watch
            (Watch_Filter'Unrestricted_Access, Watch_Info'Address),
          "Event watch registration failed");
       Push
@@ -502,7 +502,7 @@ begin
       Require
         (Watch_Info.Calls > 0 and then Watch_Info.Last_Type = Custom_First,
          "Event watch did not observe the synthetic custom event");
-      SDL.Events.Events.Remove_Watch
+      SDL.Events.Queue.Remove_Watch
         (Watch_Filter'Unrestricted_Access, Watch_Info'Address);
 
       declare
@@ -516,28 +516,28 @@ begin
             "Removed event watch was still invoked");
       end;
 
-      SDL.Events.Events.Flush (Custom_First);
+      SDL.Events.Queue.Flush (Custom_First);
       Require
-        (not SDL.Events.Events.Has (Custom_First),
+        (not SDL.Events.Queue.Has (Custom_First),
          "Flush did not remove the queued custom event");
 
       declare
-         Queued_Custom_Events : SDL.Events.Events.Event_Arrays (1 .. 2) :=
+         Queued_Custom_Events : SDL.Events.Queue.Event_Arrays (1 .. 2) :=
            (Make_User_Event (Custom_First, 21),
             Make_User_Event (Custom_Second, 22));
-         Peeked_Custom_Events : SDL.Events.Events.Event_Arrays (1 .. 2);
-         Got_Custom_Events    : SDL.Events.Events.Event_Arrays (1 .. 2);
+         Peeked_Custom_Events : SDL.Events.Queue.Event_Arrays (1 .. 2);
+         Got_Custom_Events    : SDL.Events.Queue.Event_Arrays (1 .. 2);
       begin
          Require
-           (SDL.Events.Events.Peep (Queued_Custom_Events, SDL.Events.Events.Add) = 2,
+           (SDL.Events.Queue.Peep (Queued_Custom_Events, SDL.Events.Queue.Add) = 2,
             "Peep add did not enqueue the expected custom events");
          Require
-           (SDL.Events.Events.Count (Custom_First, Custom_Second) = 2,
+           (SDL.Events.Queue.Count (Custom_First, Custom_Second) = 2,
             "Count did not observe the queued custom events");
          Require
-           (SDL.Events.Events.Peep
+           (SDL.Events.Queue.Peep
               (Peeked_Custom_Events,
-               SDL.Events.Events.Peek,
+               SDL.Events.Queue.Peek,
                Custom_First,
                Custom_Second) = 2,
             "Peep peek did not inspect the queued custom events");
@@ -546,12 +546,12 @@ begin
               Peeked_Custom_Events (2).Common.Event_Type = Custom_Second,
             "Peep peek did not preserve custom event order");
          Require
-           (SDL.Events.Events.Count (Custom_First, Custom_Second) = 2,
+           (SDL.Events.Queue.Count (Custom_First, Custom_Second) = 2,
             "Peep peek should not remove queued events");
          Require
-           (SDL.Events.Events.Peep
+           (SDL.Events.Queue.Peep
               (Got_Custom_Events,
-               SDL.Events.Events.Get,
+               SDL.Events.Queue.Get,
                Custom_First,
                Custom_Second) = 2,
             "Peep get did not dequeue the custom events");
@@ -560,7 +560,7 @@ begin
               Got_Custom_Events (2).User.Code = 22,
             "Peep get did not preserve custom event payloads");
          Require
-           (not SDL.Events.Events.Has (Custom_First, Custom_Second),
+           (not SDL.Events.Queue.Has (Custom_First, Custom_Second),
             "Custom events remained queued after peep get");
       end;
 
@@ -572,20 +572,20 @@ begin
          "Second filtered-queue custom event push failed");
       Filter_Info.Calls := 0;
       Filter_Info.Reject_Type := Custom_First;
-      SDL.Events.Events.Filter
+      SDL.Events.Queue.Filter
         (Reject_Filter'Unrestricted_Access, Filter_Info'Address);
       Require
         (Filter_Info.Calls >= 2,
          "Filter callback did not run across the queued custom events");
       Require
-        (not SDL.Events.Events.Has (Custom_First),
+        (not SDL.Events.Queue.Has (Custom_First),
          "Queue filter did not remove the rejected custom event");
       Require
-        (SDL.Events.Events.Has (Custom_Second),
+        (SDL.Events.Queue.Has (Custom_Second),
          "Queue filter unexpectedly removed the accepted custom event");
-      SDL.Events.Events.Flush (Custom_First, Custom_Second);
+      SDL.Events.Queue.Flush (Custom_First, Custom_Second);
       Require
-        (not SDL.Events.Events.Has (Custom_First, Custom_Second),
+        (not SDL.Events.Queue.Has (Custom_First, Custom_Second),
          "Range flush did not clear the remaining custom events");
    end;
 
@@ -600,125 +600,185 @@ begin
    Push (Make_Drop_Event, "Drop event push failed");
    Push (Make_Quit_Event, "Quit event push failed");
 
-   SDL.Events.Events.Wait (Event);
+   SDL.Events.Queue.Wait (Event);
    Require
-     (Event.Common.Event_Type = SDL.Events.Windows.To_Event_Type (SDL.Events.Windows.Moved),
+     (SDL.Events.Queue.Is_Window (Event),
       "Wait did not dequeue the synthetic window event");
-   Require
-     (SDL.Events.Windows.Get_Event_ID (Event.Window) = SDL.Events.Windows.Moved,
-      "Window event type did not map to the expected compatibility ID");
-   Require
-     (Event.Window.ID = Window.Get_ID and then
-        Event.Window.Data_1 = 640 and then Event.Window.Data_2 = 480,
-      "Window event did not preserve the expected payload");
+   declare
+      Window_Event : constant SDL.Events.Windows.Window_Events :=
+        SDL.Events.Queue.As_Window (Event);
+   begin
+      Require
+        (Window_Event.Event_Type =
+           SDL.Events.Windows.To_Event_Type (SDL.Events.Windows.Moved),
+         "Window event type did not preserve the expected SDL event type");
+      Require
+        (SDL.Events.Windows.Get_Event_ID (Window_Event) = SDL.Events.Windows.Moved,
+         "Window event type did not map to the expected compatibility ID");
+      Require
+        (SDL.Events.Queue.Get_Window_ID (Event) = Window.Get_ID and then
+           Window_Event.Data_1 = 640 and then Window_Event.Data_2 = 480,
+         "Window event did not preserve the expected payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic key-down event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Key_Down,
-      "Expected a key-down event");
-   Require
-     (Event.Keyboard.Key_Sym.Scan_Code = SDL.Events.Keyboards.Scan_Code_Z,
-      "Keyboard event did not preserve the scan code");
-   Require
-     (SDL.Events.Keyboards.Get_State (Event.Keyboard) = SDL.Events.Pressed,
-      "Keyboard event did not preserve the key state");
+     (SDL.Events.Queue.Is_Keyboard (Event),
+      "Expected a keyboard event");
+   declare
+      Keyboard_Event : constant SDL.Events.Keyboards.Keyboard_Events :=
+        SDL.Events.Queue.As_Keyboard (Event);
+   begin
+      Require
+        (Keyboard_Event.Event_Type = SDL.Events.Keyboards.Key_Down,
+         "Expected a key-down event");
+      Require
+        (Keyboard_Event.Key_Sym.Scan_Code = SDL.Events.Keyboards.Scan_Code_Z,
+         "Keyboard event did not preserve the scan code");
+      Require
+        (SDL.Events.Keyboards.Get_State (Keyboard_Event) = SDL.Events.Pressed,
+         "Keyboard event did not preserve the key state");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic text-editing event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Text_Editing,
+     (SDL.Events.Queue.Is_Text_Editing (Event),
       "Expected a text-editing event");
-   Require
-     (CS.Value (Event.Text_Editing.Text) = "compose" and then
-        Event.Text_Editing.Start = 2 and then Event.Text_Editing.Length = 3,
-      "Text-editing event did not preserve the composition payload");
+   declare
+      Text_Editing_Event : constant SDL.Events.Keyboards.Text_Editing_Events :=
+        SDL.Events.Queue.As_Text_Editing (Event);
+   begin
+      Require
+        (CS.Value (Text_Editing_Event.Text) = "compose" and then
+           Text_Editing_Event.Start = 2 and then
+           Text_Editing_Event.Length = 3,
+         "Text-editing event did not preserve the composition payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic text-input event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Keyboards.Text_Input,
+     (SDL.Events.Queue.Is_Text_Input (Event),
       "Expected a text-input event");
-   Require
-     (CS.Value (Event.Text_Input.Text) = "z",
-      "Text-input event did not preserve the input text");
+   declare
+      Text_Input_Event : constant SDL.Events.Keyboards.Text_Input_Events :=
+        SDL.Events.Queue.As_Text_Input (Event);
+   begin
+      Require
+        (CS.Value (Text_Input_Event.Text) = "z",
+         "Text-input event did not preserve the input text");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-motion event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Motion,
+     (SDL.Events.Queue.Is_Mouse_Motion (Event),
       "Expected a mouse-motion event");
-   Require
-     (Event.Mouse_Motion.Mask = SDL.Events.Mice.Left_Mask and then
-        Nearly_Equal (Event.Mouse_Motion.X, 320.5) and then
-        Nearly_Equal (Event.Mouse_Motion.Y, 240.25) and then
-        Nearly_Equal (Event.Mouse_Motion.X_Relative, 2.0) and then
-        Nearly_Equal (Event.Mouse_Motion.Y_Relative, -3.5),
-      "Mouse-motion event did not preserve the motion payload");
+   declare
+      Motion_Event : constant SDL.Events.Mice.Motion_Events :=
+        SDL.Events.Queue.As_Mouse_Motion (Event);
+   begin
+      Require
+        (Motion_Event.Mask = SDL.Events.Mice.Left_Mask and then
+           Nearly_Equal (Motion_Event.X, 320.5) and then
+           Nearly_Equal (Motion_Event.Y, 240.25) and then
+           Nearly_Equal (Motion_Event.X_Relative, 2.0) and then
+           Nearly_Equal (Motion_Event.Y_Relative, -3.5),
+         "Mouse-motion event did not preserve the motion payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-button event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Button_Down,
+     (SDL.Events.Queue.Is_Mouse_Button (Event),
       "Expected a mouse-button event");
-   Require
-     (Event.Mouse_Button.Button = SDL.Events.Mice.Left and then
-        SDL.Events.Mice.Get_State (Event.Mouse_Button) = SDL.Events.Pressed and then
-        Event.Mouse_Button.Clicks = 2,
-      "Mouse-button event did not preserve the button payload");
+   declare
+      Button_Event : constant SDL.Events.Mice.Button_Events :=
+        SDL.Events.Queue.As_Mouse_Button (Event);
+   begin
+      Require
+        (Button_Event.Event_Type = SDL.Events.Mice.Button_Down,
+         "Expected a mouse-button event");
+      Require
+        (Button_Event.Button = SDL.Events.Mice.Left and then
+           SDL.Events.Mice.Get_State (Button_Event) = SDL.Events.Pressed and then
+           Button_Event.Clicks = 2,
+         "Mouse-button event did not preserve the button payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic mouse-wheel event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Mice.Wheel,
+     (SDL.Events.Queue.Is_Mouse_Wheel (Event),
       "Expected a mouse-wheel event");
-   Require
-     (Event.Mouse_Wheel.Direction = SDL.Events.Mice.Flipped and then
-        Event.Mouse_Wheel.Integer_X = 1 and then Event.Mouse_Wheel.Integer_Y = -2 and then
-        Nearly_Equal (Event.Mouse_Wheel.X, 1.5) and then
-        Nearly_Equal (Event.Mouse_Wheel.Y, -2.5),
-      "Mouse-wheel event did not preserve the wheel payload");
+   declare
+      Wheel_Event : constant SDL.Events.Mice.Wheel_Events :=
+        SDL.Events.Queue.As_Mouse_Wheel (Event);
+   begin
+      Require
+        (Wheel_Event.Direction = SDL.Events.Mice.Flipped and then
+           Wheel_Event.Integer_X = 1 and then
+           Wheel_Event.Integer_Y = -2 and then
+           Nearly_Equal (Wheel_Event.X, 1.5) and then
+           Nearly_Equal (Wheel_Event.Y, -2.5),
+         "Mouse-wheel event did not preserve the wheel payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic touch event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Touches.Finger_Motion,
+     (SDL.Events.Queue.Is_Touch_Finger (Event),
       "Expected a touch-finger event");
-   Require
-     (Event.Touch_Finger.Touch_ID = 11 and then
-        Event.Touch_Finger.Finger_ID = 19 and then
-        Event.Touch_Finger.Window_ID = Window.Get_ID and then
-        Nearly_Equal (Event.Touch_Finger.X, 0.5) and then
-        Nearly_Equal (Event.Touch_Finger.Y, 0.75) and then
-        Nearly_Equal (Event.Touch_Finger.Pressure, 0.8),
-      "Touch event did not preserve the finger payload");
+   declare
+      Touch_Event : constant SDL.Events.Touches.Finger_Events :=
+        SDL.Events.Queue.As_Touch_Finger (Event);
+   begin
+      Require
+        (Touch_Event.Touch_ID = 11 and then
+           Touch_Event.Finger_ID = 19 and then
+           Touch_Event.Window_ID = Window.Get_ID and then
+           Nearly_Equal (Touch_Event.X, 0.5) and then
+           Nearly_Equal (Touch_Event.Y, 0.75) and then
+           Nearly_Equal (Touch_Event.Pressure, 0.8),
+         "Touch event did not preserve the finger payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic drop event");
    Require
-     (Event.Common.Event_Type = SDL.Events.Files.Drop_File,
+     (SDL.Events.Queue.Is_Drop (Event),
       "Expected a drop-file event");
-   Require
-     (CS.Value (Event.Drop.File_Name) = "synthetic-drop.gb" and then
-        Nearly_Equal (Event.Drop.X, 12.0) and then
-        Nearly_Equal (Event.Drop.Y, 34.0),
-      "Drop event did not preserve the drop payload");
+   declare
+      Drop_Event : constant SDL.Events.Files.Drop_Events :=
+        SDL.Events.Queue.As_Drop (Event);
+   begin
+      Require
+        (Drop_Event.Event_Type = SDL.Events.Files.Drop_File,
+         "Expected a drop-file event");
+      Require
+        (CS.Value (Drop_Event.File_Name) = "synthetic-drop.gb" and then
+           Nearly_Equal (Drop_Event.X, 12.0) and then
+           Nearly_Equal (Drop_Event.Y, 34.0),
+         "Drop event did not preserve the drop payload");
+   end;
 
    Require
-     (SDL.Events.Events.Poll (Event),
+     (SDL.Events.Queue.Poll (Event),
       "Poll did not dequeue the synthetic quit event");
    Require (Event.Common.Event_Type = SDL.Events.Quit, "Expected a quit event");
 
    Require
-     (not SDL.Events.Events.Poll (Event),
+     (not SDL.Events.Queue.Poll (Event),
       "Event queue should be empty");
 
    Ada.Text_IO.Put_Line
@@ -742,7 +802,7 @@ begin
    SDL.Finalise;
 exception
    when others =>
-      SDL.Events.Events.Set_Filter (null);
+      SDL.Events.Queue.Set_Filter (null);
 
       if Window_Created then
          SDL.Video.Windows.Finalize (Window);

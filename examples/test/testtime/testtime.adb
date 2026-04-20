@@ -4,7 +4,7 @@ with Ada.Text_IO;
 with SDL;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Events.Keyboards;
 with SDL.Time;
 with SDL.Timers;
@@ -300,9 +300,9 @@ procedure TestTime is
    end Render;
 
    procedure Handle_Events is
-      Event : SDL.Events.Events.Events;
+      Event : SDL.Events.Queue.Event;
    begin
-      while SDL.Events.Events.Poll (Event) loop
+      while SDL.Events.Queue.Poll (Event) loop
          case Event.Common.Event_Type is
             when SDL.Events.Quit =>
                Running := False;

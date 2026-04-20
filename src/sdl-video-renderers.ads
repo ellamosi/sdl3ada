@@ -4,7 +4,7 @@ with Interfaces;
 with Interfaces.C;
 with System;
 
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.GPU;
 with SDL.Properties;
 with SDL.Video.Palettes;
@@ -234,7 +234,7 @@ package SDL.Video.Renderers is
 
    procedure Convert_Event_Coordinates
      (Self  : in Renderer;
-      Event : in out SDL.Events.Events.Events);
+      Event : in out SDL.Events.Queue.Event);
 
    procedure Set_Viewport
      (Self      : in out Renderer;

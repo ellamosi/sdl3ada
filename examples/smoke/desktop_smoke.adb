@@ -8,7 +8,7 @@ with Interfaces;
 with SDL;
 with SDL.Dialogs;
 with SDL.Error;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Message_Boxes;
 with SDL.Properties;
 with SDL.Timers;

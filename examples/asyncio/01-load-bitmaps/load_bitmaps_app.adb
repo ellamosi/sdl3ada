@@ -10,7 +10,7 @@ with SDL;
 with SDL.AsyncIO;
 with SDL.Error;
 with SDL.Events;
-with SDL.Events.Events;
+with SDL.Events.Queue;
 with SDL.Filesystems;
 with SDL.Main;
 with SDL.RWops;
@@ -92,7 +92,7 @@ package body Load_Bitmaps_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    with Convention => C;
 
    procedure App_Quit
@@ -305,7 +305,7 @@ package body Load_Bitmaps_App is
 
    function App_Event
      (App_State : in System.Address;
-      Event     : access SDL.Events.Events.Events) return SDL.Main.App_Results
+      Event     : access SDL.Events.Queue.Event) return SDL.Main.App_Results
    is
       pragma Unreferenced (App_State);
    begin

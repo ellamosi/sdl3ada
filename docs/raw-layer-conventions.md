@@ -31,6 +31,21 @@ Current raw packages include:
 - `SDL.Raw.Thread`
 - `SDL.Raw.Time`
 
+## Compatibility Raw Surfaces
+
+- A small number of public `SDL.*` packages still act as compatibility-facing
+  raw surfaces even though the auditable C import layer lives under
+  `SDL.Raw.*`.
+- `SDL.Events.Events` is the primary current example: it preserves the
+  historical `sdlada` package name and the unchecked-union event storage for
+  source compatibility.
+- That package should be treated as a supported compatibility layer, not as
+  the preferred ergonomic API. New code and new documentation should point to
+  `SDL.Events.Queue`.
+- New event-handling helpers, classification logic, and typed accessors belong
+  on `SDL.Events.Queue`. `SDL.Events.Events` should stay structurally close to
+  the raw union view so existing callers remain stable.
+
 ## Naming
 
 - Package names follow the source header family, for example

@@ -4,6 +4,7 @@ with Interfaces.C;
 with System;
 
 with SDL.Properties;
+with SDL.Raw.Video_Types;
 with SDL.Video.Displays;
 with SDL.Video.Pixel_Formats;
 with SDL.Video.Rectangles;
@@ -70,8 +71,7 @@ package SDL.Video.Windows is
    Not_Focusable       : constant Window_Flags := 16#0000_0000_8000_0000#;
    Full_Screen_Desktop : constant Window_Flags := Full_Screen;
 
-   type ID is mod 2 ** 32 with
-     Convention => C;
+   subtype ID is SDL.Raw.Video_Types.Window_ID;
 
    type Flash_Operations is
      (Flash_Cancel,

@@ -1,63 +1,42 @@
-with Interfaces;
 with Interfaces.C;
+
+with SDL.Raw.Pen;
 
 package SDL.Pens is
    package C renames Interfaces.C;
 
-   type ID is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   use type SDL.Raw.Pen.Input_Flags;
 
-   type Input_Flags is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype ID is SDL.Raw.Pen.ID;
 
-   Input_Down              : constant Input_Flags := 16#0000_0001#;
-   Input_Button_1          : constant Input_Flags := 16#0000_0002#;
-   Input_Button_2          : constant Input_Flags := 16#0000_0004#;
-   Input_Button_3          : constant Input_Flags := 16#0000_0008#;
-   Input_Button_4          : constant Input_Flags := 16#0000_0010#;
-   Input_Button_5          : constant Input_Flags := 16#0000_0020#;
-   Input_Eraser_Tip        : constant Input_Flags := 16#4000_0000#;
-   Input_In_Proximity      : constant Input_Flags := 16#8000_0000#;
+   subtype Input_Flags is SDL.Raw.Pen.Input_Flags;
 
-   type Axes is
-     (Pressure,
-      X_Tilt,
-      Y_Tilt,
-      Distance,
-      Rotation,
-      Slider,
-      Tangential_Pressure,
-      Count)
-   with
-     Convention => C,
-     Size       => C.int'Size;
+   Input_Down         : constant Input_Flags := SDL.Raw.Pen.Input_Down;
+   Input_Button_1     : constant Input_Flags := SDL.Raw.Pen.Input_Button_1;
+   Input_Button_2     : constant Input_Flags := SDL.Raw.Pen.Input_Button_2;
+   Input_Button_3     : constant Input_Flags := SDL.Raw.Pen.Input_Button_3;
+   Input_Button_4     : constant Input_Flags := SDL.Raw.Pen.Input_Button_4;
+   Input_Button_5     : constant Input_Flags := SDL.Raw.Pen.Input_Button_5;
+   Input_Eraser_Tip   : constant Input_Flags := SDL.Raw.Pen.Input_Eraser_Tip;
+   Input_In_Proximity : constant Input_Flags := SDL.Raw.Pen.Input_In_Proximity;
 
-   for Axes use
-     (Pressure            => 0,
-      X_Tilt              => 1,
-      Y_Tilt              => 2,
-      Distance            => 3,
-      Rotation            => 4,
-      Slider              => 5,
-      Tangential_Pressure => 6,
-      Count               => 7);
+   subtype Axes is SDL.Raw.Pen.Axes;
 
-   type Device_Types is
-     (Invalid,
-      Unknown,
-      Direct,
-      Indirect)
-   with
-     Convention => C,
-     Size       => C.int'Size;
+   Pressure            : constant Axes := SDL.Raw.Pen.Pressure;
+   X_Tilt              : constant Axes := SDL.Raw.Pen.X_Tilt;
+   Y_Tilt              : constant Axes := SDL.Raw.Pen.Y_Tilt;
+   Distance            : constant Axes := SDL.Raw.Pen.Distance;
+   Rotation            : constant Axes := SDL.Raw.Pen.Rotation;
+   Slider              : constant Axes := SDL.Raw.Pen.Slider;
+   Tangential_Pressure : constant Axes := SDL.Raw.Pen.Tangential_Pressure;
+   Count               : constant Axes := SDL.Raw.Pen.Count;
 
-   for Device_Types use
-     (Invalid  => -1,
-      Unknown  => 0,
-      Direct   => 1,
-      Indirect => 2);
+   subtype Device_Types is SDL.Raw.Pen.Device_Types;
+
+   Invalid  : constant Device_Types := SDL.Raw.Pen.Invalid;
+   Unknown  : constant Device_Types := SDL.Raw.Pen.Unknown;
+   Direct   : constant Device_Types := SDL.Raw.Pen.Direct;
+   Indirect : constant Device_Types := SDL.Raw.Pen.Indirect;
 
    function Has_Flag
      (State : in Input_Flags;

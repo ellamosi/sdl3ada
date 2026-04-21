@@ -1,15 +1,16 @@
 with Interfaces;
-with System;
-
+with SDL.Raw.Event_Layouts;
+with SDL.Raw.Keyboard_Types;
 with SDL.Raw.Event_Types;
+with SDL.Raw.Video_Types;
 
 package SDL.Events is
    pragma Pure;
 
    subtype Event_Types is SDL.Raw.Event_Types.Event_Type;
    subtype Time_Stamps is Interfaces.Unsigned_64;
-   subtype Window_IDs is Interfaces.Unsigned_32;
-   subtype Keyboard_IDs is Interfaces.Unsigned_32;
+   subtype Window_IDs is SDL.Raw.Video_Types.Window_ID;
+   subtype Keyboard_IDs is SDL.Raw.Keyboard_Types.ID;
 
    type Button_State is (Released, Pressed) with
      Convention => C,
@@ -38,23 +39,9 @@ package SDL.Events is
      Convention => C,
      Size       => 16;
 
-   type Common_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-   end record with
-     Convention => C;
+   subtype Common_Events is SDL.Raw.Event_Layouts.Common_Event;
 
-   subtype Event_Codes is Interfaces.Integer_32;
+   subtype Event_Codes is SDL.Raw.Event_Layouts.Event_Code;
 
-   type User_Events is record
-      Event_Type : Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : Time_Stamps;
-      Window_ID  : Window_IDs;
-      Code       : Event_Codes;
-      Data_1     : System.Address;
-      Data_2     : System.Address;
-   end record with
-     Convention => C;
+   subtype User_Events is SDL.Raw.Event_Layouts.User_Event;
 end SDL.Events;

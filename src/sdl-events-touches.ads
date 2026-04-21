@@ -1,15 +1,20 @@
 with Interfaces;
 with Interfaces.C;
 
-with SDL.Video.Windows;
+with SDL.Raw.Event_Layouts.Touches;
+with SDL.Raw.Touch;
 
 package SDL.Events.Touches is
    Touch_Error : exception;
 
-   Finger_Down     : constant SDL.Events.Event_Types := 16#0000_0700#;
-   Finger_Up       : constant SDL.Events.Event_Types := 16#0000_0701#;
-   Finger_Motion   : constant SDL.Events.Event_Types := 16#0000_0702#;
-   Finger_Canceled : constant SDL.Events.Event_Types := 16#0000_0703#;
+   Finger_Down     : constant SDL.Events.Event_Types :=
+     SDL.Raw.Event_Layouts.Touches.Finger_Down;
+   Finger_Up       : constant SDL.Events.Event_Types :=
+     SDL.Raw.Event_Layouts.Touches.Finger_Up;
+   Finger_Motion   : constant SDL.Events.Event_Types :=
+     SDL.Raw.Event_Layouts.Touches.Finger_Motion;
+   Finger_Canceled : constant SDL.Events.Event_Types :=
+     SDL.Raw.Event_Layouts.Touches.Finger_Canceled;
 
    --  SDL3 retired the SDL2 dollar/multigesture stream. These constants stay
    --  reserved for compatibility, and the record types remain inert carriers
@@ -18,54 +23,31 @@ package SDL.Events.Touches is
    Dollar_Record        : constant SDL.Events.Event_Types := 16#0000_0801#;
    Dollar_Multi_Gesture : constant SDL.Events.Event_Types := 16#0000_0802#;
 
-   subtype Touch_IDs is Interfaces.Unsigned_64;
-   subtype Finger_IDs is Interfaces.Unsigned_64;
+   subtype Touch_IDs is SDL.Raw.Touch.ID;
+   subtype Finger_IDs is SDL.Raw.Touch.Finger_ID;
    subtype Gesture_IDs is Interfaces.Unsigned_64;
 
-   type Touch_Device_Types is
-     (Invalid_Touch_Device,
-      Direct_Touch_Device,
-      Indirect_Absolute_Touch_Device,
-      Indirect_Relative_Touch_Device)
-   with
-     Convention => C,
-     Size       => Interfaces.C.int'Size;
+   subtype Touch_Device_Types is SDL.Raw.Touch.Device_Type;
 
-   for Touch_Device_Types use
-     (Invalid_Touch_Device           => -1,
-      Direct_Touch_Device            => 0,
-      Indirect_Absolute_Touch_Device => 1,
-      Indirect_Relative_Touch_Device => 2);
+   Invalid_Touch_Device           : constant Touch_Device_Types :=
+     SDL.Raw.Touch.Invalid_Touch_Device;
+   Direct_Touch_Device            : constant Touch_Device_Types :=
+     SDL.Raw.Touch.Direct_Touch_Device;
+   Indirect_Absolute_Touch_Device : constant Touch_Device_Types :=
+     SDL.Raw.Touch.Indirect_Absolute_Touch_Device;
+   Indirect_Relative_Touch_Device : constant Touch_Device_Types :=
+     SDL.Raw.Touch.Indirect_Relative_Touch_Device;
 
-   subtype Touch_Locations is Interfaces.C.C_float;
-   subtype Touch_Distances is Interfaces.C.C_float;
-   subtype Touch_Pressures is Interfaces.C.C_float;
+   subtype Touch_Locations is SDL.Raw.Touch.Location;
+   subtype Touch_Distances is SDL.Raw.Touch.Distance;
+   subtype Touch_Pressures is SDL.Raw.Touch.Pressure_Value;
 
-   type Finger is record
-      ID       : Finger_IDs := 0;
-      X        : Touch_Locations := 0.0;
-      Y        : Touch_Locations := 0.0;
-      Pressure : Touch_Pressures := 0.0;
-   end record with
-     Convention => C;
+   subtype Finger is SDL.Raw.Touch.Finger;
 
    type ID_Lists is array (Natural range <>) of Touch_IDs;
    type Finger_Lists is array (Natural range <>) of Finger;
 
-   type Finger_Events is record
-      Event_Type : SDL.Events.Event_Types;
-      Reserved   : Interfaces.Unsigned_32;
-      Time_Stamp : SDL.Events.Time_Stamps;
-      Touch_ID   : Touch_IDs;
-      Finger_ID  : Finger_IDs;
-      X          : Touch_Locations;
-      Y          : Touch_Locations;
-      Delta_X    : Touch_Distances;
-      Delta_Y    : Touch_Distances;
-      Pressure   : Touch_Pressures;
-      Window_ID  : SDL.Video.Windows.ID;
-   end record with
-     Convention => C;
+   subtype Finger_Events is SDL.Raw.Event_Layouts.Touches.Finger_Event;
 
    subtype Finger_Rotations is Interfaces.C.C_float;
    subtype Finger_Pinches is Interfaces.C.C_float;

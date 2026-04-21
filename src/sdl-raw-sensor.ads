@@ -4,7 +4,7 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
 
 package SDL.Raw.Sensor is
@@ -87,56 +87,56 @@ package SDL.Raw.Sensor is
      External_Name => "SDL_GetSensorNonPortableTypeForID";
 
    function Open_Sensor
-     (Instance : in ID) return SDL.C_Pointers.Sensor_Pointer
+     (Instance : in ID) return SDL.Raw.C_Pointers.Sensor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenSensor";
 
    function Get_Sensor_From_ID
-     (Instance : in ID) return SDL.C_Pointers.Sensor_Pointer
+     (Instance : in ID) return SDL.Raw.C_Pointers.Sensor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorFromID";
 
    function Get_Sensor_Properties
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return SDL.Raw.Properties.ID
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorProperties";
 
    function Get_Sensor_Name
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorName";
 
    function Get_Sensor_Type
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return Types
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer) return Types
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorType";
 
    function Get_Sensor_Non_Portable_Type
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorNonPortableType";
 
    function Get_Sensor_ID
-     (Self : in SDL.C_Pointers.Sensor_Pointer) return ID
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer) return ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetSensorID";
 
    function Get_Sensor_Data
-     (Self        : in SDL.C_Pointers.Sensor_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Sensor_Pointer;
       Data        : in System.Address;
       Value_Count : in C.int) return CE.bool
    with
@@ -145,7 +145,7 @@ package SDL.Raw.Sensor is
      External_Name => "SDL_GetSensorData";
 
    procedure Close_Sensor
-     (Self : in SDL.C_Pointers.Sensor_Pointer)
+     (Self : in SDL.Raw.C_Pointers.Sensor_Pointer)
    with
      Import        => True,
      Convention    => C,

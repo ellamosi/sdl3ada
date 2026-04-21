@@ -4,9 +4,10 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.Pixels;
 with SDL.Raw.Properties;
-with SDL.Video.Pixel_Formats;
-with SDL.Video.Rectangles;
+with SDL.Raw.Rect;
+with SDL.Raw.Video;
 
 package SDL.Raw.GPU is
    pragma Preelaborate;
@@ -22,6 +23,7 @@ package SDL.Raw.GPU is
    subtype Texture_Formats is C.int;
    subtype Texture_Usage_Flags is Unsigned_32;
    subtype Buffer_Usage_Flags is Unsigned_32;
+   subtype Window_Pointer is SDL.Raw.Video.Window_Pointer;
    subtype Load_Ops is C.int;
    subtype Store_Ops is C.int;
    subtype Present_Modes is C.int;
@@ -231,6 +233,10 @@ package SDL.Raw.GPU is
    type Buffer_Access is access all Buffer_Object with
      Convention => C;
 
+   type Buffer_Access_Array is
+     array (C.size_t range <>) of aliased Buffer_Access
+   with Convention => C;
+
    type Transfer_Buffer_Object is null record;
    type Transfer_Buffer_Access is access all Transfer_Buffer_Object with
      Convention => C;
@@ -238,6 +244,10 @@ package SDL.Raw.GPU is
    type Texture_Object is null record;
    type Texture_Access is access all Texture_Object with
      Convention => C;
+
+   type Texture_Access_Array is
+     array (C.size_t range <>) of aliased Texture_Access
+   with Convention => C;
 
    type Sampler_Object is null record;
    type Sampler_Access is access all Sampler_Object with
@@ -274,6 +284,10 @@ package SDL.Raw.GPU is
    type Fence_Object is null record;
    type Fence_Access is access all Fence_Object with
      Convention => C;
+
+   type Fence_Access_Array is
+     array (C.size_t range <>) of aliased Fence_Access
+   with Convention => C;
 
    type Float_Colour is
       record
@@ -312,6 +326,10 @@ package SDL.Raw.GPU is
          Padding_1            : Unsigned_8 := 0;
          Padding_2            : Unsigned_8 := 0;
       end record
+   with Convention => C;
+
+   type Color_Target_Info_Array is
+     array (C.size_t range <>) of aliased Color_Target_Info
    with Convention => C;
 
    type Depth_Stencil_Target_Info is
@@ -447,6 +465,14 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Vertex_Buffer_Description_Access is access constant
+     Vertex_Buffer_Description
+   with Convention => C;
+
+   type Vertex_Buffer_Description_Array is
+     array (C.size_t range <>) of aliased Vertex_Buffer_Description
+   with Convention => C;
+
    type Vertex_Attribute is
       record
          Location    : Unsigned_32 := 0;
@@ -456,11 +482,18 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Vertex_Attribute_Access is access constant Vertex_Attribute with
+     Convention => C;
+
+   type Vertex_Attribute_Array is
+     array (C.size_t range <>) of aliased Vertex_Attribute
+   with Convention => C;
+
    type Vertex_Input_State is
       record
-         Vertex_Buffer_Descriptions : System.Address := System.Null_Address;
+         Vertex_Buffer_Descriptions : Vertex_Buffer_Description_Access := null;
          Num_Vertex_Buffers         : Unsigned_32 := 0;
-         Vertex_Attributes          : System.Address := System.Null_Address;
+         Vertex_Attributes          : Vertex_Attribute_Access := null;
          Num_Vertex_Attributes      : Unsigned_32 := 0;
       end record
    with Convention => C;
@@ -575,9 +608,17 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Color_Target_Description_Access is access constant
+     Color_Target_Description
+   with Convention => C;
+
+   type Color_Target_Description_Array is
+     array (C.size_t range <>) of aliased Color_Target_Description
+   with Convention => C;
+
    type Graphics_Pipeline_Target_Info is
       record
-         Color_Target_Descriptions : System.Address := System.Null_Address;
+         Color_Target_Descriptions : Color_Target_Description_Access := null;
          Num_Color_Targets         : Unsigned_32 := 0;
          Depth_Stencil_Format      : Texture_Formats := Invalid_Texture_Format;
          Has_Depth_Stencil_Target  : CE.bool := CE.bool'Val (0);
@@ -592,9 +633,9 @@ package SDL.Raw.GPU is
          Vertex_Shader       : Shader_Access := null;
          Fragment_Shader     : Shader_Access := null;
          Vertex_Input_State  : SDL.Raw.GPU.Vertex_Input_State :=
-           (Vertex_Buffer_Descriptions => System.Null_Address,
+           (Vertex_Buffer_Descriptions => null,
             Num_Vertex_Buffers         => 0,
-            Vertex_Attributes          => System.Null_Address,
+            Vertex_Attributes          => null,
             Num_Vertex_Attributes      => 0);
          Primitive_Type      : Primitive_Types := Primitive_Triangle_List;
          Rasterizer_State    : SDL.Raw.GPU.Rasterizer_State :=
@@ -636,7 +677,7 @@ package SDL.Raw.GPU is
             Padding_2           => 0,
             Padding_3           => 0);
          Target_Info         : SDL.Raw.GPU.Graphics_Pipeline_Target_Info :=
-           (Color_Target_Descriptions => System.Null_Address,
+           (Color_Target_Descriptions => null,
             Num_Color_Targets         => 0,
             Depth_Stencil_Format      => Invalid_Texture_Format,
             Has_Depth_Stencil_Target  => CE.bool'Val (0),
@@ -717,11 +758,19 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Buffer_Binding_Array is
+     array (C.size_t range <>) of aliased Buffer_Binding
+   with Convention => C;
+
    type Texture_Sampler_Binding is
       record
          Texture : Texture_Access := null;
          Sampler : Sampler_Access := null;
       end record
+   with Convention => C;
+
+   type Texture_Sampler_Binding_Array is
+     array (C.size_t range <>) of aliased Texture_Sampler_Binding
    with Convention => C;
 
    type Storage_Buffer_Read_Write_Binding is
@@ -734,6 +783,10 @@ package SDL.Raw.GPU is
       end record
    with Convention => C;
 
+   type Storage_Buffer_Read_Write_Binding_Array is
+     array (C.size_t range <>) of aliased Storage_Buffer_Read_Write_Binding
+   with Convention => C;
+
    type Storage_Texture_Read_Write_Binding is
       record
          Texture   : Texture_Access := null;
@@ -744,6 +797,10 @@ package SDL.Raw.GPU is
          Padding_2 : Unsigned_8 := 0;
          Padding_3 : Unsigned_8 := 0;
       end record
+   with Convention => C;
+
+   type Storage_Texture_Read_Write_Binding_Array is
+     array (C.size_t range <>) of aliased Storage_Texture_Read_Write_Binding
    with Convention => C;
 
    function Supports_Shader_Formats
@@ -1024,7 +1081,8 @@ package SDL.Raw.GPU is
      (Command_Buffer            : in Command_Buffer_Access;
       Color_Target_Infos        : access constant Color_Target_Info;
       Num_Color_Targets         : in Unsigned_32;
-      Depth_Stencil_Target_Info : in System.Address) return Render_Pass_Access
+      Depth_Stencil_Target      : access constant Depth_Stencil_Target_Info)
+      return Render_Pass_Access
    with
      Import        => True,
      Convention    => C,
@@ -1048,7 +1106,7 @@ package SDL.Raw.GPU is
 
    procedure Set_Scissor
      (Render_Pass : in Render_Pass_Access;
-      Scissor     : access constant SDL.Video.Rectangles.Rectangle)
+      Scissor     : access constant SDL.Raw.Rect.Rectangle)
    with
      Import        => True,
      Convention    => C,
@@ -1073,7 +1131,7 @@ package SDL.Raw.GPU is
    procedure Bind_Vertex_Buffers
      (Render_Pass   : in Render_Pass_Access;
       First_Slot    : in Unsigned_32;
-      Bindings      : in System.Address;
+      Bindings      : access constant Buffer_Binding;
       Num_Bindings  : in Unsigned_32)
    with
      Import        => True,
@@ -1092,7 +1150,7 @@ package SDL.Raw.GPU is
    procedure Bind_Vertex_Samplers
      (Render_Pass      : in Render_Pass_Access;
       First_Slot       : in Unsigned_32;
-      Bindings         : in System.Address;
+      Bindings         : access constant Texture_Sampler_Binding;
       Num_Bindings     : in Unsigned_32)
    with
      Import        => True,
@@ -1102,7 +1160,7 @@ package SDL.Raw.GPU is
    procedure Bind_Vertex_Storage_Textures
      (Render_Pass      : in Render_Pass_Access;
       First_Slot       : in Unsigned_32;
-      Storage_Textures : in System.Address;
+      Storage_Textures : access constant Texture_Access;
       Num_Bindings     : in Unsigned_32)
    with
      Import        => True,
@@ -1112,7 +1170,7 @@ package SDL.Raw.GPU is
    procedure Bind_Vertex_Storage_Buffers
      (Render_Pass     : in Render_Pass_Access;
       First_Slot      : in Unsigned_32;
-      Storage_Buffers : in System.Address;
+      Storage_Buffers : access constant Buffer_Access;
       Num_Bindings    : in Unsigned_32)
    with
      Import        => True,
@@ -1122,7 +1180,7 @@ package SDL.Raw.GPU is
    procedure Bind_Fragment_Samplers
      (Render_Pass      : in Render_Pass_Access;
       First_Slot       : in Unsigned_32;
-      Bindings         : in System.Address;
+      Bindings         : access constant Texture_Sampler_Binding;
       Num_Bindings     : in Unsigned_32)
    with
      Import        => True,
@@ -1132,7 +1190,7 @@ package SDL.Raw.GPU is
    procedure Bind_Fragment_Storage_Textures
      (Render_Pass      : in Render_Pass_Access;
       First_Slot       : in Unsigned_32;
-      Storage_Textures : in System.Address;
+      Storage_Textures : access constant Texture_Access;
       Num_Bindings     : in Unsigned_32)
    with
      Import        => True,
@@ -1142,7 +1200,7 @@ package SDL.Raw.GPU is
    procedure Bind_Fragment_Storage_Buffers
      (Render_Pass     : in Render_Pass_Access;
       First_Slot      : in Unsigned_32;
-      Storage_Buffers : in System.Address;
+      Storage_Buffers : access constant Buffer_Access;
       Num_Bindings    : in Unsigned_32)
    with
      Import        => True,
@@ -1201,9 +1259,9 @@ package SDL.Raw.GPU is
 
    function Begin_Compute_Pass
      (Command_Buffer                 : in Command_Buffer_Access;
-      Storage_Texture_Bindings       : in System.Address;
+      Storage_Texture_Bindings       : access constant Storage_Texture_Read_Write_Binding;
       Num_Storage_Texture_Bindings   : in Unsigned_32;
-      Storage_Buffer_Bindings        : in System.Address;
+      Storage_Buffer_Bindings        : access constant Storage_Buffer_Read_Write_Binding;
       Num_Storage_Buffer_Bindings    : in Unsigned_32)
       return Compute_Pass_Access
    with
@@ -1222,7 +1280,7 @@ package SDL.Raw.GPU is
    procedure Bind_Compute_Samplers
      (Compute_Pass   : in Compute_Pass_Access;
       First_Slot     : in Unsigned_32;
-      Bindings       : in System.Address;
+      Bindings       : access constant Texture_Sampler_Binding;
       Num_Bindings   : in Unsigned_32)
    with
      Import        => True,
@@ -1232,7 +1290,7 @@ package SDL.Raw.GPU is
    procedure Bind_Compute_Storage_Textures
      (Compute_Pass     : in Compute_Pass_Access;
       First_Slot       : in Unsigned_32;
-      Storage_Textures : in System.Address;
+      Storage_Textures : access constant Texture_Access;
       Num_Bindings     : in Unsigned_32)
    with
      Import        => True,
@@ -1242,7 +1300,7 @@ package SDL.Raw.GPU is
    procedure Bind_Compute_Storage_Buffers
      (Compute_Pass    : in Compute_Pass_Access;
       First_Slot      : in Unsigned_32;
-      Storage_Buffers : in System.Address;
+      Storage_Buffers : access constant Buffer_Access;
       Num_Bindings    : in Unsigned_32)
    with
      Import        => True,
@@ -1386,7 +1444,7 @@ package SDL.Raw.GPU is
 
    function Window_Supports_Swapchain_Composition
      (Device                : in Device_Access;
-      Window                : in System.Address;
+      Window                : in Window_Pointer;
       Swapchain_Composition : in Swapchain_Compositions) return CE.bool
    with
      Import        => True,
@@ -1395,7 +1453,7 @@ package SDL.Raw.GPU is
 
    function Window_Supports_Present_Mode
      (Device       : in Device_Access;
-      Window       : in System.Address;
+      Window       : in Window_Pointer;
       Present_Mode : in Present_Modes) return CE.bool
    with
      Import        => True,
@@ -1404,7 +1462,7 @@ package SDL.Raw.GPU is
 
    function Claim_Window
      (Device : in Device_Access;
-      Window : in System.Address) return CE.bool
+      Window : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -1412,7 +1470,7 @@ package SDL.Raw.GPU is
 
    procedure Release_Window
      (Device : in Device_Access;
-      Window : in System.Address)
+      Window : in Window_Pointer)
    with
      Import        => True,
      Convention    => C,
@@ -1420,7 +1478,7 @@ package SDL.Raw.GPU is
 
    function Set_Swapchain_Parameters
      (Device                : in Device_Access;
-      Window                : in System.Address;
+      Window                : in Window_Pointer;
       Swapchain_Composition : in Swapchain_Compositions;
       Present_Mode          : in Present_Modes) return CE.bool
    with
@@ -1438,7 +1496,7 @@ package SDL.Raw.GPU is
 
    function Get_Swapchain_Texture_Format
      (Device : in Device_Access;
-      Window : in System.Address) return Texture_Formats
+      Window : in Window_Pointer) return Texture_Formats
    with
      Import        => True,
      Convention    => C,
@@ -1446,7 +1504,7 @@ package SDL.Raw.GPU is
 
    function Acquire_Swapchain_Texture
      (Command_Buffer : in Command_Buffer_Access;
-      Window         : in System.Address;
+      Window         : in Window_Pointer;
       Texture        : access Texture_Access;
       Texture_Width  : access Unsigned_32;
       Texture_Height : access Unsigned_32) return CE.bool
@@ -1457,7 +1515,7 @@ package SDL.Raw.GPU is
 
    function Wait_For_Swapchain
      (Device : in Device_Access;
-      Window : in System.Address) return CE.bool
+      Window : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -1465,7 +1523,7 @@ package SDL.Raw.GPU is
 
    function Wait_And_Acquire_Swapchain_Texture
      (Command_Buffer : in Command_Buffer_Access;
-      Window         : in System.Address;
+      Window         : in Window_Pointer;
       Texture        : access Texture_Access;
       Texture_Width  : access Unsigned_32;
       Texture_Height : access Unsigned_32) return CE.bool
@@ -1505,7 +1563,7 @@ package SDL.Raw.GPU is
    function Wait_For_Fences
      (Device     : in Device_Access;
       Wait_All   : in CE.bool;
-      Fences     : in System.Address;
+      Fences     : access constant Fence_Access;
       Num_Fences : in Unsigned_32) return CE.bool
    with
      Import        => True,
@@ -1566,14 +1624,14 @@ package SDL.Raw.GPU is
 
    function Get_Pixel_Format_From_Texture_Format
      (Format : in Texture_Formats)
-      return SDL.Video.Pixel_Formats.Pixel_Format_Names
+      return SDL.Raw.Pixels.Pixel_Format_Name
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetPixelFormatFromGPUTextureFormat";
 
    function Get_Texture_Format_From_Pixel_Format
-     (Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
+     (Format : in SDL.Raw.Pixels.Pixel_Format_Name)
       return Texture_Formats
    with
      Import        => True,

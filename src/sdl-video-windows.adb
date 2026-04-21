@@ -4,16 +4,18 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Rect;
 with SDL.Raw.Video;
 with SDL.Video.Surfaces.Internal;
 
 package body SDL.Video.Windows is
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+   package Raw_Rect renames SDL.Raw.Rect;
    package Raw_Video renames SDL.Raw.Video;
    package Surface_Internal renames SDL.Video.Surfaces.Internal;
 
-   subtype Display_ID is Interfaces.Unsigned_32;
+   subtype Display_ID is Raw_Video.Display_ID;
 
    type Display_ID_Array is array (C.ptrdiff_t range <>) of aliased Display_ID with
      Convention => C;
@@ -44,22 +46,8 @@ package body SDL.Video.Windows is
       Element_Array      => Window_Address_Array,
       Default_Terminator => System.Null_Address);
 
-   type Internal_Mode is
-      record
-         Display        : Display_ID;
-         Format         : SDL.Video.Pixel_Formats.Pixel_Format_Names;
-         Width          : C.int;
-         Height         : C.int;
-         Pixel_Density  : C.C_float;
-         Refresh_Rate   : C.C_float;
-         Refresh_Num    : C.int;
-         Refresh_Denom  : C.int;
-         Driver_Data    : System.Address;
-      end record
-   with Convention => C;
-
-   type Internal_Mode_Access is access constant Internal_Mode with
-     Convention => C;
+   subtype Internal_Mode is Raw_Video.Display_Mode;
+   subtype Internal_Mode_Access is Raw_Video.Display_Mode_Access;
 
    type Rectangle_Access is access constant SDL.Video.Rectangles.Rectangle with
      Convention => C;
@@ -77,47 +65,50 @@ package body SDL.Video.Windows is
       Target => U8_Pointers.Pointer);
 
    function To_Window_Address_Pointers is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Raw_Video.Window_Pointers.Pointer,
       Target => Window_Address_Pointers.Pointer);
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => Window_Address_Pointers.Pointer,
       Target => System.Address);
 
-   function To_Address is new Ada.Unchecked_Conversion
-     (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Video.Window_Pointer);
+
+   function To_Window_Address is new Ada.Unchecked_Conversion
+     (Source => Raw_Video.Window_Pointer,
       Target => System.Address);
 
+   function To_Surface_Pointer is new Ada.Unchecked_Conversion
+     (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
+      Target => Raw_Video.Surface_Pointer);
+
    function To_Internal_Surface_Pointer is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Raw_Video.Surface_Pointer,
       Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
 
-   function To_Internal_Mode_Access is new Ada.Unchecked_Conversion
-     (Source => System.Address,
-      Target => Internal_Mode_Access);
-
    function To_Rectangle_Access is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Raw_Rect.Rectangle_Access,
       Target => Rectangle_Access);
 
    function To_Raw_Hit_Test_Callback is new Ada.Unchecked_Conversion
      (Source => Hit_Test_Callback,
       Target => Raw_Video.Window_Hit_Test_Callback);
 
-   function To_Address
-     (Value : access constant Internal_Mode) return System.Address is
-       (if Value = null then System.Null_Address else Value.all'Address);
+   function To_Raw
+     (Value : in SDL.Video.Rectangles.Rectangle) return Raw_Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => Raw_Rect.Dimension (Value.Width),
+         Height => Raw_Rect.Dimension (Value.Height)));
 
-   function To_Address
-     (Value : access constant SDL.Video.Rectangles.Rectangle)
-      return System.Address is
-       (if Value = null then System.Null_Address else Value.all'Address);
-
-   function To_Address
-     (Value : in SDL.Video.Rectangles.Rectangle_Arrays) return System.Address is
-       (if Value'Length = 0
-        then System.Null_Address
-        else Value (Value'First)'Address);
+   function To_Public
+     (Value : in Raw_Rect.Rectangle) return SDL.Video.Rectangles.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Natural_Dimension (Value.Width),
+         Height => SDL.Natural_Dimension (Value.Height)));
 
    function To_Raw
      (Value : in Flash_Operations) return Raw_Video.Flash_Operation is
@@ -176,8 +167,10 @@ package body SDL.Video.Windows is
    use type C.C_float;
    use type C.ptrdiff_t;
    use type C.size_t;
+   use type Display_ID;
    use type Display_ID_Pointers.Pointer;
    use type CS.chars_ptr;
+   use type Raw_Video.Display_Mode_Access;
    use type SDL.Video.Pixel_Formats.Pixel_Format_Names;
    use type SDL.Video.Surfaces.Internal_Surface_Pointer;
    use type Window_Address_Pointers.Pointer;
@@ -198,11 +191,12 @@ package body SDL.Video.Windows is
 
    function SDL_Get_Window_ID
      (Value : in System.Address) return ID is
-       (ID (Raw_Video.Get_Window_ID (Value)));
+       (ID (Raw_Video.Get_Window_ID (To_Window_Pointer (Value))));
 
    function SDL_Get_Window_From_ID
      (Window_ID : in ID) return System.Address is
-       (Raw_Video.Get_Window_From_ID (Raw_Video.Window_ID (Window_ID)));
+       (To_Window_Address
+          (Raw_Video.Get_Window_From_ID (Raw_Video.Window_ID (Window_ID))));
 
    function SDL_Get_Windows
      (Count : access C.int) return Window_Address_Pointers.Pointer is
@@ -210,77 +204,83 @@ package body SDL.Video.Windows is
 
    function SDL_Get_Display_For_Window
      (Value : in System.Address) return Display_ID is
-       (Display_ID (Raw_Video.Get_Display_For_Window (Value)));
+       (Raw_Video.Get_Display_For_Window (To_Window_Pointer (Value)));
 
    function SDL_Get_Window_Properties
      (Value : in System.Address) return SDL.Properties.Property_ID is
-       (SDL.Properties.Property_ID (Raw_Video.Get_Window_Properties (Value)));
+       (SDL.Properties.Property_ID
+          (Raw_Video.Get_Window_Properties (To_Window_Pointer (Value))));
 
    function SDL_Get_Window_Flags
      (Value : in System.Address) return Window_Flags is
-       (Window_Flags (Raw_Video.Get_Window_Flags (Value)));
+       (Window_Flags (Raw_Video.Get_Window_Flags (To_Window_Pointer (Value))));
 
    function SDL_Get_Window_Title
      (Value : in System.Address) return CS.chars_ptr is
-       (Raw_Video.Get_Window_Title (Value));
+       (Raw_Video.Get_Window_Title (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Title
      (Value : in System.Address;
       Text  : in C.char_array) return CE.bool is
-       (Raw_Video.Set_Window_Title (Value, Text));
+       (Raw_Video.Set_Window_Title (To_Window_Pointer (Value), Text));
 
    function SDL_Get_Window_Surface
      (Value : in System.Address)
       return SDL.Video.Surfaces.Internal_Surface_Pointer is
-       (To_Internal_Surface_Pointer (Raw_Video.Get_Window_Surface (Value)));
+       (To_Internal_Surface_Pointer
+          (Raw_Video.Get_Window_Surface (To_Window_Pointer (Value))));
 
    function SDL_Set_Window_Icon
      (Value : in System.Address;
       Icon  : in SDL.Video.Surfaces.Internal_Surface_Pointer) return CE.bool is
-       (Raw_Video.Set_Window_Icon (Value, To_Address (Icon)));
+       (Raw_Video.Set_Window_Icon
+          (To_Window_Pointer (Value), To_Surface_Pointer (Icon)));
 
    function SDL_Get_Window_Position
      (Value : in System.Address;
       X     : access C.int;
       Y     : access C.int) return CE.bool is
-       (Raw_Video.Get_Window_Position (Value, X, Y));
+       (Raw_Video.Get_Window_Position (To_Window_Pointer (Value), X, Y));
 
    function SDL_Set_Window_Position
      (Value : in System.Address;
       X     : in SDL.Coordinate;
       Y     : in SDL.Coordinate) return CE.bool is
-       (Raw_Video.Set_Window_Position (Value, C.int (X), C.int (Y)));
+       (Raw_Video.Set_Window_Position
+          (To_Window_Pointer (Value), C.int (X), C.int (Y)));
 
    function SDL_Get_Window_Size
      (Value  : in System.Address;
       Width  : access C.int;
       Height : access C.int) return CE.bool is
-       (Raw_Video.Get_Window_Size (Value, Width, Height));
+       (Raw_Video.Get_Window_Size (To_Window_Pointer (Value), Width, Height));
 
    function SDL_Set_Window_Size
      (Value  : in System.Address;
       Width  : in SDL.Positive_Dimension;
       Height : in SDL.Positive_Dimension) return CE.bool is
-       (Raw_Video.Set_Window_Size (Value, C.int (Width), C.int (Height)));
+       (Raw_Video.Set_Window_Size
+          (To_Window_Pointer (Value), C.int (Width), C.int (Height)));
 
    function SDL_Get_Window_Size_In_Pixels
      (Value  : in System.Address;
       Width  : access C.int;
       Height : access C.int) return CE.bool is
-       (Raw_Video.Get_Window_Size_In_Pixels (Value, Width, Height));
+       (Raw_Video.Get_Window_Size_In_Pixels
+          (To_Window_Pointer (Value), Width, Height));
 
    function SDL_Get_Window_Pixel_Density
      (Value : in System.Address) return C.C_float is
-       (Raw_Video.Get_Window_Pixel_Density (Value));
+       (Raw_Video.Get_Window_Pixel_Density (To_Window_Pointer (Value)));
 
    function SDL_Get_Window_Display_Scale
      (Value : in System.Address) return C.C_float is
-       (Raw_Video.Get_Window_Display_Scale (Value));
+       (Raw_Video.Get_Window_Display_Scale (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Fullscreen_Mode
      (Value : in System.Address;
       Mode  : access constant Internal_Mode) return CE.bool is
-       (Raw_Video.Set_Window_Fullscreen_Mode (Value, To_Address (Mode)));
+       (Raw_Video.Set_Window_Fullscreen_Mode (To_Window_Pointer (Value), Mode));
 
    function SDL_Get_Closest_Fullscreen_Display_Mode
      (ID                         : in Display_ID;
@@ -295,39 +295,58 @@ package body SDL.Video.Windows is
            Height,
            Refresh_Rate,
            Include_High_Density_Modes,
-           (if Closest = null then System.Null_Address else Closest.all'Address)));
+           Closest));
 
    function SDL_Get_Window_Fullscreen_Mode
      (Value : in System.Address) return Internal_Mode_Access is
-       (To_Internal_Mode_Access (Raw_Video.Get_Window_Fullscreen_Mode (Value)));
+       (Raw_Video.Get_Window_Fullscreen_Mode (To_Window_Pointer (Value)));
 
    function SDL_Get_Window_ICC_Profile
      (Value : in System.Address;
       Size  : access C.size_t) return System.Address is
-       (Raw_Video.Get_Window_ICC_Profile (Value, Size));
+       (Raw_Video.Get_Window_ICC_Profile (To_Window_Pointer (Value), Size));
 
    function SDL_Get_Window_Pixel_Format
      (Value : in System.Address) return SDL.Video.Pixel_Formats.Pixel_Format_Names is
        (SDL.Video.Pixel_Formats.Pixel_Format_Names
-          (Raw_Video.Get_Window_Pixel_Format (Value)));
+          (Raw_Video.Get_Window_Pixel_Format (To_Window_Pointer (Value))));
 
    function SDL_Get_Window_Safe_Area
      (Value : in System.Address;
-      Area  : access SDL.Video.Rectangles.Rectangle) return CE.bool is
-       (Raw_Video.Get_Window_Safe_Area
-          (Value, (if Area = null then System.Null_Address else Area.all'Address)));
+      Area  : access SDL.Video.Rectangles.Rectangle) return CE.bool
+   is
+   begin
+      if Area = null then
+         return Raw_Video.Get_Window_Safe_Area (To_Window_Pointer (Value), null);
+      end if;
+
+      declare
+         Converted : aliased Raw_Rect.Rectangle := Raw_Rect.Null_Rectangle;
+         Result    : constant CE.bool :=
+           Raw_Video.Get_Window_Safe_Area
+             (To_Window_Pointer (Value), Converted'Access);
+      begin
+         if Boolean (Result) then
+            Area.all := To_Public (Converted);
+         end if;
+
+         return Result;
+      end;
+   end SDL_Get_Window_Safe_Area;
 
    function SDL_Set_Window_Aspect_Ratio
      (Value   : in System.Address;
       Minimum : in C.C_float;
       Maximum : in C.C_float) return CE.bool is
-       (Raw_Video.Set_Window_Aspect_Ratio (Value, Minimum, Maximum));
+       (Raw_Video.Set_Window_Aspect_Ratio
+          (To_Window_Pointer (Value), Minimum, Maximum));
 
    function SDL_Get_Window_Aspect_Ratio
      (Value   : in System.Address;
       Minimum : access C.C_float;
       Maximum : access C.C_float) return CE.bool is
-       (Raw_Video.Get_Window_Aspect_Ratio (Value, Minimum, Maximum));
+       (Raw_Video.Get_Window_Aspect_Ratio
+          (To_Window_Pointer (Value), Minimum, Maximum));
 
    function SDL_Get_Window_Borders_Size
      (Value  : in System.Address;
@@ -336,227 +355,294 @@ package body SDL.Video.Windows is
       Bottom : access C.int;
       Right  : access C.int) return CE.bool is
        (Raw_Video.Get_Window_Borders_Size
-          (Value, Top, Left, Bottom, Right));
+          (To_Window_Pointer (Value), Top, Left, Bottom, Right));
 
    function SDL_Get_Window_Minimum_Size
      (Value  : in System.Address;
       Width  : access C.int;
       Height : access C.int) return CE.bool is
-       (Raw_Video.Get_Window_Minimum_Size (Value, Width, Height));
+       (Raw_Video.Get_Window_Minimum_Size
+          (To_Window_Pointer (Value), Width, Height));
 
    function SDL_Set_Window_Minimum_Size
      (Value  : in System.Address;
       Width  : in SDL.Natural_Dimension;
       Height : in SDL.Natural_Dimension) return CE.bool is
        (Raw_Video.Set_Window_Minimum_Size
-          (Value, C.int (Width), C.int (Height)));
+          (To_Window_Pointer (Value), C.int (Width), C.int (Height)));
 
    function SDL_Get_Window_Maximum_Size
      (Value  : in System.Address;
       Width  : access C.int;
       Height : access C.int) return CE.bool is
-       (Raw_Video.Get_Window_Maximum_Size (Value, Width, Height));
+       (Raw_Video.Get_Window_Maximum_Size
+          (To_Window_Pointer (Value), Width, Height));
 
    function SDL_Set_Window_Maximum_Size
      (Value  : in System.Address;
       Width  : in SDL.Natural_Dimension;
       Height : in SDL.Natural_Dimension) return CE.bool is
        (Raw_Video.Set_Window_Maximum_Size
-          (Value, C.int (Width), C.int (Height)));
+          (To_Window_Pointer (Value), C.int (Width), C.int (Height)));
 
    function SDL_Set_Window_Bordered
      (Value    : in System.Address;
       Bordered : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Bordered (Value, Bordered));
+       (Raw_Video.Set_Window_Bordered (To_Window_Pointer (Value), Bordered));
 
    function SDL_Set_Window_Resizable
      (Value     : in System.Address;
       Resizable : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Resizable (Value, Resizable));
+       (Raw_Video.Set_Window_Resizable (To_Window_Pointer (Value), Resizable));
 
    function SDL_Set_Window_Always_On_Top
      (Value  : in System.Address;
       Enable : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Always_On_Top (Value, Enable));
+       (Raw_Video.Set_Window_Always_On_Top
+          (To_Window_Pointer (Value), Enable));
 
    function SDL_Set_Window_Fill_Document
      (Value  : in System.Address;
       Enable : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Fill_Document (Value, Enable));
+       (Raw_Video.Set_Window_Fill_Document
+          (To_Window_Pointer (Value), Enable));
 
    function SDL_Show_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Show_Window (Value));
+       (Raw_Video.Show_Window (To_Window_Pointer (Value)));
 
    function SDL_Hide_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Hide_Window (Value));
+       (Raw_Video.Hide_Window (To_Window_Pointer (Value)));
 
    function SDL_Maximize_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Maximize_Window (Value));
+       (Raw_Video.Maximize_Window (To_Window_Pointer (Value)));
 
    function SDL_Minimize_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Minimize_Window (Value));
+       (Raw_Video.Minimize_Window (To_Window_Pointer (Value)));
 
    function SDL_Raise_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Raise_Window (Value));
+       (Raw_Video.Raise_Window (To_Window_Pointer (Value)));
 
    function SDL_Restore_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Restore_Window (Value));
+       (Raw_Video.Restore_Window (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Fullscreen
      (Value      : in System.Address;
       Fullscreen : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Fullscreen (Value, Fullscreen));
+       (Raw_Video.Set_Window_Fullscreen
+          (To_Window_Pointer (Value), Fullscreen));
 
    function SDL_Sync_Window
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Sync_Window (Value));
+       (Raw_Video.Sync_Window (To_Window_Pointer (Value)));
 
    function SDL_Window_Has_Surface
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Window_Has_Surface (Value));
+       (Raw_Video.Window_Has_Surface (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Surface_VSync
      (Value    : in System.Address;
       Interval : in Window_Surface_V_Sync_Intervals) return CE.bool is
-       (Raw_Video.Set_Window_Surface_VSync (Value, Interval));
+       (Raw_Video.Set_Window_Surface_VSync
+          (To_Window_Pointer (Value), Interval));
 
    function SDL_Get_Window_Surface_VSync
      (Value    : in System.Address;
       Interval : access Window_Surface_V_Sync_Intervals) return CE.bool is
-       (Raw_Video.Get_Window_Surface_VSync (Value, Interval));
+       (Raw_Video.Get_Window_Surface_VSync
+          (To_Window_Pointer (Value), Interval));
 
    function SDL_Update_Window_Surface
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Update_Window_Surface (Value));
+       (Raw_Video.Update_Window_Surface (To_Window_Pointer (Value)));
 
    function SDL_Update_Window_Surface_Rects
      (Value      : in System.Address;
       Rectangles : access constant SDL.Video.Rectangles.Rectangle;
-      Total      : in C.int) return CE.bool is
-       (Raw_Video.Update_Window_Surface_Rects
-          (Value, To_Address (Rectangles), Total));
+      Total      : in C.int) return CE.bool
+   is
+   begin
+      if Rectangles = null then
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), null, Total);
+      end if;
+
+      declare
+         Converted : aliased constant Raw_Rect.Rectangle := To_Raw (Rectangles.all);
+      begin
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), Converted'Access, Total);
+      end;
+   end SDL_Update_Window_Surface_Rects;
 
    function SDL_Update_Window_Surface_Rects
      (Value      : in System.Address;
       Rectangles : in SDL.Video.Rectangles.Rectangle_Arrays;
-      Total      : in C.int) return CE.bool is
-       (Raw_Video.Update_Window_Surface_Rects
-          (Value, To_Address (Rectangles), Total));
+      Total      : in C.int) return CE.bool
+   is
+      Count : constant C.int := C.int'Min (Total, C.int (Rectangles'Length));
+   begin
+      if Count <= 0 then
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), null, 0);
+      end if;
+
+      declare
+         Converted : Raw_Rect.Rectangle_Array (0 .. C.size_t (Count - 1));
+      begin
+         for Index in Converted'Range loop
+            Converted (Index) :=
+              To_Raw
+                (Rectangles
+                   (Rectangles'First + Index - Converted'First));
+         end loop;
+
+         return
+           Raw_Video.Update_Window_Surface_Rects
+             (To_Window_Pointer (Value), Converted (Converted'First)'Access, Count);
+      end;
+   end SDL_Update_Window_Surface_Rects;
 
    function SDL_Destroy_Window_Surface
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Destroy_Window_Surface (Value));
+       (Raw_Video.Destroy_Window_Surface (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Keyboard_Grab
      (Value   : in System.Address;
       Grabbed : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Keyboard_Grab (Value, Grabbed));
+       (Raw_Video.Set_Window_Keyboard_Grab
+          (To_Window_Pointer (Value), Grabbed));
 
    function SDL_Get_Window_Keyboard_Grab
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Get_Window_Keyboard_Grab (Value));
+       (Raw_Video.Get_Window_Keyboard_Grab (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Mouse_Grab
      (Value   : in System.Address;
       Grabbed : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Mouse_Grab (Value, Grabbed));
+       (Raw_Video.Set_Window_Mouse_Grab
+          (To_Window_Pointer (Value), Grabbed));
 
    function SDL_Get_Window_Mouse_Grab
      (Value : in System.Address) return CE.bool is
-       (Raw_Video.Get_Window_Mouse_Grab (Value));
+       (Raw_Video.Get_Window_Mouse_Grab (To_Window_Pointer (Value)));
 
    function SDL_Get_Grabbed_Window return System.Address
    is
-     (Raw_Video.Get_Grabbed_Window);
+     (To_Window_Address (Raw_Video.Get_Grabbed_Window));
 
    function SDL_Set_Window_Mouse_Rect
      (Value     : in System.Address;
-      Rectangle : access constant SDL.Video.Rectangles.Rectangle) return CE.bool is
-       (Raw_Video.Set_Window_Mouse_Rect (Value, To_Address (Rectangle)));
+      Rectangle : access constant SDL.Video.Rectangles.Rectangle) return CE.bool
+   is
+   begin
+      if Rectangle = null then
+         return Raw_Video.Set_Window_Mouse_Rect (To_Window_Pointer (Value), null);
+      end if;
+
+      declare
+         Converted : aliased constant Raw_Rect.Rectangle := To_Raw (Rectangle.all);
+      begin
+         return
+           Raw_Video.Set_Window_Mouse_Rect
+             (To_Window_Pointer (Value), Converted'Access);
+      end;
+   end SDL_Set_Window_Mouse_Rect;
 
    function SDL_Get_Window_Mouse_Rect
      (Value : in System.Address)
       return access constant SDL.Video.Rectangles.Rectangle is
-       (To_Rectangle_Access (Raw_Video.Get_Window_Mouse_Rect (Value)));
+       (To_Rectangle_Access
+          (Raw_Video.Get_Window_Mouse_Rect (To_Window_Pointer (Value))));
 
    function SDL_Set_Window_Opacity
      (Value   : in System.Address;
       Opacity : in C.C_float) return CE.bool is
-       (Raw_Video.Set_Window_Opacity (Value, Opacity));
+       (Raw_Video.Set_Window_Opacity (To_Window_Pointer (Value), Opacity));
 
    function SDL_Get_Window_Opacity
      (Value : in System.Address) return C.C_float is
-       (Raw_Video.Get_Window_Opacity (Value));
+       (Raw_Video.Get_Window_Opacity (To_Window_Pointer (Value)));
 
    function SDL_Set_Window_Parent
      (Value  : in System.Address;
       Parent : in System.Address) return CE.bool is
-       (Raw_Video.Set_Window_Parent (Value, Parent));
+       (Raw_Video.Set_Window_Parent
+          (To_Window_Pointer (Value), To_Window_Pointer (Parent)));
 
    function SDL_Get_Window_Parent
      (Value : in System.Address) return System.Address is
-       (Raw_Video.Get_Window_Parent (Value));
+       (To_Window_Address
+          (Raw_Video.Get_Window_Parent (To_Window_Pointer (Value))));
 
    function SDL_Set_Window_Modal
      (Value : in System.Address;
       Modal : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Modal (Value, Modal));
+       (Raw_Video.Set_Window_Modal (To_Window_Pointer (Value), Modal));
 
    function SDL_Set_Window_Focusable
      (Value     : in System.Address;
       Focusable : in CE.bool) return CE.bool is
-       (Raw_Video.Set_Window_Focusable (Value, Focusable));
+       (Raw_Video.Set_Window_Focusable
+          (To_Window_Pointer (Value), Focusable));
 
    function SDL_Show_Window_System_Menu
      (Value : in System.Address;
       X     : in SDL.Coordinate;
       Y     : in SDL.Coordinate) return CE.bool is
-       (Raw_Video.Show_Window_System_Menu (Value, C.int (X), C.int (Y)));
+       (Raw_Video.Show_Window_System_Menu
+          (To_Window_Pointer (Value), C.int (X), C.int (Y)));
 
    function SDL_Set_Window_Hit_Test
      (Value     : in System.Address;
       Callback  : in Hit_Test_Callback;
       User_Data : in System.Address) return CE.bool is
        (Raw_Video.Set_Window_Hit_Test
-          (Value, To_Raw_Hit_Test_Callback (Callback), User_Data));
+          (To_Window_Pointer (Value), To_Raw_Hit_Test_Callback (Callback), User_Data));
 
    function SDL_Set_Window_Shape
      (Value : in System.Address;
       Shape : in SDL.Video.Surfaces.Internal_Surface_Pointer) return CE.bool is
-       (Raw_Video.Set_Window_Shape (Value, To_Address (Shape)));
+       (Raw_Video.Set_Window_Shape
+          (To_Window_Pointer (Value), To_Surface_Pointer (Shape)));
 
    function SDL_Flash_Window
      (Value     : in System.Address;
       Operation : in Flash_Operations) return CE.bool is
-       (Raw_Video.Flash_Window (Value, To_Raw (Operation)));
+       (Raw_Video.Flash_Window (To_Window_Pointer (Value), To_Raw (Operation)));
 
    function SDL_Set_Window_Progress_State
      (Value : in System.Address;
       State : in Progress_States) return CE.bool is
-       (Raw_Video.Set_Window_Progress_State (Value, To_Raw (State)));
+       (Raw_Video.Set_Window_Progress_State
+          (To_Window_Pointer (Value), To_Raw (State)));
 
    function SDL_Get_Window_Progress_State
      (Value : in System.Address) return Progress_States is
-       (To_Public (Raw_Video.Get_Window_Progress_State (Value)));
+       (To_Public
+          (Raw_Video.Get_Window_Progress_State (To_Window_Pointer (Value))));
 
    function SDL_Set_Window_Progress_Value
      (Value : in System.Address;
       Scale : in C.C_float) return CE.bool is
-       (Raw_Video.Set_Window_Progress_Value (Value, Scale));
+       (Raw_Video.Set_Window_Progress_Value
+          (To_Window_Pointer (Value), Scale));
 
    function SDL_Get_Window_Progress_Value
      (Value : in System.Address) return C.C_float is
-       (Raw_Video.Get_Window_Progress_Value (Value));
+       (Raw_Video.Get_Window_Progress_Value (To_Window_Pointer (Value)));
 
    procedure SDL_Destroy_Window (Value : in System.Address) is
    begin
-      Raw_Video.Destroy_Window (Value);
+      Raw_Video.Destroy_Window (To_Window_Pointer (Value));
    end SDL_Destroy_Window;
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
@@ -618,11 +704,11 @@ package body SDL.Video.Windows is
      (Value : in Internal_Mode) return SDL.Video.Displays.Mode is
    begin
       return
-        (Format       => Value.Format,
+        (Format       => SDL.Video.Pixel_Formats.Pixel_Format_Names (Value.Format),
          Width        => Value.Width,
          Height       => Value.Height,
          Refresh_Rate => To_Refresh_Rate (Value.Refresh_Rate),
-         Driver_Data  => Value.Driver_Data);
+         Driver_Data  => Value.Internal);
    end To_Public;
 
    function To_Internal
@@ -630,14 +716,14 @@ package body SDL.Video.Windows is
    begin
       return
         (Display       => 0,
-         Format        => Value.Format,
+         Format        => Raw_Video.Pixel_Format_Name (Value.Format),
          Width         => Value.Width,
          Height        => Value.Height,
          Pixel_Density => 0.0,
          Refresh_Rate  => C.C_float (Value.Refresh_Rate),
-         Refresh_Num   => 0,
-         Refresh_Denom => 0,
-         Driver_Data   => Value.Driver_Data);
+         Refresh_Numerator   => 0,
+         Refresh_Denominator => 0,
+         Internal            => Value.Driver_Data);
    end To_Internal;
 
    function Make_Window_From_Pointer
@@ -947,14 +1033,15 @@ package body SDL.Video.Windows is
       Direct   : aliased constant Internal_Mode := To_Internal (Mode);
       Resolved : aliased Internal_Mode :=
         (Display       => 0,
-         Format        => SDL.Video.Pixel_Formats.Pixel_Format_Unknown,
+         Format        => Raw_Video.Pixel_Format_Name
+           (SDL.Video.Pixel_Formats.Pixel_Format_Unknown),
          Width         => 0,
          Height        => 0,
          Pixel_Density => 0.0,
          Refresh_Rate  => 0.0,
-         Refresh_Num   => 0,
-         Refresh_Denom => 0,
-         Driver_Data   => System.Null_Address);
+         Refresh_Numerator   => 0,
+         Refresh_Denominator => 0,
+         Internal            => System.Null_Address);
    begin
       Require_Window (Self);
 

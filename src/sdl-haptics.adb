@@ -3,7 +3,6 @@ with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
-with SDL.Raw.Haptic;
 
 package body SDL.Haptics is
    package Raw renames SDL.Raw.Haptic;
@@ -13,23 +12,10 @@ package body SDL.Haptics is
    use type CS.chars_ptr;
    use type Raw.ID_Pointers.Pointer;
    use type SDL.C_Pointers.Haptic_Pointer;
-   use type System.Address;
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
-
-   function To_Address is new Ada.Unchecked_Conversion
-     (Source => SDL.C_Pointers.Haptic_Pointer,
-      Target => System.Address);
-
-   function To_Address is new Ada.Unchecked_Conversion
-     (Source => SDL.C_Pointers.Joystick_Pointer,
-      Target => System.Address);
-
-   function To_Pointer is new Ada.Unchecked_Conversion
-     (Source => System.Address,
-      Target => SDL.C_Pointers.Haptic_Pointer);
 
    procedure Raise_Last_Error
      (Default_Message : in String := "SDL haptic call failed");
@@ -173,7 +159,7 @@ package body SDL.Haptics is
    begin
       Open_Internal
         (Self,
-         To_Pointer (Raw.Open_Haptic_From_Mouse),
+         Raw.Open_Haptic_From_Mouse,
          "SDL_OpenHapticFromMouse failed");
    end Open_Mouse;
 
@@ -183,7 +169,7 @@ package body SDL.Haptics is
    begin
       return Boolean
         (Raw.Is_Joystick_Haptic
-           (To_Address (SDL.Inputs.Joysticks.Get_Internal (Joystick))));
+           (SDL.Inputs.Joysticks.Get_Internal (Joystick)));
    end Is_Joystick_Haptic;
 
    function Open (Instance : in ID) return Haptic is
@@ -199,14 +185,14 @@ package body SDL.Haptics is
    begin
       Open_Internal
         (Self,
-         To_Pointer (Raw.Open_Haptic (Raw.ID (Instance))),
+         Raw.Open_Haptic (Raw.ID (Instance)),
          "SDL_OpenHaptic failed");
    end Open;
 
    function Get (Instance : in ID) return Haptic is
    begin
       return (Ada.Finalization.Limited_Controlled with
-              Internal => To_Pointer (Raw.Get_Haptic_From_ID (Raw.ID (Instance))),
+              Internal => Raw.Get_Haptic_From_ID (Raw.ID (Instance)),
               Owns     => False);
    end Get;
 
@@ -224,9 +210,8 @@ package body SDL.Haptics is
    begin
       Open_Internal
         (Self,
-         To_Pointer
-           (Raw.Open_Haptic_From_Joystick
-              (To_Address (SDL.Inputs.Joysticks.Get_Internal (Joystick)))),
+         Raw.Open_Haptic_From_Joystick
+           (SDL.Inputs.Joysticks.Get_Internal (Joystick)),
          "SDL_OpenHapticFromJoystick failed");
    end Open_From_Joystick;
 
@@ -239,7 +224,7 @@ package body SDL.Haptics is
    procedure Close (Self : in out Haptic) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         Raw.Close_Haptic (To_Address (Self.Internal));
+         Raw.Close_Haptic (Self.Internal);
       end if;
 
       Self.Internal := null;
@@ -256,7 +241,7 @@ package body SDL.Haptics is
          return 0;
       end if;
 
-      Result := ID (Raw.Get_Haptic_ID (To_Address (Self.Internal)));
+      Result := ID (Raw.Get_Haptic_ID (Self.Internal));
       if Result = 0 then
          Raise_Last_Error ("SDL_GetHapticID failed");
       end if;
@@ -269,7 +254,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
 
-      Value := Raw.Get_Haptic_Name (To_Address (Self.Internal));
+      Value := Raw.Get_Haptic_Name (Self.Internal);
       if Value = CS.Null_Ptr then
          return "";
       end if;
@@ -281,7 +266,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
       return Checked_Count
-        (Raw.Get_Max_Haptic_Effects (To_Address (Self.Internal)),
+        (Raw.Get_Max_Haptic_Effects (Self.Internal),
          "SDL_GetMaxHapticEffects failed");
    end Get_Max_Effects;
 
@@ -289,21 +274,21 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
       return Checked_Count
-        (Raw.Get_Max_Haptic_Effects_Playing (To_Address (Self.Internal)),
+        (Raw.Get_Max_Haptic_Effects_Playing (Self.Internal),
          "SDL_GetMaxHapticEffectsPlaying failed");
    end Get_Max_Playing_Effects;
 
    function Get_Features (Self : in Haptic) return Features is
    begin
       Require_Valid (Self);
-      return Features (Raw.Get_Haptic_Features (To_Address (Self.Internal)));
+      return Features (Raw.Get_Haptic_Features (Self.Internal));
    end Get_Features;
 
    function Get_Num_Axes (Self : in Haptic) return Natural is
    begin
       Require_Valid (Self);
       return Checked_Count
-        (Raw.Get_Num_Haptic_Axes (To_Address (Self.Internal)),
+        (Raw.Get_Num_Haptic_Axes (Self.Internal),
          "SDL_GetNumHapticAxes failed");
    end Get_Num_Axes;
 
@@ -315,8 +300,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
       return Boolean
-        (Raw.Haptic_Effect_Supported
-           (To_Address (Self.Internal), Copy'Address));
+        (Raw.Haptic_Effect_Supported (Self.Internal, Copy'Access));
    end Effect_Supported;
 
    function Create_Effect
@@ -329,8 +313,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       Result :=
-        Raw.Create_Haptic_Effect
-          (To_Address (Self.Internal), Copy'Address);
+        Raw.Create_Haptic_Effect (Self.Internal, Copy'Access);
       if Result < 0 then
          Raise_Last_Error ("SDL_CreateHapticEffect failed");
       end if;
@@ -348,8 +331,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Update_Haptic_Effect
-             (To_Address (Self.Internal), Item, Copy'Address))
+          (Raw.Update_Haptic_Effect (Self.Internal, Item, Copy'Access))
       then
          Raise_Last_Error ("SDL_UpdateHapticEffect failed");
       end if;
@@ -363,8 +345,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Run_Haptic_Effect
-             (To_Address (Self.Internal), Raw.Effect_ID (Item), Iterations))
+          (Raw.Run_Haptic_Effect (Self.Internal, Raw.Effect_ID (Item), Iterations))
       then
          Raise_Last_Error ("SDL_RunHapticEffect failed");
       end if;
@@ -377,8 +358,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Stop_Haptic_Effect
-             (To_Address (Self.Internal), Raw.Effect_ID (Item)))
+          (Raw.Stop_Haptic_Effect (Self.Internal, Raw.Effect_ID (Item)))
       then
          Raise_Last_Error ("SDL_StopHapticEffect failed");
       end if;
@@ -389,8 +369,7 @@ package body SDL.Haptics is
       Item   : in Effect_ID) is
    begin
       Require_Valid (Self);
-      Raw.Destroy_Haptic_Effect
-        (To_Address (Self.Internal), Raw.Effect_ID (Item));
+      Raw.Destroy_Haptic_Effect (Self.Internal, Raw.Effect_ID (Item));
    end Destroy_Effect;
 
    function Effect_Status
@@ -399,8 +378,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
       return Boolean
-        (Raw.Get_Haptic_Effect_Status
-           (To_Address (Self.Internal), Raw.Effect_ID (Item)));
+        (Raw.Get_Haptic_Effect_Status (Self.Internal, Raw.Effect_ID (Item)));
    end Effect_Status;
 
    procedure Set_Gain
@@ -410,7 +388,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Set_Haptic_Gain (To_Address (Self.Internal), Gain))
+          (Raw.Set_Haptic_Gain (Self.Internal, Gain))
       then
          Raise_Last_Error ("SDL_SetHapticGain failed");
       end if;
@@ -423,7 +401,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Set_Haptic_Autocenter (To_Address (Self.Internal), Autocenter))
+          (Raw.Set_Haptic_Autocenter (Self.Internal, Autocenter))
       then
          Raise_Last_Error ("SDL_SetHapticAutocenter failed");
       end if;
@@ -433,7 +411,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
 
-      if not Boolean (Raw.Pause_Haptic (To_Address (Self.Internal))) then
+      if not Boolean (Raw.Pause_Haptic (Self.Internal)) then
          Raise_Last_Error ("SDL_PauseHaptic failed");
       end if;
    end Pause;
@@ -442,7 +420,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
 
-      if not Boolean (Raw.Resume_Haptic (To_Address (Self.Internal))) then
+      if not Boolean (Raw.Resume_Haptic (Self.Internal)) then
          Raise_Last_Error ("SDL_ResumeHaptic failed");
       end if;
    end Resume;
@@ -451,7 +429,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
 
-      if not Boolean (Raw.Stop_Haptic_Effects (To_Address (Self.Internal))) then
+      if not Boolean (Raw.Stop_Haptic_Effects (Self.Internal)) then
          Raise_Last_Error ("SDL_StopHapticEffects failed");
       end if;
    end Stop_All_Effects;
@@ -459,14 +437,14 @@ package body SDL.Haptics is
    function Supports_Rumble (Self : in Haptic) return Boolean is
    begin
       Require_Valid (Self);
-      return Boolean (Raw.Haptic_Rumble_Supported (To_Address (Self.Internal)));
+      return Boolean (Raw.Haptic_Rumble_Supported (Self.Internal));
    end Supports_Rumble;
 
    procedure Initialise_Rumble (Self : in Haptic) is
    begin
       Require_Valid (Self);
 
-      if not Boolean (Raw.Init_Haptic_Rumble (To_Address (Self.Internal))) then
+      if not Boolean (Raw.Init_Haptic_Rumble (Self.Internal)) then
          Raise_Last_Error ("SDL_InitHapticRumble failed");
       end if;
    end Initialise_Rumble;
@@ -479,8 +457,7 @@ package body SDL.Haptics is
       Require_Valid (Self);
 
       if not Boolean
-          (Raw.Play_Haptic_Rumble
-             (To_Address (Self.Internal), Strength, Length_MS))
+          (Raw.Play_Haptic_Rumble (Self.Internal, Strength, Length_MS))
       then
          Raise_Last_Error ("SDL_PlayHapticRumble failed");
       end if;
@@ -490,7 +467,7 @@ package body SDL.Haptics is
    begin
       Require_Valid (Self);
 
-      if not Boolean (Raw.Stop_Haptic_Rumble (To_Address (Self.Internal))) then
+      if not Boolean (Raw.Stop_Haptic_Rumble (Self.Internal)) then
          Raise_Last_Error ("SDL_StopHapticRumble failed");
       end if;
    end Stop_Rumble;

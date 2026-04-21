@@ -43,7 +43,8 @@ should not grow into a second raw layer.
 - `Makers` packages remain public wrappers only. They do not become raw and they
   do not import SDL directly.
 - `SDL.C_Pointers` is frozen as a compatibility/support package. New code should
-  prefer generated opaque types in the appropriate raw family.
+  prefer generated opaque types in the appropriate raw family or a dedicated
+  raw support package such as `SDL.Raw.C_Pointers`.
 
 ## Subsystem Map
 
@@ -61,7 +62,7 @@ should not grow into a second raw layer.
 | `SDL.Hints` | public wrapper | add `SDL.Raw.Hints` | Callback watch plumbing stays handwritten. |
 | `SDL.Platform`, `SDL.CPUS`, `SDL.Power`, `SDL.Versions`, `SDL.Locale`, `SDL.Misc`, `SDL.Libraries` | public value or thin wrapper layer | keep or add `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, `SDL.Raw.Version`, `SDL.Raw.Locale`, `SDL.Raw.Misc`, `SDL.Raw.LoadSO` | `SDL.Raw.Platform`, `SDL.Raw.CPUInfo`, `SDL.Raw.Power`, `SDL.Raw.Version`, and `SDL.Raw.LoadSO` now exist. |
 | `SDL.Filesystems`, `SDL.Properties`, `SDL.Processes`, `SDL.Storage`, `SDL.Systems`, `SDL.Threads`, `SDL.Time`, `SDL.Timers` | public wrappers | keep or add raw families and normalize them | Existing raw families are the right shape conceptually, but handwritten public layers should own all buffer, string, and lifetime policy. `SDL.Timers` can remain a pure wrapper while routing timer and delay entry points through `SDL.Raw.Timer`. |
-| `SDL.C_Pointers` | compatibility/support only | no new raw dependency on it | Existing public package can remain for compatibility, but generated raw families should declare their own opaque types or use a dedicated raw support package. |
+| `SDL.C_Pointers` | compatibility/support only | no new raw dependency on it | Existing public package can remain for compatibility as a facade over `SDL.Raw.C_Pointers`, but generated raw families should declare their own opaque types or use dedicated raw support packages instead of depending on the public unit. |
 | `SDL.UTF_8` | public support layer | add `SDL.Raw.UTF_8` only for ABI-level helpers | Ada string encoding policy stays above raw. |
 
 ### Audio

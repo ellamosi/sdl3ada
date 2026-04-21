@@ -5,7 +5,7 @@ with Interfaces.C;
 with Interfaces.C.Extensions;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
 
 package SDL.Raw.IOStream is
@@ -94,9 +94,8 @@ package SDL.Raw.IOStream is
    end record with
      Convention => C;
 
-   type IO_Stream_Object is null record;
-   type IO_Stream_Access is access all IO_Stream_Object with
-     Convention => C;
+   subtype IO_Stream_Object is SDL.Raw.C_Pointers.IO_Streams;
+   subtype IO_Stream_Access is SDL.Raw.C_Pointers.IO_Stream_Pointer;
 
    procedure Free (Memory : in System.Address)
    with
@@ -106,7 +105,7 @@ package SDL.Raw.IOStream is
 
    function IO_From_File
      (File : in C.char_array;
-      Mode : in C.char_array) return SDL.C_Pointers.IO_Stream_Pointer
+      Mode : in C.char_array) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -122,7 +121,7 @@ package SDL.Raw.IOStream is
 
    function IO_From_Mem
      (Mem : in System.Address;
-      Size : in C.size_t) return SDL.C_Pointers.IO_Stream_Pointer
+      Size : in C.size_t) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -136,13 +135,13 @@ package SDL.Raw.IOStream is
 
    function IO_From_Const_Mem
      (Mem : in System.Address;
-      Size : in C.size_t) return SDL.C_Pointers.IO_Stream_Pointer
+      Size : in C.size_t) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_IOFromConstMem";
 
-   function IO_From_Dynamic_Mem return SDL.C_Pointers.IO_Stream_Pointer
+   function IO_From_Dynamic_Mem return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -154,42 +153,42 @@ package SDL.Raw.IOStream is
 
    function Open_IO
      (Iface : access constant IO_Stream_Interface;
-      Userdata : in System.Address) return SDL.C_Pointers.IO_Stream_Pointer
+      Userdata : in System.Address) return SDL.Raw.C_Pointers.IO_Stream_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenIO";
 
    function Close_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return CE.bool
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CloseIO";
 
    function Get_IO_Properties
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return SDL.Raw.Properties.ID
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetIOProperties";
 
    function Get_IO_Status
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return IO_Status
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return IO_Status
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetIOStatus";
 
    function Get_IO_Size
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return Interfaces.Integer_64
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return Interfaces.Integer_64
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetIOSize";
 
    function Seek_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Offset : in Interfaces.Integer_64;
       Whence : in IO_Whence) return Interfaces.Integer_64
    with
@@ -198,14 +197,14 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_SeekIO";
 
    function Tell_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return Interfaces.Integer_64
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return Interfaces.Integer_64
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_TellIO";
 
    function Read_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Ptr : in System.Address;
       Size : in C.size_t) return C.size_t
    with
@@ -214,7 +213,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadIO";
 
    function Write_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Ptr : in System.Address;
       Size : in C.size_t) return C.size_t
    with
@@ -223,7 +222,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteIO";
 
    function I_Oprintf
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Fmt : in C.char_array) return C.size_t
    with
      Import        => True,
@@ -231,7 +230,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_IOprintf";
 
    function I_Ovprintf
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Fmt : in C.char_array;
       Ap : in System.Address) return C.size_t
    with
@@ -240,14 +239,14 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_IOvprintf";
 
    function Flush_IO
-     (Context : in SDL.C_Pointers.IO_Stream_Pointer) return CE.bool
+     (Context : in SDL.Raw.C_Pointers.IO_Stream_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_FlushIO";
 
    function Load_File_IO
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Datasize : access C.size_t;
       Closeio : in CE.bool) return System.Address
    with
@@ -264,7 +263,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_LoadFile";
 
    function Save_File_IO
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Data : in System.Address;
       Datasize : in C.size_t;
       Closeio : in CE.bool) return CE.bool
@@ -283,7 +282,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_SaveFile";
 
    function Read_U_8
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_8) return CE.bool
    with
      Import        => True,
@@ -291,7 +290,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU8";
 
    function Read_S_8
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_8) return CE.bool
    with
      Import        => True,
@@ -299,7 +298,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS8";
 
    function Read_U_16_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_16) return CE.bool
    with
      Import        => True,
@@ -307,7 +306,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU16LE";
 
    function Read_S_16_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_16) return CE.bool
    with
      Import        => True,
@@ -315,7 +314,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS16LE";
 
    function Read_U_16_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_16) return CE.bool
    with
      Import        => True,
@@ -323,7 +322,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU16BE";
 
    function Read_S_16_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_16) return CE.bool
    with
      Import        => True,
@@ -331,7 +330,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS16BE";
 
    function Read_U_32_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_32) return CE.bool
    with
      Import        => True,
@@ -339,7 +338,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU32LE";
 
    function Read_S_32_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_32) return CE.bool
    with
      Import        => True,
@@ -347,7 +346,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS32LE";
 
    function Read_U_32_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_32) return CE.bool
    with
      Import        => True,
@@ -355,7 +354,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU32BE";
 
    function Read_S_32_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_32) return CE.bool
    with
      Import        => True,
@@ -363,7 +362,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS32BE";
 
    function Read_U_64_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_64) return CE.bool
    with
      Import        => True,
@@ -371,7 +370,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU64LE";
 
    function Read_S_64_Le
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_64) return CE.bool
    with
      Import        => True,
@@ -379,7 +378,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS64LE";
 
    function Read_U_64_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Unsigned_64) return CE.bool
    with
      Import        => True,
@@ -387,7 +386,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadU64BE";
 
    function Read_S_64_Be
-     (Src : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Src : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : access Interfaces.Integer_64) return CE.bool
    with
      Import        => True,
@@ -395,7 +394,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_ReadS64BE";
 
    function Write_U_8
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_8) return CE.bool
    with
      Import        => True,
@@ -403,7 +402,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU8";
 
    function Write_S_8
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_8) return CE.bool
    with
      Import        => True,
@@ -411,7 +410,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS8";
 
    function Write_U_16_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_16) return CE.bool
    with
      Import        => True,
@@ -419,7 +418,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU16LE";
 
    function Write_S_16_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_16) return CE.bool
    with
      Import        => True,
@@ -427,7 +426,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS16LE";
 
    function Write_U_16_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_16) return CE.bool
    with
      Import        => True,
@@ -435,7 +434,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU16BE";
 
    function Write_S_16_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_16) return CE.bool
    with
      Import        => True,
@@ -443,7 +442,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS16BE";
 
    function Write_U_32_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_32) return CE.bool
    with
      Import        => True,
@@ -451,7 +450,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU32LE";
 
    function Write_S_32_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_32) return CE.bool
    with
      Import        => True,
@@ -459,7 +458,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS32LE";
 
    function Write_U_32_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_32) return CE.bool
    with
      Import        => True,
@@ -467,7 +466,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU32BE";
 
    function Write_S_32_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_32) return CE.bool
    with
      Import        => True,
@@ -475,7 +474,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS32BE";
 
    function Write_U_64_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_64) return CE.bool
    with
      Import        => True,
@@ -483,7 +482,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU64LE";
 
    function Write_S_64_Le
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_64) return CE.bool
    with
      Import        => True,
@@ -491,7 +490,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteS64LE";
 
    function Write_U_64_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Unsigned_64) return CE.bool
    with
      Import        => True,
@@ -499,7 +498,7 @@ package SDL.Raw.IOStream is
      External_Name => "SDL_WriteU64BE";
 
    function Write_S_64_Be
-     (Dst : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Dst : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Value : in Interfaces.Integer_64) return CE.bool
    with
      Import        => True,

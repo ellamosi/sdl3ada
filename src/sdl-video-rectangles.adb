@@ -1,41 +1,56 @@
-with System;
-
 with SDL.Error;
 with SDL.Raw.Rect;
 
 package body SDL.Video.Rectangles is
    package Raw renames SDL.Raw.Rect;
 
-   function Address_Of
-     (Points : in Point_Arrays) return System.Address is
-     (if Points'Length = 0 then System.Null_Address else Points (Points'First)'Address);
+   function To_Raw (Value : in Point) return Raw.Point is
+     ((X => Value.X, Y => Value.Y));
 
-   function Address_Of
-     (Points : in Float_Point_Arrays) return System.Address is
-     (if Points'Length = 0 then System.Null_Address else Points (Points'First)'Address);
+   function To_Raw (Value : in Rectangle) return Raw.Rectangle is
+     ((X      => Value.X,
+       Y      => Value.Y,
+       Width  => Raw.Dimension (Value.Width),
+       Height => Raw.Dimension (Value.Height)));
+
+   function To_Public (Value : in Raw.Rectangle) return Rectangle is
+     ((X      => Value.X,
+       Y      => Value.Y,
+       Width  => SDL.Natural_Dimension (Value.Width),
+       Height => SDL.Natural_Dimension (Value.Height)));
+
+   function To_Raw (Value : in Float_Rectangle) return Raw.Float_Rectangle is
+     ((X      => Value.X,
+       Y      => Value.Y,
+       Width  => Value.Width,
+       Height => Value.Height));
+
+   function To_Public
+     (Value : in Raw.Float_Rectangle) return Float_Rectangle is
+     ((X      => Value.X,
+       Y      => Value.Y,
+       Width  => Value.Width,
+       Height => Value.Height));
 
    function Has_Intersected (A, B : in Rectangle) return Boolean is
-      Left  : aliased Rectangle := A;
-      Right : aliased Rectangle := B;
+      Left  : aliased constant Raw.Rectangle := To_Raw (A);
+      Right : aliased constant Raw.Rectangle := To_Raw (B);
    begin
-      return Boolean
-        (Raw.Has_Rect_Intersection (Left'Address, Right'Address));
+      return Boolean (Raw.Has_Rect_Intersection (Left'Access, Right'Access));
    end Has_Intersected;
 
    function Intersects
      (A, B : in Rectangle;
       Intersection : out Rectangle) return Boolean
    is
-      Left   : aliased Rectangle := A;
-      Right  : aliased Rectangle := B;
-      Result : aliased Rectangle := Null_Rectangle;
+      Left   : aliased constant Raw.Rectangle := To_Raw (A);
+      Right  : aliased constant Raw.Rectangle := To_Raw (B);
+      Result : aliased Raw.Rectangle := Raw.Null_Rectangle;
       Found  : constant Boolean :=
-        Boolean
-          (Raw.Get_Rect_Intersection
-             (Left'Address, Right'Address, Result'Address));
+        Boolean (Raw.Get_Rect_Intersection (Left'Access, Right'Access, Result'Access));
    begin
       if Found then
-         Intersection := Result;
+         Intersection := To_Public (Result);
       else
          Intersection := Null_Rectangle;
       end if;
@@ -44,15 +59,14 @@ package body SDL.Video.Rectangles is
    end Intersects;
 
    function Union (A, B : in Rectangle) return Rectangle is
-      Left   : aliased Rectangle := A;
-      Right  : aliased Rectangle := B;
-      Result : aliased Rectangle := Null_Rectangle;
+      Left    : aliased constant Raw.Rectangle := To_Raw (A);
+      Right   : aliased constant Raw.Rectangle := To_Raw (B);
+      Result  : aliased Raw.Rectangle := Raw.Null_Rectangle;
       Ignored : constant Boolean :=
-        Boolean
-          (Raw.Get_Rect_Union (Left'Address, Right'Address, Result'Address));
+        Boolean (Raw.Get_Rect_Union (Left'Access, Right'Access, Result'Access));
       pragma Unreferenced (Ignored);
    begin
-      return Result;
+      return To_Public (Result);
    end Union;
 
    function Enclose
@@ -60,18 +74,24 @@ package body SDL.Video.Rectangles is
       Clip     : in Rectangle;
       Enclosed : out Rectangle) return Boolean
    is
-      Clipped : aliased Rectangle := Clip;
-      Result  : aliased Rectangle := Null_Rectangle;
-      Found   : constant Boolean :=
+      Converted : Raw.Point_Array (Points'Range);
+      Clipped   : aliased constant Raw.Rectangle := To_Raw (Clip);
+      Result    : aliased Raw.Rectangle := Raw.Null_Rectangle;
+      Found     : Boolean;
+   begin
+      for Index in Points'Range loop
+         Converted (Index) := To_Raw (Points (Index));
+      end loop;
+
+      Found :=
         Boolean
           (Raw.Get_Rect_Enclosing_Points
-             (Address_Of (Points),
+             ((if Converted'Length = 0 then null else Converted (Converted'First)'Access),
               C.int (Points'Length),
-              Clipped'Address,
-              Result'Address));
-   begin
+              Clipped'Access,
+              Result'Access));
       if Found then
-         Enclosed := Result;
+         Enclosed := To_Public (Result);
       else
          Enclosed := Null_Rectangle;
       end if;
@@ -83,26 +103,31 @@ package body SDL.Video.Rectangles is
      (Points   : in Point_Arrays;
       Enclosed : out Rectangle)
    is
-      Result : aliased Rectangle := Null_Rectangle;
+      Converted : Raw.Point_Array (Points'Range);
+      Result    : aliased Raw.Rectangle := Raw.Null_Rectangle;
    begin
+      for Index in Points'Range loop
+         Converted (Index) := To_Raw (Points (Index));
+      end loop;
+
       if not Boolean
           (Raw.Get_Rect_Enclosing_Points
-             (Address_Of (Points),
+             ((if Converted'Length = 0 then null else Converted (Converted'First)'Access),
               C.int (Points'Length),
-              System.Null_Address,
-              Result'Address))
+              null,
+              Result'Access))
       then
          raise Rectangle_Error with SDL.Error.Get;
       end if;
 
-      Enclosed := Result;
+      Enclosed := To_Public (Result);
    end Enclose;
 
    function Clip_To
      (Clip_Area : in Rectangle;
       Line      : in out Line_Segment) return Boolean
    is
-      Area : aliased Rectangle := Clip_Area;
+      Area : aliased constant Raw.Rectangle := To_Raw (Clip_Area);
       X1   : aliased C.int := Line.Start.X;
       Y1   : aliased C.int := Line.Start.Y;
       X2   : aliased C.int := Line.Finish.X;
@@ -110,7 +135,7 @@ package body SDL.Video.Rectangles is
       Hit  : constant Boolean :=
         Boolean
           (Raw.Get_Rect_And_Line_Intersection
-             (Area'Address, X1'Access, Y1'Access, X2'Access, Y2'Access));
+             (Area'Access, X1'Access, Y1'Access, X2'Access, Y2'Access));
    begin
       if Hit then
          Line := (Start => (X => X1, Y => Y1), Finish => (X => X2, Y => Y2));
@@ -120,27 +145,27 @@ package body SDL.Video.Rectangles is
    end Clip_To;
 
    function Has_Intersected (A, B : in Float_Rectangle) return Boolean is
-      Left  : aliased Float_Rectangle := A;
-      Right : aliased Float_Rectangle := B;
+      Left  : aliased constant Raw.Float_Rectangle := To_Raw (A);
+      Right : aliased constant Raw.Float_Rectangle := To_Raw (B);
    begin
       return Boolean
-        (Raw.Has_Rect_Intersection_Float (Left'Address, Right'Address));
+        (Raw.Has_Rect_Intersection_Float (Left'Access, Right'Access));
    end Has_Intersected;
 
    function Intersects
      (A, B : in Float_Rectangle;
       Intersection : out Float_Rectangle) return Boolean
    is
-      Left   : aliased Float_Rectangle := A;
-      Right  : aliased Float_Rectangle := B;
-      Result : aliased Float_Rectangle := (others => 0.0);
+      Left   : aliased constant Raw.Float_Rectangle := To_Raw (A);
+      Right  : aliased constant Raw.Float_Rectangle := To_Raw (B);
+      Result : aliased Raw.Float_Rectangle := Raw.Null_Float_Rectangle;
       Found  : constant Boolean :=
         Boolean
           (Raw.Get_Rect_Intersection_Float
-             (Left'Address, Right'Address, Result'Address));
+             (Left'Access, Right'Access, Result'Access));
    begin
       if Found then
-         Intersection := Result;
+         Intersection := To_Public (Result);
       else
          Intersection := (others => 0.0);
       end if;
@@ -149,16 +174,16 @@ package body SDL.Video.Rectangles is
    end Intersects;
 
    function Union (A, B : in Float_Rectangle) return Float_Rectangle is
-      Left   : aliased Float_Rectangle := A;
-      Right  : aliased Float_Rectangle := B;
-      Result : aliased Float_Rectangle := (others => 0.0);
+      Left    : aliased constant Raw.Float_Rectangle := To_Raw (A);
+      Right   : aliased constant Raw.Float_Rectangle := To_Raw (B);
+      Result  : aliased Raw.Float_Rectangle := Raw.Null_Float_Rectangle;
       Ignored : constant Boolean :=
         Boolean
           (Raw.Get_Rect_Union_Float
-             (Left'Address, Right'Address, Result'Address));
+             (Left'Access, Right'Access, Result'Access));
       pragma Unreferenced (Ignored);
    begin
-      return Result;
+      return To_Public (Result);
    end Union;
 
    function Enclose
@@ -166,24 +191,23 @@ package body SDL.Video.Rectangles is
       Clip     : in Float_Rectangle;
       Enclosed : out Float_Rectangle) return Boolean
    is
-      Converted : Float_Point_Arrays (Points'Range);
-      Clipped   : aliased Float_Rectangle := Clip;
-      Result    : aliased Float_Rectangle := (others => 0.0);
+      Converted : Raw.Float_Point_Array (Points'Range);
+      Clipped   : aliased constant Raw.Float_Rectangle := To_Raw (Clip);
+      Result    : aliased Raw.Float_Rectangle := Raw.Null_Float_Rectangle;
    begin
       for Index in Points'Range loop
          Converted (Index) :=
-           (X => Float (Points (Index).X),
-            Y => Float (Points (Index).Y));
+           (X => Float (Points (Index).X), Y => Float (Points (Index).Y));
       end loop;
 
       if Boolean
           (Raw.Get_Rect_Enclosing_Points_Float
-             (Address_Of (Converted),
+             ((if Converted'Length = 0 then null else Converted (Converted'First)'Access),
               C.int (Converted'Length),
-              Clipped'Address,
-              Result'Address))
+              Clipped'Access,
+              Result'Access))
       then
-         Enclosed := Result;
+         Enclosed := To_Public (Result);
          return True;
       end if;
 
@@ -195,33 +219,32 @@ package body SDL.Video.Rectangles is
      (Points   : in Point_Arrays;
       Enclosed : out Float_Rectangle)
    is
-      Converted : Float_Point_Arrays (Points'Range);
-      Result    : aliased Float_Rectangle := (others => 0.0);
+      Converted : Raw.Float_Point_Array (Points'Range);
+      Result    : aliased Raw.Float_Rectangle := Raw.Null_Float_Rectangle;
    begin
       for Index in Points'Range loop
          Converted (Index) :=
-           (X => Float (Points (Index).X),
-            Y => Float (Points (Index).Y));
+           (X => Float (Points (Index).X), Y => Float (Points (Index).Y));
       end loop;
 
       if not Boolean
           (Raw.Get_Rect_Enclosing_Points_Float
-             (Address_Of (Converted),
+             ((if Converted'Length = 0 then null else Converted (Converted'First)'Access),
               C.int (Converted'Length),
-              System.Null_Address,
-              Result'Address))
+              null,
+              Result'Access))
       then
          raise Rectangle_Error with SDL.Error.Get;
       end if;
 
-      Enclosed := Result;
+      Enclosed := To_Public (Result);
    end Enclose;
 
    function Clip_To
      (Clip_Area : in Float_Rectangle;
       Line      : in out Line_Segment) return Boolean
    is
-      Area : aliased Float_Rectangle := Clip_Area;
+      Area : aliased constant Raw.Float_Rectangle := To_Raw (Clip_Area);
       X1   : aliased Float := Float (Line.Start.X);
       Y1   : aliased Float := Float (Line.Start.Y);
       X2   : aliased Float := Float (Line.Finish.X);
@@ -229,7 +252,7 @@ package body SDL.Video.Rectangles is
       Hit  : constant Boolean :=
         Boolean
           (Raw.Get_Rect_And_Line_Intersection_Float
-             (Area'Address, X1'Access, Y1'Access, X2'Access, Y2'Access));
+             (Area'Access, X1'Access, Y1'Access, X2'Access, Y2'Access));
    begin
       if Hit then
          Line :=

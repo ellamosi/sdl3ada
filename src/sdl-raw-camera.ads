@@ -5,15 +5,44 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.C_Pointers;
+with SDL.Raw.Pixels;
 with SDL.Raw.Properties;
 
 package SDL.Raw.Camera is
+   pragma Preelaborate;
+
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
 
    subtype ID is Interfaces.Unsigned_32;
+   subtype Colour_Space is Interfaces.Unsigned_32;
    subtype Timestamp_Nanoseconds is Interfaces.Unsigned_64;
+
+   Unknown_Colour_Space : constant Colour_Space := 0;
+
+   type Spec is record
+      Format                : SDL.Raw.Pixels.Pixel_Format_Name;
+      Colour_Space          : Interfaces.Unsigned_32;
+      Width                 : C.int;
+      Height                : C.int;
+      Framerate_Numerator   : C.int;
+      Framerate_Denominator : C.int;
+   end record
+   with Convention => C;
+
+   type Spec_Access is access constant Spec with
+     Convention => C;
+
+   type Spec_Access_Array is array (C.ptrdiff_t range <>) of aliased Spec_Access with
+     Convention => C;
+
+   package Spec_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => Spec_Access,
+      Element_Array      => Spec_Access_Array,
+      Default_Terminator => null);
 
    type Positions is
      (Unknown_Position,
@@ -84,7 +113,7 @@ package SDL.Raw.Camera is
 
    function Get_Camera_Supported_Formats
      (Instance : in ID;
-      Count    : access C.int) return System.Address
+      Count    : access C.int) return Spec_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,
@@ -106,43 +135,43 @@ package SDL.Raw.Camera is
 
    function Open_Camera
      (Instance : in ID;
-      Desired  : in System.Address) return System.Address
+      Desired  : access constant Spec) return SDL.Raw.C_Pointers.Camera_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenCamera";
 
    function Get_Camera_Permission_State
-     (Self : in System.Address) return Permission_States
+     (Self : in SDL.Raw.C_Pointers.Camera_Pointer) return Permission_States
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetCameraPermissionState";
 
    function Get_Camera_ID
-     (Self : in System.Address) return ID
+     (Self : in SDL.Raw.C_Pointers.Camera_Pointer) return ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetCameraID";
 
    function Get_Camera_Properties
-     (Self : in System.Address) return SDL.Raw.Properties.ID
+     (Self : in SDL.Raw.C_Pointers.Camera_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetCameraProperties";
 
    function Get_Camera_Format
-     (Self  : in System.Address;
-      Value : in System.Address) return CE.bool
+     (Self  : in SDL.Raw.C_Pointers.Camera_Pointer;
+      Value : access Spec) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetCameraFormat";
 
    function Acquire_Camera_Frame
-     (Self         : in System.Address;
+     (Self         : in SDL.Raw.C_Pointers.Camera_Pointer;
       Timestamp_NS : access Timestamp_Nanoseconds)
       return System.Address
    with
@@ -151,7 +180,7 @@ package SDL.Raw.Camera is
      External_Name => "SDL_AcquireCameraFrame";
 
    procedure Release_Camera_Frame
-     (Self  : in System.Address;
+     (Self  : in SDL.Raw.C_Pointers.Camera_Pointer;
       Frame : in System.Address)
    with
      Import        => True,
@@ -159,7 +188,7 @@ package SDL.Raw.Camera is
      External_Name => "SDL_ReleaseCameraFrame";
 
    procedure Close_Camera
-     (Self : in System.Address)
+     (Self : in SDL.Raw.C_Pointers.Camera_Pointer)
    with
      Import        => True,
      Convention    => C,

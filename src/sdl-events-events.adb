@@ -11,6 +11,7 @@ package body SDL.Events.Events is
    package Raw_Video renames SDL.Raw.Video;
 
    use type System.Address;
+   use type Raw_Video.Window_Pointer;
 
    function To_Raw (Value : in Event_Actions) return Raw_Events.Event_Action is
      (Raw_Events.Event_Action'Val (Event_Actions'Pos (Value)));
@@ -22,6 +23,10 @@ package body SDL.Events.Events is
    function To_Public is new Ada.Unchecked_Conversion
      (Source => Raw_Events.Event_Filter,
       Target => Event_Filter);
+
+   function To_Event_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Events.Event_Access);
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (CE.bool'Val (Boolean'Pos (Value)));
@@ -39,12 +44,14 @@ package body SDL.Events.Events is
 
    function Poll (Event : out Events) return Boolean is
    begin
-      return Boolean (Raw_Events.Poll_Event (Event'Address));
+      return Boolean (Raw_Events.Poll_Event (To_Event_Pointer (Event'Address)));
    end Poll;
 
    procedure Wait (Event : out Events) is
    begin
-      if not Boolean (Raw_Events.Wait_Event (Event'Address)) then
+      if not Boolean
+          (Raw_Events.Wait_Event (To_Event_Pointer (Event'Address)))
+      then
          Raise_With_Last_Error ("SDL_WaitEvent failed");
       end if;
    end Wait;
@@ -55,7 +62,8 @@ package body SDL.Events.Events is
    is
    begin
       return Boolean
-        (Raw_Events.Wait_Event_Timeout (Event'Address, Timeout_MS));
+        (Raw_Events.Wait_Event_Timeout
+           (To_Event_Pointer (Event'Address), Timeout_MS));
    end Wait;
 
    procedure Pump is
@@ -70,16 +78,16 @@ package body SDL.Events.Events is
       Max_Type : in SDL.Events.Event_Types := SDL.Events.Last_Event)
       return Natural
    is
-      Items_Address : System.Address := System.Null_Address;
-      Retrieved     : C.int;
+      Items_Buffer : Raw_Events.Event_Access := null;
+      Retrieved    : C.int;
    begin
       if Items'Length > 0 then
-         Items_Address := Items (Items'First)'Address;
+         Items_Buffer := To_Event_Pointer (Items (Items'First)'Address);
       end if;
 
       Retrieved :=
         Raw_Events.Peep_Events
-          (Items      => Items_Address,
+          (Items      => Items_Buffer,
            Num_Events => C.int (Items'Length),
            Action     => To_Raw (Action),
            Min_Type   => Raw_Events.Event_Type (Min_Type),
@@ -99,7 +107,7 @@ package body SDL.Events.Events is
    is
       Retrieved : constant C.int :=
         Raw_Events.Peep_Events
-          (Items      => System.Null_Address,
+          (Items      => null,
            Num_Events => 0,
            Action     => Raw_Events.Peek_Action,
            Min_Type   => Raw_Events.Event_Type (Min_Type),
@@ -148,7 +156,8 @@ package body SDL.Events.Events is
    function Push (Event : in Events) return Boolean is
       Local_Event : aliased Events := Event;
    begin
-      return Boolean (Raw_Events.Push_Event (Local_Event'Address));
+      return Boolean
+        (Raw_Events.Push_Event (To_Event_Pointer (Local_Event'Address)));
    end Push;
 
    procedure Set_Filter
@@ -232,10 +241,11 @@ package body SDL.Events.Events is
      (Event : in Events) return SDL.Video.Windows.ID
    is
       Local_Event : aliased constant Events := Event;
-      Window      : constant System.Address :=
-        Raw_Events.Get_Window_From_Event (Local_Event'Address);
+      Window      : constant Raw_Video.Window_Pointer :=
+        Raw_Events.Get_Window_From_Event
+          (To_Event_Pointer (Local_Event'Address));
    begin
-      if Window = System.Null_Address then
+      if Window = null then
          return 0;
       end if;
 
@@ -246,7 +256,7 @@ package body SDL.Events.Events is
       Local_Event : aliased constant Events := Event;
       Needed      : constant C.int :=
         Raw_Events.Get_Event_Description
-          (Event         => Local_Event'Address,
+          (Event         => To_Event_Pointer (Local_Event'Address),
            Buffer        => System.Null_Address,
            Buffer_Length => 0);
    begin
@@ -258,7 +268,7 @@ package body SDL.Events.Events is
          Buffer : aliased C.char_array (0 .. C.size_t (Needed));
          Written : constant C.int :=
            Raw_Events.Get_Event_Description
-             (Event         => Local_Event'Address,
+             (Event         => To_Event_Pointer (Local_Event'Address),
               Buffer        => Buffer'Address,
               Buffer_Length => Needed + 1);
       begin

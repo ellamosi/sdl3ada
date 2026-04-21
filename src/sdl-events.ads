@@ -1,10 +1,12 @@
 with Interfaces;
 with System;
 
+with SDL.Raw.Event_Types;
+
 package SDL.Events is
    pragma Pure;
 
-   subtype Event_Types is Interfaces.Unsigned_32;
+   subtype Event_Types is SDL.Raw.Event_Types.Event_Type;
    subtype Time_Stamps is Interfaces.Unsigned_64;
    subtype Window_IDs is Interfaces.Unsigned_32;
    subtype Keyboard_IDs is Interfaces.Unsigned_32;
@@ -15,18 +17,18 @@ package SDL.Events is
 
    for Button_State use (Released => 0, Pressed => 1);
 
-   First_Event               : constant Event_Types := 16#0000_0000#;
-   Quit                      : constant Event_Types := 16#0000_0100#;
-   App_Terminating           : constant Event_Types := 16#0000_0101#;
-   App_Low_Memory            : constant Event_Types := 16#0000_0102#;
-   App_Will_Enter_Background : constant Event_Types := 16#0000_0103#;
-   App_Did_Enter_Background  : constant Event_Types := 16#0000_0104#;
-   App_Will_Enter_Foreground : constant Event_Types := 16#0000_0105#;
-   App_Did_Enter_Foreground  : constant Event_Types := 16#0000_0106#;
-   Locale_Changed            : constant Event_Types := 16#0000_0107#;
-   Clipboard_Update          : constant Event_Types := 16#0000_0900#;
-   User                      : constant Event_Types := 16#0000_8000#;
-   Last_Event                : constant Event_Types := 16#0000_FFFF#;
+   First_Event               : constant Event_Types := SDL.Raw.Event_Types.First_Event;
+   Quit                      : constant Event_Types := SDL.Raw.Event_Types.Quit;
+   App_Terminating           : constant Event_Types := SDL.Raw.Event_Types.App_Terminating;
+   App_Low_Memory            : constant Event_Types := SDL.Raw.Event_Types.App_Low_Memory;
+   App_Will_Enter_Background : constant Event_Types := SDL.Raw.Event_Types.App_Will_Enter_Background;
+   App_Did_Enter_Background  : constant Event_Types := SDL.Raw.Event_Types.App_Did_Enter_Background;
+   App_Will_Enter_Foreground : constant Event_Types := SDL.Raw.Event_Types.App_Will_Enter_Foreground;
+   App_Did_Enter_Foreground  : constant Event_Types := SDL.Raw.Event_Types.App_Did_Enter_Foreground;
+   Locale_Changed            : constant Event_Types := SDL.Raw.Event_Types.Locale_Changed;
+   Clipboard_Update          : constant Event_Types := SDL.Raw.Event_Types.Clipboard_Update;
+   User                      : constant Event_Types := SDL.Raw.Event_Types.User;
+   Last_Event                : constant Event_Types := SDL.Raw.Event_Types.Last_Event;
 
    type Padding_8 is mod 2 ** 8 with
      Convention => C,

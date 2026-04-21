@@ -1,9 +1,12 @@
 with Ada.Streams;
+with Ada.Unchecked_Conversion;
 with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
 with SDL.Platform;
+with SDL.Raw.Pixels;
+with SDL.Raw.Rect;
 
 package body SDL.GPU is
    package CE renames Interfaces.C.Extensions;
@@ -25,8 +28,13 @@ package body SDL.GPU is
    use type Compute_Pass_Handle;
    use type Copy_Pass_Handle;
    use type Fence_Handle;
+   use type Raw.Window_Pointer;
    use type Shader_Formats;
    use type System.Address;
+
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Window_Pointer);
 
    function To_C_Bool (Value : in Boolean) return CE.bool is
      (if Value then CE.bool'Val (1) else CE.bool'Val (0));
@@ -56,6 +64,13 @@ package body SDL.GPU is
    function To_Raw
      (Value : in Transfer_Buffer_Usages) return Raw.Transfer_Buffer_Usages is
      (Raw.Transfer_Buffer_Usages (Transfer_Buffer_Usages'Enum_Rep (Value)));
+
+   function To_Raw
+     (Value : in SDL.Video.Rectangles.Rectangle) return SDL.Raw.Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Raw.Rect.Dimension (Value.Width),
+         Height => SDL.Raw.Rect.Dimension (Value.Height)));
 
    function To_Raw (Value : in Primitive_Types) return Raw.Primitive_Types is
      (Raw.Primitive_Types (Primitive_Types'Enum_Rep (Value)));
@@ -206,46 +221,6 @@ package body SDL.GPU is
      ((Format      => Value.Format,
        Blend_State => To_Raw (Value.Blend_State)));
 
-   type Raw_Vertex_Buffer_Description_Arrays is
-     array (C.size_t range <>) of aliased Raw.Vertex_Buffer_Description
-   with Convention => C;
-
-   type Raw_Vertex_Attribute_Arrays is
-     array (C.size_t range <>) of aliased Raw.Vertex_Attribute
-   with Convention => C;
-
-   type Raw_Colour_Target_Description_Arrays is
-     array (C.size_t range <>) of aliased Raw.Color_Target_Description
-   with Convention => C;
-
-   type Raw_Color_Target_Info_Arrays is
-     array (C.size_t range <>) of aliased Raw.Color_Target_Info
-   with Convention => C;
-
-   type Raw_Buffer_Binding_Arrays is
-     array (C.size_t range <>) of aliased Raw.Buffer_Binding
-   with Convention => C;
-
-   type Raw_Texture_Sampler_Binding_Arrays is
-     array (C.size_t range <>) of aliased Raw.Texture_Sampler_Binding
-   with Convention => C;
-
-   type Raw_Storage_Buffer_Read_Write_Binding_Arrays is
-     array (C.size_t range <>) of aliased Raw.Storage_Buffer_Read_Write_Binding
-   with Convention => C;
-
-   type Raw_Storage_Texture_Read_Write_Binding_Arrays is
-     array (C.size_t range <>) of aliased Raw.Storage_Texture_Read_Write_Binding
-   with Convention => C;
-
-   type Raw_Buffer_Handle_Arrays is
-     array (C.size_t range <>) of aliased Buffer_Handle
-   with Convention => C;
-
-   type Raw_Texture_Handle_Arrays is
-     array (C.size_t range <>) of aliased Texture_Handle
-   with Convention => C;
-
    function Array_Last (Length : in Natural) return C.size_t is
      (if Length = 0 then 0 else C.size_t (Length - 1));
 
@@ -281,8 +256,8 @@ package body SDL.GPU is
    procedure Require_Copy_Pass (Self : in Copy_Pass);
    procedure Require_Texture (Self : in Texture);
 
-   function Window_Address
-     (Window : in SDL.Video.Windows.Window) return System.Address;
+   function Window_Handle
+     (Window : in SDL.Video.Windows.Window) return Raw.Window_Pointer;
 
    procedure Require_Device (Self : in Device) is
    begin
@@ -368,8 +343,8 @@ package body SDL.GPU is
       end if;
    end Require_Texture;
 
-   function Window_Address
-     (Window : in SDL.Video.Windows.Window) return System.Address
+   function Window_Handle
+     (Window : in SDL.Video.Windows.Window) return Raw.Window_Pointer
    is
       Internal : constant System.Address := SDL.Video.Windows.Get_Internal (Window);
    begin
@@ -377,8 +352,8 @@ package body SDL.GPU is
          raise GPU_Error with "Invalid window";
       end if;
 
-      return Internal;
-   end Window_Address;
+      return To_Window_Pointer (Internal);
+   end Window_Handle;
 
    procedure Reset
      (Self     : in out Buffer;
@@ -757,12 +732,14 @@ package body SDL.GPU is
    function Pixel_Format_From_Texture_Format
      (Format : in Texture_Formats)
       return SDL.Video.Pixel_Formats.Pixel_Format_Names is
-     (Raw.Get_Pixel_Format_From_Texture_Format (Format));
+     (SDL.Video.Pixel_Formats.Pixel_Format_Names
+        (Raw.Get_Pixel_Format_From_Texture_Format (Format)));
 
    function Texture_Format_From_Pixel_Format
      (Format : in SDL.Video.Pixel_Formats.Pixel_Format_Names)
       return Texture_Formats is
-     (Raw.Get_Texture_Format_From_Pixel_Format (Format));
+     (Raw.Get_Texture_Format_From_Pixel_Format
+        (SDL.Raw.Pixels.Pixel_Format_Name (Format)));
 
    function Create_Buffer
      (Device     : in SDL.GPU.Device;
@@ -1354,14 +1331,17 @@ package body SDL.GPU is
         SDL.Properties.Null_Property_ID)
    is
       Raw_Vertex_Buffers    :
-        aliased Raw_Vertex_Buffer_Description_Arrays
+        aliased Raw.Vertex_Buffer_Description_Array
           (0 .. Array_Last (Vertex_Buffers'Length));
       Raw_Vertex_Attributes :
-        aliased Raw_Vertex_Attribute_Arrays
+        aliased Raw.Vertex_Attribute_Array
           (0 .. Array_Last (Vertex_Attributes'Length));
       Raw_Colour_Targets    :
-        aliased Raw_Colour_Target_Description_Arrays
+        aliased Raw.Color_Target_Description_Array
           (0 .. Array_Last (Color_Targets'Length));
+      First_Vertex_Buffer   : Raw.Vertex_Buffer_Description_Access := null;
+      First_Vertex_Attribute : Raw.Vertex_Attribute_Access := null;
+      First_Color_Target    : Raw.Color_Target_Description_Access := null;
       Info                  : aliased Raw.Graphics_Pipeline_Create_Info;
       Created               : Graphics_Pipeline_Handle;
    begin
@@ -1385,18 +1365,28 @@ package body SDL.GPU is
            To_Raw (Color_Targets (Index));
       end loop;
 
+      if Vertex_Buffers'Length > 0 then
+         First_Vertex_Buffer := Raw_Vertex_Buffers (0)'Unchecked_Access;
+      end if;
+
+      if Vertex_Attributes'Length > 0 then
+         First_Vertex_Attribute := Raw_Vertex_Attributes (0)'Unchecked_Access;
+      end if;
+
+      if Color_Targets'Length > 0 then
+         First_Color_Target := Raw_Colour_Targets (0)'Unchecked_Access;
+      end if;
+
       Info :=
         (Vertex_Shader      => Vertex.Internal,
          Fragment_Shader    => Fragment.Internal,
          Vertex_Input_State =>
            (Vertex_Buffer_Descriptions =>
-              (if Vertex_Buffers'Length = 0 then System.Null_Address
-               else Raw_Vertex_Buffers'Address),
+              First_Vertex_Buffer,
             Num_Vertex_Buffers         =>
               Interfaces.Unsigned_32 (Vertex_Buffers'Length),
             Vertex_Attributes          =>
-              (if Vertex_Attributes'Length = 0 then System.Null_Address
-               else Raw_Vertex_Attributes'Address),
+              First_Vertex_Attribute,
             Num_Vertex_Attributes      =>
               Interfaces.Unsigned_32 (Vertex_Attributes'Length)),
          Primitive_Type     => To_Raw (Primitive),
@@ -1405,8 +1395,7 @@ package body SDL.GPU is
          Depth_Stencil_State => To_Raw (Depth_Stencil),
          Target_Info        =>
            (Color_Target_Descriptions =>
-              (if Color_Targets'Length = 0 then System.Null_Address
-               else Raw_Colour_Targets'Address),
+              First_Color_Target,
             Num_Color_Targets         => Interfaces.Unsigned_32 (Color_Targets'Length),
             Depth_Stencil_Format      => Depth_Stencil_Format,
             Has_Depth_Stencil_Target  => To_C_Bool (Has_Depth_Stencil_Target),
@@ -1762,7 +1751,7 @@ package body SDL.GPU is
    begin
       Require_Device (Self);
 
-      if not To_Bool (Raw.Claim_Window (Self.Internal, Window_Address (Window))) then
+      if not To_Bool (Raw.Claim_Window (Self.Internal, Window_Handle (Window))) then
          Raise_GPU_Error ("SDL_ClaimWindowForGPUDevice failed");
       end if;
    end Claim_Window;
@@ -1777,7 +1766,7 @@ package body SDL.GPU is
          return;
       end if;
 
-      Raw.Release_Window (Self.Internal, Internal_Window);
+      Raw.Release_Window (Self.Internal, To_Window_Pointer (Internal_Window));
    end Release_Window;
 
    function Supports_Composition
@@ -1791,7 +1780,7 @@ package body SDL.GPU is
       return
         To_Bool
           (Raw.Window_Supports_Swapchain_Composition
-             (Self.Internal, Window_Address (Window), To_Raw (Composition)));
+             (Self.Internal, Window_Handle (Window), To_Raw (Composition)));
    end Supports_Composition;
 
    function Supports_Present_Mode
@@ -1805,7 +1794,7 @@ package body SDL.GPU is
       return
         To_Bool
           (Raw.Window_Supports_Present_Mode
-             (Self.Internal, Window_Address (Window), To_Raw (Present_Mode)));
+             (Self.Internal, Window_Handle (Window), To_Raw (Present_Mode)));
    end Supports_Present_Mode;
 
    procedure Set_Swapchain_Parameters
@@ -1820,7 +1809,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Set_Swapchain_Parameters
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               To_Raw (Composition),
               To_Raw (Present_Mode)))
       then
@@ -1849,7 +1838,7 @@ package body SDL.GPU is
    is
    begin
       Require_Device (Self);
-      return Raw.Get_Swapchain_Texture_Format (Self.Internal, Window_Address (Window));
+      return Raw.Get_Swapchain_Texture_Format (Self.Internal, Window_Handle (Window));
    end Get_Swapchain_Texture_Format;
 
    procedure GDK_Suspend (Self : in Device) is
@@ -1998,11 +1987,15 @@ package body SDL.GPU is
       Storage_Buffers  : in Storage_Buffer_Read_Write_Binding_Arrays)
       return Compute_Pass
    is
-      Raw_Textures : aliased Raw_Storage_Texture_Read_Write_Binding_Arrays
+      Raw_Textures : aliased Raw.Storage_Texture_Read_Write_Binding_Array
         (0 .. Array_Last (Storage_Textures'Length));
-      Raw_Buffers : aliased Raw_Storage_Buffer_Read_Write_Binding_Arrays
+      Raw_Buffers : aliased Raw.Storage_Buffer_Read_Write_Binding_Array
         (0 .. Array_Last (Storage_Buffers'Length));
-      Internal    : Compute_Pass_Handle;
+      First_Texture_Binding : access constant
+        Raw.Storage_Texture_Read_Write_Binding := null;
+      First_Buffer_Binding : access constant
+        Raw.Storage_Buffer_Read_Write_Binding := null;
+      Internal : Compute_Pass_Handle;
    begin
       Require_Command_Buffer (Self);
 
@@ -2016,14 +2009,20 @@ package body SDL.GPU is
            Storage_Buffers (Index).Internal;
       end loop;
 
+      if Storage_Textures'Length > 0 then
+         First_Texture_Binding := Raw_Textures (0)'Access;
+      end if;
+
+      if Storage_Buffers'Length > 0 then
+         First_Buffer_Binding := Raw_Buffers (0)'Access;
+      end if;
+
       Internal :=
         Raw.Begin_Compute_Pass
           (Self.Internal,
-           (if Storage_Textures'Length = 0 then System.Null_Address
-            else Raw_Textures'Address),
+           First_Texture_Binding,
            Interfaces.Unsigned_32 (Storage_Textures'Length),
-           (if Storage_Buffers'Length = 0 then System.Null_Address
-            else Raw_Buffers'Address),
+           First_Buffer_Binding,
            Interfaces.Unsigned_32 (Storage_Buffers'Length));
 
       if Internal = null then
@@ -2193,7 +2192,7 @@ package body SDL.GPU is
    is
    begin
       Require_Device (Self);
-      return To_Bool (Raw.Wait_For_Swapchain (Self.Internal, Window_Address (Window)));
+      return To_Bool (Raw.Wait_For_Swapchain (Self.Internal, Window_Handle (Window)));
    end Wait_For_Swapchain;
 
    function Acquire_Swapchain_Texture
@@ -2211,7 +2210,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Acquire_Swapchain_Texture
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               Raw_Texture'Access,
               Raw_Width'Access,
               Raw_Height'Access))
@@ -2241,7 +2240,7 @@ package body SDL.GPU is
       if not To_Bool
           (Raw.Wait_And_Acquire_Swapchain_Texture
              (Self.Internal,
-              Window_Address (Window),
+              Window_Handle (Window),
               Raw_Texture'Access,
               Raw_Width'Access,
               Raw_Height'Access))
@@ -2359,7 +2358,7 @@ package body SDL.GPU is
      (Self                  : in out Command_Buffer;
       Color_Targets         : access constant Raw.Color_Target_Info;
       Num_Color_Targets     : in Interfaces.Unsigned_32;
-      Depth_Stencil_Target  : in System.Address := System.Null_Address)
+      Depth_Stencil_Target  : access constant Raw.Depth_Stencil_Target_Info := null)
       return Render_Pass
    is
       Pass_Handle : Render_Pass_Handle;
@@ -2392,7 +2391,7 @@ package body SDL.GPU is
      (Self          : in out Command_Buffer;
       Color_Targets : in Color_Target_Info_Arrays) return Render_Pass
    is
-      Raw_Targets : aliased Raw_Color_Target_Info_Arrays
+      Raw_Targets : aliased Raw.Color_Target_Info_Array
         (0 .. Array_Last (Color_Targets'Length));
       First_Target : access constant Raw.Color_Target_Info := null;
    begin
@@ -2423,7 +2422,7 @@ package body SDL.GPU is
    begin
       return
         Begin_Render_Pass_Internal
-          (Self, Raw_Target'Access, 1, Raw_Depth'Address);
+          (Self, Raw_Target'Access, 1, Raw_Depth'Access);
    end Begin_Render_Pass;
 
    function Begin_Render_Pass
@@ -2431,7 +2430,7 @@ package body SDL.GPU is
       Color_Targets        : in Color_Target_Info_Arrays;
       Depth_Stencil_Target : in Depth_Stencil_Target_Info) return Render_Pass
    is
-      Raw_Targets : aliased Raw_Color_Target_Info_Arrays
+      Raw_Targets : aliased Raw.Color_Target_Info_Array
         (0 .. Array_Last (Color_Targets'Length));
       First_Target : access constant Raw.Color_Target_Info := null;
       Raw_Depth    : aliased constant Raw.Depth_Stencil_Target_Info :=
@@ -2451,7 +2450,7 @@ package body SDL.GPU is
           (Self,
            First_Target,
            Interfaces.Unsigned_32 (Color_Targets'Length),
-           Raw_Depth'Address);
+           Raw_Depth'Access);
    end Begin_Render_Pass;
 
    function Begin_Render_Pass
@@ -2463,7 +2462,7 @@ package body SDL.GPU is
    begin
       return
         Begin_Render_Pass_Internal
-          (Self, null, 0, Raw_Depth'Address);
+          (Self, null, 0, Raw_Depth'Access);
    end Begin_Render_Pass;
 
    procedure End_Pass (Self : in out Render_Pass) is
@@ -2503,7 +2502,7 @@ package body SDL.GPU is
      (Self    : in Render_Pass;
       Scissor : in SDL.Video.Rectangles.Rectangle)
    is
-      Raw_Scissor : aliased constant SDL.Video.Rectangles.Rectangle := Scissor;
+      Raw_Scissor : aliased constant SDL.Raw.Rect.Rectangle := To_Raw (Scissor);
    begin
       Require_Render_Pass (Self);
       Raw.Set_Scissor (Self.Internal, Raw_Scissor'Access);
@@ -2532,8 +2531,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Buffer_Binding_Arrays)
    is
-      Raw_Bindings : aliased Raw_Buffer_Binding_Arrays
+      Raw_Bindings : aliased Raw.Buffer_Binding_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Buffer_Binding := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2542,11 +2542,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Vertex_Buffers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Vertex_Buffers;
 
@@ -2567,8 +2570,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Sampler_Binding_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Sampler_Binding_Arrays
+      Raw_Bindings : aliased Raw.Texture_Sampler_Binding_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Sampler_Binding := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2577,11 +2581,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Vertex_Samplers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Vertex_Samplers;
 
@@ -2590,8 +2597,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Handle_Arrays
+      Raw_Bindings : aliased Raw.Texture_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Access := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2601,11 +2609,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Vertex_Storage_Textures
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Vertex_Storage_Textures;
 
@@ -2614,8 +2625,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Buffer_Arrays)
    is
-      Raw_Bindings : aliased Raw_Buffer_Handle_Arrays
+      Raw_Bindings : aliased Raw.Buffer_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Buffer_Access := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2625,11 +2637,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Vertex_Storage_Buffers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Vertex_Storage_Buffers;
 
@@ -2638,8 +2653,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Sampler_Binding_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Sampler_Binding_Arrays
+      Raw_Bindings : aliased Raw.Texture_Sampler_Binding_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Sampler_Binding := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2648,11 +2664,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Fragment_Samplers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Fragment_Samplers;
 
@@ -2661,8 +2680,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Handle_Arrays
+      Raw_Bindings : aliased Raw.Texture_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Access := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2672,11 +2692,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Fragment_Storage_Textures
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Fragment_Storage_Textures;
 
@@ -2685,8 +2708,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Buffer_Arrays)
    is
-      Raw_Bindings : aliased Raw_Buffer_Handle_Arrays
+      Raw_Bindings : aliased Raw.Buffer_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Buffer_Access := null;
    begin
       Require_Render_Pass (Self);
 
@@ -2696,11 +2720,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Fragment_Storage_Buffers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Fragment_Storage_Buffers;
 
@@ -2781,8 +2808,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Sampler_Binding_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Sampler_Binding_Arrays
+      Raw_Bindings : aliased Raw.Texture_Sampler_Binding_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Sampler_Binding := null;
    begin
       Require_Compute_Pass (Self);
 
@@ -2791,11 +2819,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Compute_Samplers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Compute_Samplers;
 
@@ -2804,8 +2835,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Texture_Arrays)
    is
-      Raw_Bindings : aliased Raw_Texture_Handle_Arrays
+      Raw_Bindings : aliased Raw.Texture_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Texture_Access := null;
    begin
       Require_Compute_Pass (Self);
 
@@ -2815,11 +2847,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Compute_Storage_Textures
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Compute_Storage_Textures;
 
@@ -2828,8 +2863,9 @@ package body SDL.GPU is
       First_Slot : in Interfaces.Unsigned_32;
       Bindings   : in Buffer_Arrays)
    is
-      Raw_Bindings : aliased Raw_Buffer_Handle_Arrays
+      Raw_Bindings : aliased Raw.Buffer_Access_Array
         (0 .. Array_Last (Bindings'Length));
+      First_Binding : access constant Raw.Buffer_Access := null;
    begin
       Require_Compute_Pass (Self);
 
@@ -2839,11 +2875,14 @@ package body SDL.GPU is
            Bindings (Index).Internal;
       end loop;
 
+      if Bindings'Length > 0 then
+         First_Binding := Raw_Bindings (0)'Access;
+      end if;
+
       Raw.Bind_Compute_Storage_Buffers
         (Self.Internal,
          First_Slot,
-         (if Bindings'Length = 0 then System.Null_Address
-          else Raw_Bindings'Address),
+         First_Binding,
          Interfaces.Unsigned_32 (Bindings'Length));
    end Bind_Compute_Storage_Buffers;
 
@@ -2890,10 +2929,7 @@ package body SDL.GPU is
      (Device : in SDL.GPU.Device;
       Self   : in Fence) return Boolean
    is
-      type Fence_List is array (C.size_t range 0 .. 0) of aliased Fence_Handle with
-        Convention => C;
-
-      Fences : aliased Fence_List := [0 => Self.Internal];
+      Fences : aliased Raw.Fence_Access_Array (0 .. 0) := [0 => Self.Internal];
    begin
       Require_Device (Device);
 
@@ -2906,7 +2942,7 @@ package body SDL.GPU is
           (Raw.Wait_For_Fences
              (Device.Internal,
               To_C_Bool (True),
-              Fences'Address,
+              Fences (Fences'First)'Access,
               1));
    end Wait;
 

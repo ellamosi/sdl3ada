@@ -1,10 +1,10 @@
 with Ada.Unchecked_Conversion;
-with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
 with SDL.Error;
 with SDL.Raw.Camera;
+with SDL.Raw.Pixels;
 
 package body SDL.Cameras is
    package Raw renames SDL.Raw.Camera;
@@ -13,52 +13,28 @@ package body SDL.Cameras is
    use type C.ptrdiff_t;
    use type CS.chars_ptr;
    use type Raw.ID_Pointers.Pointer;
+   use type Raw.Spec_Access;
+   use type Raw.Spec_Pointers.Pointer;
    use type SDL.C_Pointers.Camera_Pointer;
    use type SDL.Properties.Property_ID;
    use type SDL.Video.Surfaces.Internal_Surface_Pointer;
    use type System.Address;
-
-   type Spec_Access is access all Spec with
-     Convention => C;
-
-   type Spec_Access_Arrays is array (C.ptrdiff_t range <>) of aliased Spec_Access with
-     Convention => C;
-
-   package Spec_Pointers is new Interfaces.C.Pointers
-     (Index              => C.ptrdiff_t,
-      Element            => Spec_Access,
-      Element_Array      => Spec_Access_Arrays,
-      Default_Terminator => null);
-
-   use type Spec_Pointers.Pointer;
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => Raw.ID_Pointers.Pointer,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
-     (Source => Spec_Pointers.Pointer,
-      Target => System.Address);
-
-   function To_Address is new Ada.Unchecked_Conversion
-     (Source => SDL.C_Pointers.Camera_Pointer,
+     (Source => Raw.Spec_Pointers.Pointer,
       Target => System.Address);
 
    function To_Address is new Ada.Unchecked_Conversion
      (Source => SDL.Video.Surfaces.Internal_Surface_Pointer,
       Target => System.Address);
 
-   function To_Pointer is new Ada.Unchecked_Conversion
-     (Source => System.Address,
-      Target => SDL.C_Pointers.Camera_Pointer);
-
    function To_Surface_Pointer is new Ada.Unchecked_Conversion
      (Source => System.Address,
       Target => SDL.Video.Surfaces.Internal_Surface_Pointer);
-
-   function To_Spec_Pointers is new Ada.Unchecked_Conversion
-     (Source => System.Address,
-      Target => Spec_Pointers.Pointer);
 
    function To_Public (Value : in Raw.Positions) return Positions is
      (Positions'Val (Raw.Positions'Pos (Value)));
@@ -66,6 +42,23 @@ package body SDL.Cameras is
    function To_Public
      (Value : in Raw.Permission_States) return Permission_States is
      (Permission_States'Val (Raw.Permission_States'Pos (Value)));
+
+   function To_Raw (Value : in Spec) return Raw.Spec is
+     ((Format                => SDL.Raw.Pixels.Pixel_Format_Name (Value.Format),
+       Colour_Space          => Raw.Colour_Space (Value.Colour_Space),
+       Width                 => Value.Width,
+       Height                => Value.Height,
+       Framerate_Numerator   => Value.Framerate_Numerator,
+       Framerate_Denominator => Value.Framerate_Denominator));
+
+   function To_Public (Value : in Raw.Spec) return Spec is
+     ((Format                =>
+         SDL.Video.Pixel_Formats.Pixel_Format_Names (Value.Format),
+       Colour_Space          => Colour_Spaces (Value.Colour_Space),
+       Width                 => Value.Width,
+       Height                => Value.Height,
+       Framerate_Numerator   => Value.Framerate_Numerator,
+       Framerate_Denominator => Value.Framerate_Denominator));
 
    function Make_Surface_From_Pointer
      (S    : in SDL.Video.Surfaces.Internal_Surface_Pointer;
@@ -115,9 +108,9 @@ package body SDL.Cameras is
       end if;
    end Free;
 
-   procedure Free (Items : in out Spec_Pointers.Pointer);
+   procedure Free (Items : in out Raw.Spec_Pointers.Pointer);
 
-   procedure Free (Items : in out Spec_Pointers.Pointer) is
+   procedure Free (Items : in out Raw.Spec_Pointers.Pointer) is
    begin
       if Items /= null then
          Raw.Free (To_Address (Items));
@@ -164,27 +157,27 @@ package body SDL.Cameras is
    end Copy_IDs;
 
    function Copy_Specs
-     (Items : in Spec_Pointers.Pointer;
+     (Items : in Raw.Spec_Pointers.Pointer;
       Count : in C.int) return Spec_Lists;
 
    function Copy_Specs
-     (Items : in Spec_Pointers.Pointer;
+     (Items : in Raw.Spec_Pointers.Pointer;
       Count : in C.int) return Spec_Lists
    is
-      Raw : Spec_Pointers.Pointer := Items;
+      Source_Items : Raw.Spec_Pointers.Pointer := Items;
    begin
       if Count <= 0 then
-         Free (Raw);
+         Free (Source_Items);
          return [];
       end if;
 
-      if Raw = null then
+      if Source_Items = null then
          Raise_Last_Error ("SDL_GetCameraSupportedFormats failed");
       end if;
 
       declare
-         Source : constant Spec_Access_Arrays :=
-           Spec_Pointers.Value (Raw, C.ptrdiff_t (Count));
+         Source : constant Raw.Spec_Access_Array :=
+           Raw.Spec_Pointers.Value (Source_Items, C.ptrdiff_t (Count));
          Result : Spec_Lists (0 .. Natural (Count) - 1);
       begin
          for Index in Result'Range loop
@@ -193,19 +186,19 @@ package body SDL.Cameras is
                  Source'First + C.ptrdiff_t (Index - Result'First);
             begin
                if Source (Source_Index) = null then
-                  Free (Raw);
+                  Free (Source_Items);
                   raise Camera_Error with "Camera format list contains a null spec";
                end if;
 
-               Result (Index) := Source (Source_Index).all;
+               Result (Index) := To_Public (Source (Source_Index).all);
             end;
          end loop;
 
-         Free (Raw);
+         Free (Source_Items);
          return Result;
       exception
          when others =>
-            Free (Raw);
+            Free (Source_Items);
             raise;
       end;
    end Copy_Specs;
@@ -224,11 +217,16 @@ package body SDL.Cameras is
    begin
       Close (Self);
 
-      Internal :=
-        To_Pointer
-          (Raw.Open_Camera
-             (Raw.ID (Instance),
-              (if Desired = null then System.Null_Address else Desired.all'Address)));
+      if Desired = null then
+         Internal := Raw.Open_Camera (Raw.ID (Instance), null);
+      else
+         declare
+            Raw_Desired : aliased constant Raw.Spec := To_Raw (Desired.all);
+         begin
+            Internal := Raw.Open_Camera (Raw.ID (Instance), Raw_Desired'Access);
+         end;
+      end if;
+
       if Internal = null then
          Raise_Last_Error ("SDL_OpenCamera failed");
       end if;
@@ -276,9 +274,8 @@ package body SDL.Cameras is
 
    function Supported_Formats (Instance : in ID) return Spec_Lists is
       Count : aliased C.int := 0;
-      Items : constant Spec_Pointers.Pointer :=
-        To_Spec_Pointers
-          (Raw.Get_Camera_Supported_Formats (Raw.ID (Instance), Count'Access));
+      Items : constant Raw.Spec_Pointers.Pointer :=
+        Raw.Get_Camera_Supported_Formats (Raw.ID (Instance), Count'Access);
    begin
       return Copy_Specs (Items, Count);
    end Supported_Formats;
@@ -339,7 +336,7 @@ package body SDL.Cameras is
    procedure Close (Self : in out Camera) is
    begin
       if Self.Owns and then Self.Internal /= null then
-         Raw.Close_Camera (To_Address (Self.Internal));
+         Raw.Close_Camera (Self.Internal);
       end if;
 
       Self.Internal := null;
@@ -352,7 +349,7 @@ package body SDL.Cameras is
    function Permission_State (Self : in Camera) return Permission_States is
    begin
       Require_Valid (Self);
-      return To_Public (Raw.Get_Camera_Permission_State (To_Address (Self.Internal)));
+      return To_Public (Raw.Get_Camera_Permission_State (Self.Internal));
    end Permission_State;
 
    function Get_ID (Self : in Camera) return ID is
@@ -362,7 +359,7 @@ package body SDL.Cameras is
          return 0;
       end if;
 
-      Result := ID (Raw.Get_Camera_ID (To_Address (Self.Internal)));
+      Result := ID (Raw.Get_Camera_ID (Self.Internal));
       if Result = 0 then
          Raise_Last_Error ("SDL_GetCameraID failed");
       end if;
@@ -377,7 +374,7 @@ package body SDL.Cameras is
    begin
       Require_Valid (Self);
 
-      Props := Raw.Get_Camera_Properties (To_Address (Self.Internal));
+      Props := Raw.Get_Camera_Properties (Self.Internal);
       if Props = SDL.Properties.Null_Property_ID then
          Raise_Last_Error ("SDL_GetCameraProperties failed");
       end if;
@@ -389,18 +386,16 @@ package body SDL.Cameras is
      (Self  : in Camera;
       Value : out Spec) return Boolean
    is
-      Raw_Value : aliased Spec;
+      Raw_Value : aliased Raw.Spec;
    begin
       Require_Valid (Self);
 
-      if not Boolean
-          (Raw.Get_Camera_Format
-             (To_Address (Self.Internal), Raw_Value'Address))
+      if not Boolean (Raw.Get_Camera_Format (Self.Internal, Raw_Value'Access))
       then
          return False;
       end if;
 
-      Value := Raw_Value;
+      Value := To_Public (Raw_Value);
       return True;
    end Get_Format;
 
@@ -416,7 +411,7 @@ package body SDL.Cameras is
 
       Frame :=
         To_Surface_Pointer
-          (Raw.Acquire_Camera_Frame (To_Address (Self.Internal), Stamp'Access));
+          (Raw.Acquire_Camera_Frame (Self.Internal, Stamp'Access));
       Timestamp_NS := Stamp;
 
       if Frame = null then
@@ -440,7 +435,7 @@ package body SDL.Cameras is
       end if;
 
       Raw.Release_Camera_Frame
-        (To_Address (Self.Internal), To_Address (Internal));
+        (Self.Internal, To_Address (Internal));
       Frame := SDL.Video.Surfaces.Null_Surface;
    end Release_Frame;
 

@@ -2,7 +2,6 @@ with Interfaces;
 with Interfaces.C;
 with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
-with System;
 
 package SDL.Raw.Pixels is
    pragma Preelaborate;
@@ -15,6 +14,24 @@ package SDL.Raw.Pixels is
    subtype Colour_Mask is U32;
    subtype Colour_Component is Interfaces.Unsigned_8;
    subtype Pixel_Format_Name is U32;
+
+   type Colour is record
+      Red   : Colour_Component := 0;
+      Green : Colour_Component := 0;
+      Blue  : Colour_Component := 0;
+      Alpha : Colour_Component := 0;
+   end record
+   with
+     Convention => C,
+     Size       => 32;
+
+   Null_Colour : constant Colour := (others => 0);
+
+   type Colour_Array is array (C.size_t range <>) of aliased Colour with
+     Convention => C;
+
+   type Colour_Access is access all Colour with
+     Convention => C;
 
    type Padding_Array is array (Positive range 1 .. 2) of Interfaces.Unsigned_8 with
      Convention => C;
@@ -44,7 +61,7 @@ package SDL.Raw.Pixels is
 
    type Palette is record
       Total     : C.int;
-      Colours   : System.Address;
+      Colours   : Colour_Access;
       Version   : Interfaces.Unsigned_32;
       Ref_Count : C.int;
    end record
@@ -93,7 +110,7 @@ package SDL.Raw.Pixels is
    procedure Get_RGB
      (Pixel   : in U32;
       Format  : in Pixel_Format_Details_Access;
-      Palette : in System.Address;
+      Palette : in Palette_Access;
       Red     : out Colour_Component;
       Green   : out Colour_Component;
       Blue    : out Colour_Component)
@@ -105,7 +122,7 @@ package SDL.Raw.Pixels is
    procedure Get_RGBA
      (Pixel   : in U32;
       Format  : in Pixel_Format_Details_Access;
-      Palette : in System.Address;
+      Palette : in Palette_Access;
       Red     : out Colour_Component;
       Green   : out Colour_Component;
       Blue    : out Colour_Component;
@@ -117,7 +134,7 @@ package SDL.Raw.Pixels is
 
    function Map_RGB
      (Format  : in Pixel_Format_Details_Access;
-      Palette : in System.Address;
+      Palette : in Palette_Access;
       Red     : in Colour_Component;
       Green   : in Colour_Component;
       Blue    : in Colour_Component) return U32
@@ -128,7 +145,7 @@ package SDL.Raw.Pixels is
 
    function Map_RGBA
      (Format  : in Pixel_Format_Details_Access;
-      Palette : in System.Address;
+      Palette : in Palette_Access;
       Red     : in Colour_Component;
       Green   : in Colour_Component;
       Blue    : in Colour_Component;
@@ -147,7 +164,7 @@ package SDL.Raw.Pixels is
 
    function Set_Palette_Colors
      (Container : in Palette_Access;
-      Colours   : in System.Address;
+      Colours   : access constant Colour;
       First     : in C.int;
       Total     : in C.int) return CE.bool
    with

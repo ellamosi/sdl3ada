@@ -8,6 +8,8 @@ package SDL.Raw.UTF_8 is
 
    subtype Code_Points is Interfaces.Unsigned_32;
 
+   Invalid_Unicode_Code_Point : constant Code_Points := 16#0000_FFFD#;
+
    type Char_Pointers is access all C.char
    with Convention => C;
 
@@ -18,6 +20,14 @@ package SDL.Raw.UTF_8 is
      Import        => True,
      Convention    => C,
      External_Name => "SDL_StepUTF8";
+
+   function Step_Back
+     (Start  : in Char_Pointers;
+      Text   : access Char_Pointers) return Code_Points
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_StepBackUTF8";
 
    function Encode
      (Code_Point  : in Code_Points;

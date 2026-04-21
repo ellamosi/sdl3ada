@@ -3,6 +3,7 @@ with Interfaces.C.Extensions;
 with Interfaces.C.Strings;
 
 with SDL.Error;
+with SDL.Raw.Rect;
 with SDL.Raw.Video;
 
 package body SDL.Video.Displays is
@@ -43,6 +44,23 @@ package body SDL.Video.Displays is
    function To_Public
      (Value : in Raw.Display_Orientation) return Display_Orientations is
        (Display_Orientations'Val (Raw.Display_Orientation'Pos (Value)));
+
+   function To_Raw (Value : in Rectangles.Point) return SDL.Raw.Rect.Point is
+     ((X => Value.X, Y => Value.Y));
+
+   function To_Raw
+     (Value : in Rectangles.Rectangle) return SDL.Raw.Rect.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Raw.Rect.Dimension (Value.Width),
+         Height => SDL.Raw.Rect.Dimension (Value.Height)));
+
+   function To_Public
+     (Value : in SDL.Raw.Rect.Rectangle) return Rectangles.Rectangle is
+       ((X      => Value.X,
+         Y      => Value.Y,
+         Width  => SDL.Natural_Dimension (Value.Width),
+         Height => SDL.Natural_Dimension (Value.Height)));
 
    function Resolve_Display_ID
      (Display : in Display_Indices) return Raw.Display_ID
@@ -192,9 +210,9 @@ package body SDL.Video.Displays is
    function Get_Display_Index_From_Point
      (Point : in Rectangles.Point) return Display_Indices
    is
-      Position : aliased Rectangles.Point := Point;
+      Position : aliased constant SDL.Raw.Rect.Point := To_Raw (Point);
       ID       : constant Raw.Display_ID :=
-        Raw.Get_Display_For_Point (Position'Address);
+        Raw.Get_Display_For_Point (Position'Access);
    begin
       if ID = 0 then
          raise Video_Error with SDL.Error.Get;
@@ -206,9 +224,9 @@ package body SDL.Video.Displays is
    function Get_Display_Index_From_Rectangle
      (Area : in Rectangles.Rectangle) return Display_Indices
    is
-      Region : aliased Rectangles.Rectangle := Area;
+      Region : aliased constant SDL.Raw.Rect.Rectangle := To_Raw (Area);
       ID     : constant Raw.Display_ID :=
-        Raw.Get_Display_For_Rect (Region'Address);
+        Raw.Get_Display_For_Rect (Region'Access);
    begin
       if ID = 0 then
          raise Video_Error with SDL.Error.Get;
@@ -321,16 +339,16 @@ package body SDL.Video.Displays is
      (Display : in Display_Indices;
       Bounds  : out Rectangles.Rectangle) return Boolean
    is
-      Result : aliased Rectangles.Rectangle := Rectangles.Null_Rectangle;
+      Result : aliased SDL.Raw.Rect.Rectangle := SDL.Raw.Rect.Null_Rectangle;
    begin
       if not Boolean
           (Raw.Get_Display_Bounds
-             (Resolve_Display_ID (Display), Result'Address))
+             (Resolve_Display_ID (Display), Result'Access))
       then
          return False;
       end if;
 
-      Bounds := Result;
+      Bounds := To_Public (Result);
       return True;
    end Display_Bounds;
 
@@ -338,16 +356,16 @@ package body SDL.Video.Displays is
      (Display : in Display_Indices;
       Bounds  : out Rectangles.Rectangle) return Boolean
    is
-      Result : aliased Rectangles.Rectangle := Rectangles.Null_Rectangle;
+      Result : aliased SDL.Raw.Rect.Rectangle := SDL.Raw.Rect.Null_Rectangle;
    begin
       if not Boolean
           (Raw.Get_Display_Usable_Bounds
-             (Resolve_Display_ID (Display), Result'Address))
+             (Resolve_Display_ID (Display), Result'Access))
       then
          return False;
       end if;
 
-      Bounds := Result;
+      Bounds := To_Public (Result);
       return True;
    end Get_Usable_Bounds;
 

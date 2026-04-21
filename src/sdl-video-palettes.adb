@@ -8,9 +8,9 @@ package body SDL.Video.Palettes is
    package Raw renames SDL.Raw.Pixels;
    package Palette_Internal renames SDL.Video.Palettes.Internal;
 
+   use type Raw.Colour_Access;
    use type Raw.Palette_Access;
    use type Colour_Array_Pointer.Pointer;
-   use type System.Address;
 
    type Iterator (Container : access constant Palette'Class) is
      new Ada.Finalization.Limited_Controlled and
@@ -23,12 +23,12 @@ package body SDL.Video.Palettes is
    function Next (Object : Iterator; Position : Cursor) return Cursor;
 
    function To_Colour_Pointer is new Ada.Unchecked_Conversion
-     (Source => System.Address,
+     (Source => Raw.Colour_Access,
       Target => Colour_Array_Pointer.Pointer);
 
-   function Colour_Array_Address
-     (Items : in Colour_Arrays) return System.Address is
-     (if Items'Length = 0 then System.Null_Address else Items (Items'First)'Address);
+   function To_Raw_Colour_Access is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Colour_Access);
 
    function Element (Position : in Cursor) return Colour is
    begin
@@ -99,7 +99,9 @@ package body SDL.Video.Palettes is
       if not Boolean
           (Raw.Set_Palette_Colors
              (Container.Data,
-              Colour_Array_Address (Colours),
+              (if Colours'Length = 0
+               then null
+               else To_Raw_Colour_Access (Colours (Colours'First)'Address)),
               C.int (First),
               C.int (Colours'Length)))
       then
@@ -125,7 +127,7 @@ package body SDL.Video.Palettes is
    begin
       if Object.Container = null
         or else Object.Container.Data = null
-        or else Object.Container.Data.Colours = System.Null_Address
+        or else Object.Container.Data.Colours = null
       then
          return No_Element;
       end if;

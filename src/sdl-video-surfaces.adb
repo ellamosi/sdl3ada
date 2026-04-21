@@ -48,6 +48,10 @@ package body SDL.Video.Surfaces is
      (Source => SDL.Video.Pixel_Formats.Pixel_Format_Access,
       Target => Raw_Pixels.Pixel_Format_Details_Access);
 
+   function To_Raw_Palette is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Pixels.Palette_Access);
+
    function To_Surface_Address_Access is new Ada.Unchecked_Conversion
      (Source => System.Address,
       Target => Surface_Address_Access);
@@ -312,7 +316,7 @@ package body SDL.Video.Surfaces is
       Raw_Pixels.Get_RGBA
         (Pixel   => Pixel,
          Format  => To_Raw_Details (Format),
-         Palette => Palette,
+         Palette => To_Raw_Palette (Palette),
          Red     => Raw_Red,
          Green   => Raw_Green,
          Blue    => Raw_Blue,

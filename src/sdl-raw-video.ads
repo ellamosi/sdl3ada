@@ -5,7 +5,9 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Properties;
+with SDL.Raw.Rect;
 
 package SDL.Raw.Video is
    pragma Preelaborate;
@@ -13,6 +15,10 @@ package SDL.Raw.Video is
    package C renames Interfaces.C;
    package CE renames Interfaces.C.Extensions;
    package CS renames Interfaces.C.Strings;
+
+   subtype Window_Pointer is SDL.Raw.C_Pointers.Windows_Pointer;
+   subtype Surface_Pointer is SDL.Raw.C_Pointers.Surface_Pointer;
+   subtype GL_Context_Pointer is SDL.Raw.C_Pointers.GL_Context_Pointer;
 
    type Display_ID is mod 2 ** 32 with
      Convention => C,
@@ -70,6 +76,16 @@ package SDL.Raw.Video is
      (Index              => C.ptrdiff_t,
       Element            => Display_Mode_Access,
       Element_Array      => Display_Mode_Pointer_Array,
+      Default_Terminator => null);
+
+   type Window_Pointer_Array is
+     array (C.ptrdiff_t range <>) of aliased Window_Pointer
+   with Convention => C;
+
+   package Window_Pointers is new Interfaces.C.Pointers
+     (Index              => C.ptrdiff_t,
+      Element            => Window_Pointer,
+      Element_Array      => Window_Pointer_Array,
       Default_Terminator => null);
 
    type GL_Attribute is
@@ -146,19 +162,11 @@ package SDL.Raw.Video is
    subtype Hit_Test_Result is C.int;
    subtype Blend_Mode is Interfaces.Unsigned_32;
 
-   type Window_Hit_Test_Point is
-      record
-         X : C.int;
-         Y : C.int;
-      end record
-   with Convention => C;
-
-   type Window_Hit_Test_Point_Access is
-     access constant Window_Hit_Test_Point
-   with Convention => C;
+   subtype Window_Hit_Test_Point is SDL.Raw.Rect.Point;
+   subtype Window_Hit_Test_Point_Access is SDL.Raw.Rect.Point_Access;
 
    type Window_Hit_Test_Callback is access function
-     (Win       : in System.Address;
+     (Win       : in Window_Pointer;
       Area      : in Window_Hit_Test_Point_Access;
       User_Data : in System.Address) return Hit_Test_Result
    with Convention => C;
@@ -311,6 +319,12 @@ package SDL.Raw.Video is
      Convention    => C,
      External_Name => "SDL_free";
 
+   procedure Free (Values : in Window_Pointers.Pointer)
+   with
+     Import        => True,
+     Convention    => C,
+     External_Name => "SDL_free";
+
    procedure Free (Value : in System.Address)
    with
      Import        => True,
@@ -344,14 +358,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetClosestFullscreenDisplayMode";
 
    function Get_Display_For_Point
-     (Point : in System.Address) return Display_ID
+     (Point : access constant SDL.Raw.Rect.Point) return Display_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetDisplayForPoint";
 
    function Get_Display_For_Rect
-     (Area : in System.Address) return Display_ID
+     (Area : access constant SDL.Raw.Rect.Rectangle) return Display_ID
    with
      Import        => True,
      Convention    => C,
@@ -381,7 +395,7 @@ package SDL.Raw.Video is
 
    function Get_Display_Bounds
      (ID     : in Display_ID;
-      Bounds : in System.Address) return CE.bool
+      Bounds : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -389,7 +403,7 @@ package SDL.Raw.Video is
 
    function Get_Display_Usable_Bounds
      (ID     : in Display_ID;
-      Bounds : in System.Address) return CE.bool
+      Bounds : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -417,34 +431,34 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetNaturalDisplayOrientation";
 
    function Create_GL_Context
-     (Window : in System.Address) return System.Address
+     (Window : in Window_Pointer) return GL_Context_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GL_CreateContext";
 
    function Destroy_GL_Context
-     (Context : in System.Address) return CE.bool
+     (Context : in GL_Context_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GL_DestroyContext";
 
-   function Get_Current_GL_Context return System.Address
+   function Get_Current_GL_Context return GL_Context_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GL_GetCurrentContext";
 
-   function Get_Current_GL_Window return System.Address
+   function Get_Current_GL_Window return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GL_GetCurrentWindow";
 
    function Make_GL_Current
-     (Window  : in System.Address;
-      Context : in System.Address) return CE.bool
+     (Window  : in Window_Pointer;
+      Context : in GL_Context_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -470,7 +484,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_EGL_GetCurrentConfig";
 
    function Get_EGL_Window_Surface
-     (Value : in System.Address) return System.Address
+     (Value : in Window_Pointer) return System.Address
    with
      Import        => True,
      Convention    => C,
@@ -521,7 +535,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GL_SetSwapInterval";
 
    function Swap_GL_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
@@ -548,61 +562,61 @@ package SDL.Raw.Video is
      External_Name => "SDL_GL_UnloadLibrary";
 
    function Create_Window_With_Properties
-     (Props : in SDL.Raw.Properties.ID) return System.Address
+     (Props : in SDL.Raw.Properties.ID) return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CreateWindowWithProperties";
 
    function Create_Popup_Window
-     (Parent : in System.Address;
+     (Parent : in Window_Pointer;
       X      : in C.int;
       Y      : in C.int;
       Width  : in C.int;
       Height : in C.int;
-      Flags  : in Window_Flags) return System.Address
+      Flags  : in Window_Flags) return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CreatePopupWindow";
 
    function Get_Window_Properties
-     (Value : in System.Address) return SDL.Raw.Properties.ID
+     (Value : in Window_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowProperties";
 
    function Get_Window_ID
-     (Value : in System.Address) return Window_ID
+     (Value : in Window_Pointer) return Window_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowID";
 
    function Get_Window_From_ID
-     (ID : in Window_ID) return System.Address
+     (ID : in Window_ID) return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowFromID";
 
    function Get_Windows
-     (Count : access C.int) return System.Address
+     (Count : access C.int) return Window_Pointers.Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindows";
 
    function Get_Display_For_Window
-     (Value : in System.Address) return Display_ID
+     (Value : in Window_Pointer) return Display_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetDisplayForWindow";
 
    function Get_Window_Size_In_Pixels
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : access C.int;
       Height : access C.int) return CE.bool
    with
@@ -611,21 +625,21 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowSizeInPixels";
 
    function Get_Window_Flags
-     (Value : in System.Address) return Window_Flags
+     (Value : in Window_Pointer) return Window_Flags
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowFlags";
 
    function Get_Window_Title
-     (Value : in System.Address) return CS.chars_ptr
+     (Value : in Window_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowTitle";
 
    function Set_Window_Title
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       Text  : in C.char_array) return CE.bool
    with
      Import        => True,
@@ -633,22 +647,22 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowTitle";
 
    function Get_Window_Surface
-     (Value : in System.Address) return System.Address
+     (Value : in Window_Pointer) return Surface_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowSurface";
 
    function Set_Window_Icon
-     (Value : in System.Address;
-      Icon  : in System.Address) return CE.bool
+     (Value : in Window_Pointer;
+      Icon  : in Surface_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowIcon";
 
    function Get_Window_Position
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       X     : access C.int;
       Y     : access C.int) return CE.bool
    with
@@ -657,7 +671,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowPosition";
 
    function Set_Window_Position
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       X     : in C.int;
       Y     : in C.int) return CE.bool
    with
@@ -666,7 +680,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowPosition";
 
    function Get_Window_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : access C.int;
       Height : access C.int) return CE.bool
    with
@@ -675,7 +689,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowSize";
 
    function Set_Window_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : in C.int;
       Height : in C.int) return CE.bool
    with
@@ -684,48 +698,36 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowSize";
 
    function Get_Window_Pixel_Density
-     (Value : in System.Address) return C.C_float
+     (Value : in Window_Pointer) return C.C_float
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowPixelDensity";
 
    function Get_Window_Display_Scale
-     (Value : in System.Address) return C.C_float
+     (Value : in Window_Pointer) return C.C_float
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowDisplayScale";
 
    function Set_Window_Fullscreen_Mode
-     (Value : in System.Address;
-      Mode  : in System.Address) return CE.bool
+     (Value : in Window_Pointer;
+      Mode  : access constant Display_Mode) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowFullscreenMode";
 
-   function Get_Closest_Fullscreen_Display_Mode
-     (ID                         : in Display_ID;
-      Width                      : in C.int;
-      Height                     : in C.int;
-      Refresh_Rate               : in C.C_float;
-      Include_High_Density_Modes : in CE.bool;
-      Closest                    : in System.Address) return CE.bool
-   with
-     Import        => True,
-     Convention    => C,
-     External_Name => "SDL_GetClosestFullscreenDisplayMode";
-
    function Get_Window_Fullscreen_Mode
-     (Value : in System.Address) return System.Address
+     (Value : in Window_Pointer) return Display_Mode_Access
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowFullscreenMode";
 
    function Get_Window_ICC_Profile
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       Size  : access C.size_t) return System.Address
    with
      Import        => True,
@@ -733,22 +735,22 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowICCProfile";
 
    function Get_Window_Pixel_Format
-     (Value : in System.Address) return Pixel_Format_Name
+     (Value : in Window_Pointer) return Pixel_Format_Name
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowPixelFormat";
 
    function Get_Window_Safe_Area
-     (Value : in System.Address;
-      Area  : in System.Address) return CE.bool
+     (Value : in Window_Pointer;
+      Area  : access SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowSafeArea";
 
    function Set_Window_Aspect_Ratio
-     (Value   : in System.Address;
+     (Value   : in Window_Pointer;
       Minimum : in C.C_float;
       Maximum : in C.C_float) return CE.bool
    with
@@ -757,7 +759,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowAspectRatio";
 
    function Get_Window_Aspect_Ratio
-     (Value   : in System.Address;
+     (Value   : in Window_Pointer;
       Minimum : access C.C_float;
       Maximum : access C.C_float) return CE.bool
    with
@@ -766,7 +768,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowAspectRatio";
 
    function Get_Window_Borders_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Top    : access C.int;
       Left   : access C.int;
       Bottom : access C.int;
@@ -777,7 +779,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowBordersSize";
 
    function Get_Window_Minimum_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : access C.int;
       Height : access C.int) return CE.bool
    with
@@ -786,7 +788,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowMinimumSize";
 
    function Set_Window_Minimum_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : in C.int;
       Height : in C.int) return CE.bool
    with
@@ -795,7 +797,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowMinimumSize";
 
    function Get_Window_Maximum_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : access C.int;
       Height : access C.int) return CE.bool
    with
@@ -804,7 +806,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowMaximumSize";
 
    function Set_Window_Maximum_Size
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Width  : in C.int;
       Height : in C.int) return CE.bool
    with
@@ -813,7 +815,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowMaximumSize";
 
    function Set_Window_Bordered
-     (Value    : in System.Address;
+     (Value    : in Window_Pointer;
       Bordered : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -821,7 +823,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowBordered";
 
    function Set_Window_Resizable
-     (Value     : in System.Address;
+     (Value     : in Window_Pointer;
       Resizable : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -829,7 +831,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowResizable";
 
    function Set_Window_Always_On_Top
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Enable : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -837,7 +839,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowAlwaysOnTop";
 
    function Set_Window_Fill_Document
-     (Value  : in System.Address;
+     (Value  : in Window_Pointer;
       Enable : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -845,49 +847,49 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowFillDocument";
 
    function Show_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_ShowWindow";
 
    function Hide_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_HideWindow";
 
    function Maximize_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_MaximizeWindow";
 
    function Minimize_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_MinimizeWindow";
 
    function Raise_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_RaiseWindow";
 
    function Restore_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_RestoreWindow";
 
    function Set_Window_Fullscreen
-     (Value      : in System.Address;
+     (Value      : in Window_Pointer;
       Fullscreen : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -895,21 +897,21 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowFullscreen";
 
    function Sync_Window
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SyncWindow";
 
    function Window_Has_Surface
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_WindowHasSurface";
 
    function Set_Window_Surface_VSync
-     (Value    : in System.Address;
+     (Value    : in Window_Pointer;
       Interval : in Window_Surface_V_Sync_Interval) return CE.bool
    with
      Import        => True,
@@ -917,7 +919,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowSurfaceVSync";
 
    function Get_Window_Surface_VSync
-     (Value    : in System.Address;
+     (Value    : in Window_Pointer;
       Interval : access Window_Surface_V_Sync_Interval) return CE.bool
    with
      Import        => True,
@@ -925,15 +927,15 @@ package SDL.Raw.Video is
      External_Name => "SDL_GetWindowSurfaceVSync";
 
    function Update_Window_Surface
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_UpdateWindowSurface";
 
    function Update_Window_Surface_Rects
-     (Value      : in System.Address;
-      Rectangles : in System.Address;
+     (Value      : in Window_Pointer;
+      Rectangles : access constant SDL.Raw.Rect.Rectangle;
       Total      : in C.int) return CE.bool
    with
      Import        => True,
@@ -941,14 +943,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_UpdateWindowSurfaceRects";
 
    function Destroy_Window_Surface
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_DestroyWindowSurface";
 
    function Set_Window_Keyboard_Grab
-     (Value   : in System.Address;
+     (Value   : in Window_Pointer;
       Grabbed : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -956,14 +958,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowKeyboardGrab";
 
    function Get_Window_Keyboard_Grab
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowKeyboardGrab";
 
    function Set_Window_Mouse_Grab
-     (Value   : in System.Address;
+     (Value   : in Window_Pointer;
       Grabbed : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -971,35 +973,35 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowMouseGrab";
 
    function Get_Window_Mouse_Grab
-     (Value : in System.Address) return CE.bool
+     (Value : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowMouseGrab";
 
-   function Get_Grabbed_Window return System.Address
+   function Get_Grabbed_Window return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGrabbedWindow";
 
    function Set_Window_Mouse_Rect
-     (Value     : in System.Address;
-      Rectangle : in System.Address) return CE.bool
+     (Value     : in Window_Pointer;
+      Rectangle : access constant SDL.Raw.Rect.Rectangle) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowMouseRect";
 
    function Get_Window_Mouse_Rect
-     (Value : in System.Address) return System.Address
+     (Value : in Window_Pointer) return SDL.Raw.Rect.Rectangle_Access
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowMouseRect";
 
    function Set_Window_Opacity
-     (Value   : in System.Address;
+     (Value   : in Window_Pointer;
       Opacity : in C.C_float) return CE.bool
    with
      Import        => True,
@@ -1007,29 +1009,29 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowOpacity";
 
    function Get_Window_Opacity
-     (Value : in System.Address) return C.C_float
+     (Value : in Window_Pointer) return C.C_float
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowOpacity";
 
    function Set_Window_Parent
-     (Value  : in System.Address;
-      Parent : in System.Address) return CE.bool
+     (Value  : in Window_Pointer;
+      Parent : in Window_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowParent";
 
    function Get_Window_Parent
-     (Value : in System.Address) return System.Address
+     (Value : in Window_Pointer) return Window_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowParent";
 
    function Set_Window_Modal
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       Modal : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -1037,7 +1039,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowModal";
 
    function Set_Window_Focusable
-     (Value     : in System.Address;
+     (Value     : in Window_Pointer;
       Focusable : in CE.bool) return CE.bool
    with
      Import        => True,
@@ -1045,7 +1047,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowFocusable";
 
    function Show_Window_System_Menu
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       X     : in C.int;
       Y     : in C.int) return CE.bool
    with
@@ -1054,7 +1056,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_ShowWindowSystemMenu";
 
    function Set_Window_Hit_Test
-     (Value     : in System.Address;
+     (Value     : in Window_Pointer;
       Callback  : in Window_Hit_Test_Callback;
       User_Data : in System.Address) return CE.bool
    with
@@ -1063,15 +1065,15 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowHitTest";
 
    function Set_Window_Shape
-     (Value : in System.Address;
-      Shape : in System.Address) return CE.bool
+     (Value : in Window_Pointer;
+      Shape : in Surface_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetWindowShape";
 
    function Flash_Window
-     (Value     : in System.Address;
+     (Value     : in Window_Pointer;
       Operation : in Flash_Operation) return CE.bool
    with
      Import        => True,
@@ -1079,7 +1081,7 @@ package SDL.Raw.Video is
      External_Name => "SDL_FlashWindow";
 
    function Set_Window_Progress_State
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       State : in Progress_State) return CE.bool
    with
      Import        => True,
@@ -1087,14 +1089,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowProgressState";
 
    function Get_Window_Progress_State
-     (Value : in System.Address) return Progress_State
+     (Value : in Window_Pointer) return Progress_State
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowProgressState";
 
    function Set_Window_Progress_Value
-     (Value : in System.Address;
+     (Value : in Window_Pointer;
       Scale : in C.C_float) return CE.bool
    with
      Import        => True,
@@ -1102,14 +1104,14 @@ package SDL.Raw.Video is
      External_Name => "SDL_SetWindowProgressValue";
 
    function Get_Window_Progress_Value
-     (Value : in System.Address) return C.C_float
+     (Value : in Window_Pointer) return C.C_float
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetWindowProgressValue";
 
    procedure Destroy_Window
-     (Value : in System.Address)
+     (Value : in Window_Pointer)
    with
      Import        => True,
      Convention    => C,

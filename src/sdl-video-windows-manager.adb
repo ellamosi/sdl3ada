@@ -31,6 +31,10 @@ package body SDL.Video.Windows.Manager is
      (Source => System.Address,
       Target => C_Address);
 
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw.Window_Pointer);
+
    function Pointer_Property
      (Props : in SDL.Properties.Property_Set;
       Name  : in String) return C_Address;
@@ -74,7 +78,8 @@ package body SDL.Video.Windows.Manager is
       Props : constant SDL.Properties.Property_Set :=
         SDL.Properties.Reference
           (SDL.Properties.Property_ID
-             (Raw.Get_Window_Properties (Get_Internal (Win))));
+             (Raw.Get_Window_Properties
+                (To_Window_Pointer (Get_Internal (Win)))));
    begin
       Info :=
         (Version    => Linked_Version,

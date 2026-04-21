@@ -5,7 +5,7 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 with SDL.Raw.Gamepad_Events;
 with SDL.Raw.Joystick;
 with SDL.Raw.Power;
@@ -295,7 +295,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_AddGamepadMapping";
 
    function Add_Gamepad_Mappings_From_IO
-     (Stream   : in SDL.C_Pointers.IO_Stream_Pointer;
+     (Stream   : in SDL.Raw.C_Pointers.IO_Stream_Pointer;
       Close_IO : in CE.bool) return C.int
    with
      Import        => True,
@@ -330,7 +330,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadMappingForGUID";
 
    function Get_Gamepad_Mapping
-     (Controller : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
+     (Controller : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
@@ -435,84 +435,84 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadMappingForID";
 
    function Open_Gamepad
-     (Device : in ID) return SDL.C_Pointers.Game_Controller_Pointer
+     (Device : in ID) return SDL.Raw.C_Pointers.Game_Controller_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_OpenGamepad";
 
    function Get_Gamepad_From_ID
-     (Value : in ID) return SDL.C_Pointers.Game_Controller_Pointer
+     (Value : in ID) return SDL.Raw.C_Pointers.Game_Controller_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadFromID";
 
    function Get_Gamepad_From_Player_Index
-     (Index : in Player_Index) return SDL.C_Pointers.Game_Controller_Pointer
+     (Index : in Player_Index) return SDL.Raw.C_Pointers.Game_Controller_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadFromPlayerIndex";
 
    procedure Close_Gamepad
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer)
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer)
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CloseGamepad";
 
    function Get_Gamepad_Properties
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return SDL.Raw.Properties.ID
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return SDL.Raw.Properties.ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadProperties";
 
    function Get_Gamepad_ID
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return ID
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadID";
 
    function Get_Gamepad_Name
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadName";
 
    function Get_Gamepad_Path
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadPath";
 
    function Get_Gamepad_Type
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Types
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Types
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadType";
 
    function Get_Real_Gamepad_Type
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Types
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Types
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetRealGamepadType";
 
    function Get_Gamepad_Player_Index
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Player_Index
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Player_Index
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadPlayerIndex";
 
    function Set_Gamepad_Player_Index
-     (Self  : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Index : in Player_Index) return CE.bool
    with
      Import        => True,
@@ -520,56 +520,56 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_SetGamepadPlayerIndex";
 
    function Get_Gamepad_Vendor
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Vendor_ID
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Vendor_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadVendor";
 
    function Get_Gamepad_Product
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Product_ID
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Product_ID
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadProduct";
 
    function Get_Gamepad_Product_Version
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Version_Number
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Version_Number
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadProductVersion";
 
    function Get_Gamepad_Firmware_Version
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Version_Number
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Version_Number
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadFirmwareVersion";
 
    function Get_Gamepad_Serial
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return CS.chars_ptr
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadSerial";
 
    function Get_Gamepad_Steam_Handle
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Steam_Handle
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Steam_Handle
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadSteamHandle";
 
    function Get_Gamepad_Connection_State
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return Connection_States
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return Connection_States
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadConnectionState";
 
    function Get_Gamepad_Power_Info
-     (Self       : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self       : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Percentage : access C.int) return SDL.Raw.Power.State
    with
      Import        => True,
@@ -577,21 +577,21 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadPowerInfo";
 
    function Gamepad_Connected
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return CE.bool
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GamepadConnected";
 
    function Get_Gamepad_Joystick
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return SDL.C_Pointers.Joystick_Pointer
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return SDL.Raw.C_Pointers.Joystick_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetGamepadJoystick";
 
    function Get_Gamepad_Bindings
-     (Self  : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Count : access C.int) return Binding_Pointers.Pointer
    with
      Import        => True,
@@ -627,7 +627,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadStringForAxis";
 
    function Gamepad_Has_Axis
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Axis : in Axes) return CE.bool
    with
      Import        => True,
@@ -635,7 +635,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GamepadHasAxis";
 
    function Get_Gamepad_Axis
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Axis : in Axes) return Axis_Value
    with
      Import        => True,
@@ -657,7 +657,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadStringForButton";
 
    function Gamepad_Has_Button
-     (Self   : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Button : in Buttons) return CE.bool
    with
      Import        => True,
@@ -665,7 +665,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GamepadHasButton";
 
    function Get_Gamepad_Button
-     (Self   : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Button : in Buttons) return CE.bool
    with
      Import        => True,
@@ -681,7 +681,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadButtonLabelForType";
 
    function Get_Gamepad_Button_Label
-     (Self   : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Button : in Buttons) return Button_Labels
    with
      Import        => True,
@@ -689,14 +689,14 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadButtonLabel";
 
    function Get_Num_Gamepad_Touchpads
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer) return C.int
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer) return C.int
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetNumGamepadTouchpads";
 
    function Get_Num_Gamepad_Touchpad_Fingers
-     (Self     : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self     : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Touchpad : in C.int) return C.int
    with
      Import        => True,
@@ -704,7 +704,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetNumGamepadTouchpadFingers";
 
    function Get_Gamepad_Touchpad_Finger
-     (Self     : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self     : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Touchpad : in C.int;
       Finger   : in C.int;
       Down     : access CE.bool;
@@ -717,7 +717,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadTouchpadFinger";
 
    function Gamepad_Has_Sensor
-     (Self        : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Sensor_Type : in SDL.Raw.Sensor.Types) return CE.bool
    with
      Import        => True,
@@ -725,7 +725,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GamepadHasSensor";
 
    function Set_Gamepad_Sensor_Enabled
-     (Self        : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Sensor_Type : in SDL.Raw.Sensor.Types;
       Enabled     : in CE.bool) return CE.bool
    with
@@ -734,7 +734,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_SetGamepadSensorEnabled";
 
    function Gamepad_Sensor_Enabled
-     (Self        : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Sensor_Type : in SDL.Raw.Sensor.Types) return CE.bool
    with
      Import        => True,
@@ -742,7 +742,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GamepadSensorEnabled";
 
    function Get_Gamepad_Sensor_Data_Rate
-     (Self        : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Sensor_Type : in SDL.Raw.Sensor.Types) return C.C_float
    with
      Import        => True,
@@ -750,7 +750,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadSensorDataRate";
 
    function Get_Gamepad_Sensor_Data
-     (Self        : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self        : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Sensor_Type : in SDL.Raw.Sensor.Types;
       Data        : in System.Address;
       Value_Count : in C.int) return CE.bool
@@ -760,7 +760,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadSensorData";
 
    function Rumble_Gamepad
-     (Self           : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self           : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Low_Frequency  : in Interfaces.Unsigned_16;
       High_Frequency : in Interfaces.Unsigned_16;
       Duration       : in Interfaces.Unsigned_32) return CE.bool
@@ -770,7 +770,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_RumbleGamepad";
 
    function Rumble_Gamepad_Triggers
-     (Self         : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self         : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Left_Rumble  : in Interfaces.Unsigned_16;
       Right_Rumble : in Interfaces.Unsigned_16;
       Duration     : in Interfaces.Unsigned_32) return CE.bool
@@ -780,7 +780,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_RumbleGamepadTriggers";
 
    function Set_Gamepad_LED
-     (Self  : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self  : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Red   : in LED_Component;
       Green : in LED_Component;
       Blue  : in LED_Component) return CE.bool
@@ -790,7 +790,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_SetGamepadLED";
 
    function Send_Gamepad_Effect
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Data : in System.Address;
       Size : in C.int) return CE.bool
    with
@@ -799,7 +799,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_SendGamepadEffect";
 
    function Get_Gamepad_Apple_SF_Symbols_Name_For_Button
-     (Self   : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self   : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Button : in Buttons) return CS.chars_ptr
    with
      Import        => True,
@@ -807,7 +807,7 @@ package SDL.Raw.Gamepad is
      External_Name => "SDL_GetGamepadAppleSFSymbolsNameForButton";
 
    function Get_Gamepad_Apple_SF_Symbols_Name_For_Axis
-     (Self : in SDL.C_Pointers.Game_Controller_Pointer;
+     (Self : in SDL.Raw.C_Pointers.Game_Controller_Pointer;
       Axis : in Axes) return CS.chars_ptr
    with
      Import        => True,

@@ -1,3 +1,4 @@
+with Ada.Unchecked_Conversion;
 with Interfaces.C.Strings;
 
 with SDL.Error;
@@ -13,6 +14,10 @@ package body SDL.Video.Vulkan is
    use type Interfaces.Unsigned_32;
    use type CS.chars_ptr;
    use type Raw.Extension_Pointers.Pointer;
+
+   function To_Window_Pointer is new Ada.Unchecked_Conversion
+     (Source => System.Address,
+      Target => Raw_Video.Window_Pointer);
 
    procedure Create_Surface
      (Window   : in SDL.Video.Windows.Window;
@@ -63,7 +68,7 @@ package body SDL.Video.Vulkan is
    begin
       if not Boolean
           (Raw_Video.Get_Window_Size_In_Pixels
-             (SDL.Video.Windows.Get_Internal (Window),
+             (To_Window_Pointer (SDL.Video.Windows.Get_Internal (Window)),
               Raw_Width'Access,
               Raw_Height'Access))
       then

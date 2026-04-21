@@ -1,9 +1,9 @@
 with Ada.Finalization;
-with Interfaces;
 with Interfaces.C;
 
 with SDL.C_Pointers;
 with SDL.Inputs.Joysticks;
+with SDL.Raw.Haptic;
 
 package SDL.Haptics is
    pragma Elaborate_Body;
@@ -18,195 +18,55 @@ package SDL.Haptics is
 
    type ID_Lists is array (Natural range <>) of ID;
 
-   type Features is mod 2 ** 32 with
-     Convention => C,
-     Size       => 32;
+   subtype Features is SDL.Raw.Haptic.Features;
+   subtype Effect_Types is SDL.Raw.Haptic.Effect_Types;
+   subtype Direction_Types is SDL.Raw.Haptic.Direction_Types;
+   subtype Effect_ID is SDL.Raw.Haptic.Effect_ID;
+   subtype Replay_Counts is SDL.Raw.Haptic.Replay_Counts;
+   subtype Unsigned_16 is SDL.Raw.Haptic.Unsigned_16;
+   subtype Signed_16 is SDL.Raw.Haptic.Signed_16;
+   subtype Signed_32 is SDL.Raw.Haptic.Signed_32;
+   subtype Channel_Counts is SDL.Raw.Haptic.Channel_Counts;
 
-   type Effect_Types is mod 2 ** 16 with
-     Convention => C,
-     Size       => 16;
+   Infinity : constant Replay_Counts := SDL.Raw.Haptic.Infinity;
 
-   subtype Direction_Types is Interfaces.Unsigned_8;
-   subtype Effect_ID is C.int;
-   subtype Replay_Counts is Interfaces.Unsigned_32;
-   subtype Unsigned_16 is Interfaces.Unsigned_16;
-   subtype Signed_16 is Interfaces.Integer_16;
-   subtype Signed_32 is Interfaces.Integer_32;
-   subtype Channel_Counts is Interfaces.Unsigned_8;
+   Constant_Effect      : constant Effect_Types := SDL.Raw.Haptic.Constant_Effect;
+   Sine_Effect          : constant Effect_Types := SDL.Raw.Haptic.Sine_Effect;
+   Square_Effect        : constant Effect_Types := SDL.Raw.Haptic.Square_Effect;
+   Triangle_Effect      : constant Effect_Types := SDL.Raw.Haptic.Triangle_Effect;
+   Sawtooth_Up_Effect   : constant Effect_Types := SDL.Raw.Haptic.Sawtooth_Up_Effect;
+   Sawtooth_Down_Effect : constant Effect_Types := SDL.Raw.Haptic.Sawtooth_Down_Effect;
+   Ramp_Effect          : constant Effect_Types := SDL.Raw.Haptic.Ramp_Effect;
+   Spring_Effect        : constant Effect_Types := SDL.Raw.Haptic.Spring_Effect;
+   Damper_Effect        : constant Effect_Types := SDL.Raw.Haptic.Damper_Effect;
+   Inertia_Effect       : constant Effect_Types := SDL.Raw.Haptic.Inertia_Effect;
+   Friction_Effect      : constant Effect_Types := SDL.Raw.Haptic.Friction_Effect;
+   Left_Right_Effect    : constant Effect_Types := SDL.Raw.Haptic.Left_Right_Effect;
+   Custom_Effect        : constant Effect_Types := SDL.Raw.Haptic.Custom_Effect;
 
-   Infinity : constant Replay_Counts := 16#FFFF_FFFF#;
+   Gain_Feature       : constant Features := SDL.Raw.Haptic.Gain_Feature;
+   Autocenter_Feature : constant Features := SDL.Raw.Haptic.Autocenter_Feature;
+   Status_Feature     : constant Features := SDL.Raw.Haptic.Status_Feature;
+   Pause_Feature      : constant Features := SDL.Raw.Haptic.Pause_Feature;
 
-   Constant_Effect      : constant Effect_Types := 16#0001#;
-   Sine_Effect          : constant Effect_Types := 16#0002#;
-   Square_Effect        : constant Effect_Types := 16#0004#;
-   Triangle_Effect      : constant Effect_Types := 16#0008#;
-   Sawtooth_Up_Effect   : constant Effect_Types := 16#0010#;
-   Sawtooth_Down_Effect : constant Effect_Types := 16#0020#;
-   Ramp_Effect          : constant Effect_Types := 16#0040#;
-   Spring_Effect        : constant Effect_Types := 16#0080#;
-   Damper_Effect        : constant Effect_Types := 16#0100#;
-   Inertia_Effect       : constant Effect_Types := 16#0200#;
-   Friction_Effect      : constant Effect_Types := 16#0400#;
-   Left_Right_Effect    : constant Effect_Types := 16#0800#;
-   Custom_Effect        : constant Effect_Types := 16#8000#;
+   Polar         : constant Direction_Types := SDL.Raw.Haptic.Polar;
+   Cartesian     : constant Direction_Types := SDL.Raw.Haptic.Cartesian;
+   Spherical     : constant Direction_Types := SDL.Raw.Haptic.Spherical;
+   Steering_Axis : constant Direction_Types := SDL.Raw.Haptic.Steering_Axis;
 
-   Gain_Feature       : constant Features := 16#0001_0000#;
-   Autocenter_Feature : constant Features := 16#0002_0000#;
-   Status_Feature     : constant Features := 16#0004_0000#;
-   Pause_Feature      : constant Features := 16#0008_0000#;
-
-   Polar        : constant Direction_Types := 0;
-   Cartesian    : constant Direction_Types := 1;
-   Spherical    : constant Direction_Types := 2;
-   Steering_Axis : constant Direction_Types := 3;
-
-   type Direction_Values is array (0 .. 2) of aliased Signed_32 with
-     Convention     => C,
-     Component_Size => Signed_32'Size;
-
-   type Unsigned_Axis_Values is array (0 .. 2) of aliased Unsigned_16 with
-     Convention     => C,
-     Component_Size => Unsigned_16'Size;
-
-   type Signed_Axis_Values is array (0 .. 2) of aliased Signed_16 with
-     Convention     => C,
-     Component_Size => Signed_16'Size;
-
-   type Direction is record
-      Encoding : Direction_Types := Polar;
-      Values   : Direction_Values := (others => 0);
-   end record with
-     Convention => C;
-
-   type Constant_Effect_Data is record
-      Kind          : Effect_Types := Constant_Effect;
-      Heading       : Direction := (others => <>);
-      Length        : Replay_Counts := 0;
-      Start_Delay   : Unsigned_16 := 0;
-      Button        : Unsigned_16 := 0;
-      Interval      : Unsigned_16 := 0;
-      Level         : Signed_16 := 0;
-      Attack_Length : Unsigned_16 := 0;
-      Attack_Level  : Unsigned_16 := 0;
-      Fade_Length   : Unsigned_16 := 0;
-      Fade_Level    : Unsigned_16 := 0;
-   end record with
-     Convention => C;
-
-   type Periodic_Effect_Data is record
-      Kind          : Effect_Types := Sine_Effect;
-      Heading       : Direction := (others => <>);
-      Length        : Replay_Counts := 0;
-      Start_Delay   : Unsigned_16 := 0;
-      Button        : Unsigned_16 := 0;
-      Interval      : Unsigned_16 := 0;
-      Period        : Unsigned_16 := 0;
-      Magnitude     : Signed_16 := 0;
-      Offset        : Signed_16 := 0;
-      Phase         : Unsigned_16 := 0;
-      Attack_Length : Unsigned_16 := 0;
-      Attack_Level  : Unsigned_16 := 0;
-      Fade_Length   : Unsigned_16 := 0;
-      Fade_Level    : Unsigned_16 := 0;
-   end record with
-     Convention => C;
-
-   type Condition_Effect_Data is record
-      Kind        : Effect_Types := Spring_Effect;
-      Heading     : Direction := (others => <>);
-      Length      : Replay_Counts := 0;
-      Start_Delay : Unsigned_16 := 0;
-      Button      : Unsigned_16 := 0;
-      Interval    : Unsigned_16 := 0;
-      Right_Sat   : Unsigned_Axis_Values := (others => 0);
-      Left_Sat    : Unsigned_Axis_Values := (others => 0);
-      Right_Coeff : Signed_Axis_Values := (others => 0);
-      Left_Coeff  : Signed_Axis_Values := (others => 0);
-      Deadband    : Unsigned_Axis_Values := (others => 0);
-      Center      : Signed_Axis_Values := (others => 0);
-   end record with
-     Convention => C;
-
-   type Ramp_Effect_Data is record
-      Kind          : Effect_Types := Ramp_Effect;
-      Heading       : Direction := (others => <>);
-      Length        : Replay_Counts := 0;
-      Start_Delay   : Unsigned_16 := 0;
-      Button        : Unsigned_16 := 0;
-      Interval      : Unsigned_16 := 0;
-      Start_Level   : Signed_16 := 0;
-      End_Level     : Signed_16 := 0;
-      Attack_Length : Unsigned_16 := 0;
-      Attack_Level  : Unsigned_16 := 0;
-      Fade_Length   : Unsigned_16 := 0;
-      Fade_Level    : Unsigned_16 := 0;
-   end record with
-     Convention => C;
-
-   type Left_Right_Effect_Data is record
-      Kind            : Effect_Types := Left_Right_Effect;
-      Length          : Replay_Counts := 0;
-      Large_Magnitude : Unsigned_16 := 0;
-      Small_Magnitude : Unsigned_16 := 0;
-   end record with
-     Convention => C;
-
-   type Sample_Pointer is access all Unsigned_16 with
-     Convention => C;
-
-   type Custom_Effect_Data is record
-      Kind          : Effect_Types := Custom_Effect;
-      Heading       : Direction := (others => <>);
-      Length        : Replay_Counts := 0;
-      Start_Delay   : Unsigned_16 := 0;
-      Button        : Unsigned_16 := 0;
-      Interval      : Unsigned_16 := 0;
-      Channels      : Channel_Counts := 0;
-      Period        : Unsigned_16 := 0;
-      Samples       : Unsigned_16 := 0;
-      Data          : Sample_Pointer := null;
-      Attack_Length : Unsigned_16 := 0;
-      Attack_Level  : Unsigned_16 := 0;
-      Fade_Length   : Unsigned_16 := 0;
-      Fade_Level    : Unsigned_16 := 0;
-   end record with
-     Convention => C;
-
-   type Effect_Kinds is
-     (Type_Only,
-      Constant_Data,
-      Periodic_Data,
-      Condition_Data,
-      Ramp_Data,
-      Left_Right_Data,
-      Custom_Data);
-
-   type Effect (Kind : Effect_Kinds := Type_Only) is record
-      case Kind is
-         when Type_Only =>
-            Effect_Type : Effect_Types;
-
-         when Constant_Data =>
-            Constant_Info : Constant_Effect_Data;
-
-         when Periodic_Data =>
-            Periodic : Periodic_Effect_Data;
-
-         when Condition_Data =>
-            Condition : Condition_Effect_Data;
-
-         when Ramp_Data =>
-            Ramp : Ramp_Effect_Data;
-
-         when Left_Right_Data =>
-            Left_Right : Left_Right_Effect_Data;
-
-         when Custom_Data =>
-            Custom : Custom_Effect_Data;
-      end case;
-   end record with
-     Unchecked_Union,
-     Convention => C;
+   subtype Direction_Values is SDL.Raw.Haptic.Direction_Values;
+   subtype Unsigned_Axis_Values is SDL.Raw.Haptic.Unsigned_Axis_Values;
+   subtype Signed_Axis_Values is SDL.Raw.Haptic.Signed_Axis_Values;
+   subtype Direction is SDL.Raw.Haptic.Direction;
+   subtype Constant_Effect_Data is SDL.Raw.Haptic.Constant_Effect_Data;
+   subtype Periodic_Effect_Data is SDL.Raw.Haptic.Periodic_Effect_Data;
+   subtype Condition_Effect_Data is SDL.Raw.Haptic.Condition_Effect_Data;
+   subtype Ramp_Effect_Data is SDL.Raw.Haptic.Ramp_Effect_Data;
+   subtype Left_Right_Effect_Data is SDL.Raw.Haptic.Left_Right_Effect_Data;
+   subtype Sample_Pointer is SDL.Raw.Haptic.Sample_Pointer;
+   subtype Custom_Effect_Data is SDL.Raw.Haptic.Custom_Effect_Data;
+   subtype Effect_Kinds is SDL.Raw.Haptic.Effect_Kinds;
+   subtype Effect is SDL.Raw.Haptic.Effect;
 
    type Haptic is new Ada.Finalization.Limited_Controlled with private;
 

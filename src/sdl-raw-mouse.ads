@@ -5,7 +5,7 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 
-with SDL.C_Pointers;
+with SDL.Raw.C_Pointers;
 
 package SDL.Raw.Mouse is
    pragma Preelaborate;
@@ -230,7 +230,7 @@ package SDL.Raw.Mouse is
       Width  : in C.int;
       Height : in C.int;
       Hot_X  : in C.int;
-      Hot_Y  : in C.int) return SDL.C_Pointers.Cursor_Pointer
+      Hot_Y  : in C.int) return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -239,7 +239,7 @@ package SDL.Raw.Mouse is
    function Create_Color_Cursor
      (Surface : in System.Address;
       Hot_X   : in C.int;
-      Hot_Y   : in C.int) return SDL.C_Pointers.Cursor_Pointer
+      Hot_Y   : in C.int) return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
@@ -249,40 +249,40 @@ package SDL.Raw.Mouse is
      (Value       : access Cursor_Frame;
       Frame_Count : in C.int;
       Hot_X       : in C.int;
-      Hot_Y       : in C.int) return SDL.C_Pointers.Cursor_Pointer
+      Hot_Y       : in C.int) return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CreateAnimatedCursor";
 
    function Create_System_Cursor
-     (Cursor_Name : in System_Cursor) return SDL.C_Pointers.Cursor_Pointer
+     (Cursor_Name : in System_Cursor) return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_CreateSystemCursor";
 
-   function Get_Cursor return SDL.C_Pointers.Cursor_Pointer
+   function Get_Cursor return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetCursor";
 
-   function Get_Default_Cursor return SDL.C_Pointers.Cursor_Pointer
+   function Get_Default_Cursor return SDL.Raw.C_Pointers.Cursor_Pointer
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_GetDefaultCursor";
 
    function Set_Cursor
-     (Value : in SDL.C_Pointers.Cursor_Pointer) return CE.bool
+     (Value : in SDL.Raw.C_Pointers.Cursor_Pointer) return CE.bool
    with
      Import        => True,
      Convention    => C,
      External_Name => "SDL_SetCursor";
 
    procedure Destroy_Cursor
-     (Value : in SDL.C_Pointers.Cursor_Pointer)
+     (Value : in SDL.Raw.C_Pointers.Cursor_Pointer)
    with
      Import        => True,
      Convention    => C,

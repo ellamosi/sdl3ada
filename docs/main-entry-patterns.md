@@ -43,11 +43,11 @@ not naturally provide them. SDL will synthesize arguments where it can.
 
 ## Pure Ada Callback Startup
 
-`SDL.Main.Run_Callback_App` is the simplest way for an Ada executable to use
-SDL's callback-driven app model without adding a per-application C shim. It
-collects the current process arguments from `Ada.Command_Line`, calls
-`SDL_RunApp`, and then enters `SDL_EnterAppMainCallbacks` through a bridge
-owned by `sdl3ada`.
+`SDL.Main.Run_Ada_Callback_App` is the simplest way for an Ada executable to
+use SDL's callback-driven app model without adding a per-application C shim or
+writing C-shaped callback definitions. It collects the current process
+arguments from `Ada.Command_Line`, calls `SDL_RunApp`, and then enters
+`SDL_EnterAppMainCallbacks` through a bridge owned by `sdl3ada`.
 
 ```ada
 with My_Callbacks;
@@ -55,21 +55,22 @@ with SDL.Main;
 
 procedure My_App is
 begin
-   SDL.Main.Run_Callback_App
-     (App_Init  => My_Callbacks.App_Init'Access,
-      App_Iter  => My_Callbacks.App_Iterate'Access,
-      App_Event => My_Callbacks.App_Event'Access,
-      App_Quit  => My_Callbacks.App_Quit'Access);
+   SDL.Main.Run_Ada_Callback_App
+     (App_Init  => My_Callbacks.Initialize'Access,
+      App_Iter  => My_Callbacks.Iterate'Access,
+      App_Event => My_Callbacks.Handle_Event'Access,
+      App_Quit  => My_Callbacks.Finalize'Access);
 end My_App;
 ```
 
-Use this path when you want SDL's callback app shape but still want a normal
-Ada `main` procedure and project file. See
-`examples/renderer/01-clear-run-callback-app/` for a complete example.
+Use this path when you want SDL's callback app shape with ordinary Ada callback
+signatures and package-level state is sufficient. See
+`examples/startup/01-hello-ada-owned-helper/` for a complete example.
 
-If you want the callbacks themselves to look more like ordinary Ada code,
-instantiate `SDL.Main.Callback_Apps`. The generic owns the C trampolines,
-typed state allocation, argument conversion, and exception barriers.
+If you want the callbacks themselves to stay Ada-shaped and also want typed
+application state instead of package globals, instantiate
+`SDL.Main.Callback_Apps`. The generic owns the C trampolines, typed state
+allocation, argument conversion, and exception barriers.
 
 ```ada
 with SDL.Main.Callback_Apps;
@@ -84,7 +85,7 @@ package My_App is new SDL.Main.Callback_Apps
 ```
 
 Then call `My_App.Run` from a normal Ada `main`. See
-`examples/renderer/01-clear-generic/` for a complete example.
+`examples/startup/01-hello-ada-owned-generic/` for a complete example.
 
 ## Low-Level Callback Startup
 
@@ -92,13 +93,17 @@ Then call `My_App.Run` from a normal Ada `main`. See
 `SDL_MAIN_USE_CALLBACKS`. Use it from a thin entry stub and provide
 C-convention callbacks matching `SDL.Main.App_Init_Callback`,
 `SDL.Main.App_Iterate_Callback`, `SDL.Main.App_Event_Callback`, and
-`SDL.Main.App_Quit_Callback`. `SDL.Main.Run_Callback_App` is usually the
-better fit for ordinary Ada executables.
+`SDL.Main.App_Quit_Callback`.
+
+If you already have those C-shaped callbacks but want `sdl3ada` to gather
+arguments and drive `SDL_RunApp` for you, `SDL.Main.Run_Callback_App` provides
+that bridge. Most Ada code should prefer `SDL.Main.Run_Ada_Callback_App` or
+`SDL.Main.Callback_Apps`.
 
 This mode hands the outer loop to SDL. Do not combine it with a separate Ada
 polling loop that also calls `SDL_PollEvent` or `SDL_WaitEvent`.
 
-See `examples/renderer/01-clear/` for a direct minimal example of this shape.
+See `examples/startup/01-hello-ada-owned-direct/` for a direct minimal example of this shape.
 
 ## SDL-Owned Callback Entry
 
@@ -106,30 +111,55 @@ If you want the closest Ada equivalent to SDL's native `SDL_main.h` callback
 startup, use a foreign `SDL_main` shim and bind the Ada partition with
 `gnatbind -n`.
 
-- Extend `sdl3ada_sdlmain.gpr` and add
-  `SDL3Ada_SDLMain.Support_Source_Dir` to the executable project's
-  `Source_Dirs`.
+- `with` both `sdl3ada.gpr` and `sdl3ada_sdlmain.gpr`.
+- Add `SDL3Ada_SDLMain.Support_Source_Dir` to the executable project's
+  `Source_Dirs`, and use `SDL3Ada_SDLMain.Support_Main` as the C main.
 - Either export Ada callbacks with the C names `SDL_AppInit`,
   `SDL_AppIterate`, `SDL_AppEvent`, and `SDL_AppQuit`, or instantiate
   `SDL.Main.SDLMain_Callback_Apps` to have `sdl3ada` provide those exported
   hooks for you.
-- Let the inherited support project provide the hidden `SDL_main` shim and
-  binder `-n` setup.
+- Add the binder `-n` switch, the support project's C include path, and the
+  usual platform-specific SDL linker settings from your executable project.
 
 ```gpr
-project My_App extends "sdl3ada_sdlmain.gpr" is
+with "sdl3ada.gpr";
+with "sdl3ada_sdlmain.gpr";
+
+project My_App is
+   for Languages use ("Ada", "C");
    for Source_Dirs use (".", SDL3Ada_SDLMain.Support_Source_Dir);
+   for Main use ("sdl3ada_sdlmain.c");
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-n");
+   end Binder;
+
+   package Compiler is
+      for Default_Switches ("C") use ("-I" & SDL3Ada_SDLMain.SDL_Include_Dir);
+   end Compiler;
+
+   package Linker is
+      case SDL3Ada.Platform is
+         when "macosx" =>
+            for Default_Switches ("C") use
+              ("-F" & SDL3Ada.SDL3_Framework_Dir,
+               "-Wl,-rpath," & SDL3Ada.SDL3_Framework_Dir);
+
+         when others =>
+            null;
+      end case;
+   end Linker;
 end My_App;
 ```
 
 This keeps SDL in charge of the outer process entry shim while leaving the
 callback bodies in Ada. It is a specialized interop path rather than the
 recommended default for normal Ada applications. See
-`examples/renderer/01-clear-sdlmain/` for a complete example.
+`examples/startup/01-hello-sdl-owned-direct/` for a complete example.
 
 To keep the app-facing code idiomatic Ada, instantiate
 `SDL.Main.SDLMain_Callback_Apps` instead of exporting `SDL_App*` manually. See
-`examples/renderer/01-clear-sdlmain-generic/` for that version.
+`examples/startup/01-hello-sdl-owned-generic/` for that version.
 
 ## Platform-Specific Helpers
 
